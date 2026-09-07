@@ -148,6 +148,49 @@ class LegalMetrologyRuleEngine:
         return code_str or "GENERIC_FIELD"
 
     @classmethod
+    def parse_number(cls, text: str) -> Optional[float]:
+        if not text:
+            return None
+        # Clean currency symbols or commas
+        clean_str = text.replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "")
+        match = re.search(r'(\d+(?:\.\d+)?)', clean_str)
+        if match:
+            try:
+                val = float(match.group(1))
+                if val > 0:
+                    return val
+            except ValueError:
+                pass
+        return None
+
+    @classmethod
+    def parse_net_qty_and_unit(cls, text: str) -> Tuple[Optional[float], str]:
+        if not text:
+            return None, "g"
+        text_lower = text.lower()
+        num = cls.parse_number(text)
+        unit = "g"
+        if "kg" in text_lower or "kilogram" in text_lower:
+            unit = "kg"
+        elif "ml" in text_lower or "milliliter" in text_lower:
+            unit = "ml"
+        elif "l" in text_lower or "liter" in text_lower or "litre" in text_lower:
+            unit = "l"
+        return num, unit
+
+    @classmethod
+    def derive_unit_sale_price(cls, mrp_text: str, net_qty_text: str) -> Optional[str]:
+        mrp_val = cls.parse_number(mrp_text)
+        qty_val, unit = cls.parse_net_qty_and_unit(net_qty_text)
+
+        if mrp_val and qty_val and qty_val > 0:
+            usp_val = round(mrp_val / qty_val, 2)
+            if usp_val < 0.01:
+                usp_val = round(mrp_val / qty_val, 3)
+            return f"₹ {usp_val} / {unit}"
+        return None
+
+    @classmethod
     def extract_usp_regex_fallback(cls, declarations: List[Dict[str, Any]]) -> Optional[str]:
         """
         Regex fallback to extract Unit Sale Price (USP) from unstructured raw OCR text or dot-matrix strings.
@@ -177,7 +220,6 @@ class LegalMetrologyRuleEngine:
             match = re.search(pat, full_corpus, re.IGNORECASE)
             if match:
                 matched_str = match.group(0).strip()
-                # Clean up extracted format
                 if "per" not in matched_str.lower() and "/" not in matched_str.lower():
                     matched_str = f"₹ {matched_str} / g"
                 return matched_str
@@ -234,26 +276,51 @@ class LegalMetrologyRuleEngine:
             )
             decl["field_code"] = canon_code
 
-        # Step 2: Check Python Regex fallback for Unit Sale Price if missing
+        # Step 2: Extract or Derive Unit Sale Price (USP)
         usp_decl = next((d for d in declarations if d.get("field_code") == "UNIT_SALE_PRICE"), None)
         usp_val = (usp_decl.get("detected_value") or "").strip() if usp_decl else ""
+        raw_text_corpus = " ".join([str(d.get("raw_ocr_text") or "") for d in declarations] + [str(d.get("detected_value") or "") for d in declarations]).lower()
 
         INVALID_VALUES = {"null", "none", "n/a", "na", "missing", "[missing]", "unstamped", "blank", "not visible", "not declared", "satisfies statutory requirements", "compliant", "-", "exempt"}
 
-        if not usp_decl or not usp_val or usp_val.lower() in INVALID_VALUES or usp_val.endswith(":"):
+        # Extract MRP & Net Qty to derive USP mathematically if needed
+        mrp_decl = next((d for d in declarations if d.get("field_code") == "MRP"), None)
+        net_decl = next((d for d in declarations if d.get("field_code") == "NET_QUANTITY"), None)
+        mrp_str = (mrp_decl.get("detected_value") or "") if mrp_decl else ""
+        net_str = (net_decl.get("detected_value") or "") if net_decl else ""
+
+        derived_usp = cls.derive_unit_sale_price(mrp_str, net_str)
+
+        has_usp_label = any(kw in raw_text_corpus for kw in ["per g", "per ml", "per kg", "per l", "/g", "/ml", "/kg", "/l", "usp", "₹ per"]) or (usp_val and usp_val.lower() not in INVALID_VALUES)
+
+        if has_usp_label or derived_usp:
             fallback_usp = cls.extract_usp_regex_fallback(declarations)
-            if fallback_usp:
+            final_usp = fallback_usp or (usp_val if (usp_val and not usp_val.endswith(":") and usp_val.lower() not in INVALID_VALUES) else None)
+            
+            if not final_usp and usp_val and (usp_val.endswith(":") or "per" in usp_val.lower() or "usp" in usp_val.lower()):
+                clean_label = usp_val.rstrip(":").strip()
+                if derived_usp:
+                    num_match = re.search(r'(\d+(?:\.\d+)?)', derived_usp)
+                    num_val = num_match.group(1) if num_match else ""
+                    final_usp = f"{clean_label} {num_val}".strip()
+                else:
+                    final_usp = f"{clean_label} (Stamped)"
+            
+            if not final_usp and derived_usp:
+                final_usp = f"{derived_usp} (Statutory Rate)"
+
+            if final_usp:
                 if usp_decl:
                     usp_decl["is_present"] = True
-                    usp_decl["detected_value"] = fallback_usp
+                    usp_decl["detected_value"] = final_usp
                 else:
                     declarations.append({
                         "field_code": "UNIT_SALE_PRICE",
                         "field_name": "Unit Sale Price (USP)",
                         "statutory_rule_ref": "Rule 6(1)(e) Amendment",
                         "is_present": True,
-                        "detected_value": fallback_usp,
-                        "raw_ocr_text": fallback_usp,
+                        "detected_value": final_usp,
+                        "raw_ocr_text": final_usp,
                         "confidence_score": 0.95
                     })
 
