@@ -110,3 +110,5 @@ export default function Navbar({ activeTab, setActiveTab }) {
         })}
       </nav>
     </header>
+  );
+}
