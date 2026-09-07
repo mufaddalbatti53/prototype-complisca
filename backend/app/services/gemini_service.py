@@ -40,7 +40,7 @@ Extract all text for the following standard packaging fields:
 - DATE_OF_MANUFACTURE: Stamped or printed month/year of manufacture, packing, or expiry (null if blank/unstamped).
 - MRP: Stamped or printed Maximum Retail Price with any tax clauses (null if blank/unstamped).
 - CONSUMER_CARE: Consumer complaint contact person, address, helpline phone/toll-free, email, or website.
-- COUNTRY_OF_ORIGIN: Country of origin or manufacture.
+- COUNTRY_OF_ORIGIN: Country of origin or manufacture. (CRITICAL: Do NOT infer this from the manufacturer address! Only extract if there is an explicit statement like 'Made in X', 'Country of Origin: X', or 'Produce of X'. Otherwise, set is_present to false).
 - UNIT_SALE_PRICE: Unit Sale Price if printed (e.g., ₹ per g/ml) or null.
 
 Also extract metadata:
