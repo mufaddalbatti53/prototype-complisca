@@ -41,7 +41,7 @@ app.include_router(reports.router, prefix=settings.API_V1_STR)
 app.include_router(rules.router, prefix=settings.API_V1_STR)
 app.include_router(analytics.router, prefix=settings.API_V1_STR)
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD", "POST"])
 def root():
     return {
         "system": "CompliScan Legal Metrology Compliance Engine",
@@ -51,7 +51,7 @@ def root():
         "docs": "/docs"
     }
 
-@app.get("/api/health")
+@app.api_route("/api/health", methods=["GET", "HEAD", "POST"])
 def health_check():
     return {
         "status": "healthy",
