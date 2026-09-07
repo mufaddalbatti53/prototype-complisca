@@ -127,7 +127,11 @@ class GeminiService:
         last_error = None
 
         # Iterate over pinned models in order of priority
+        seen_models = set()
         for model_name in FLAGSHIP_MODELS:
+            if model_name in seen_models:
+                continue
+            seen_models.add(model_name)
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={settings.GEMINI_API_KEY}"
             try:
                 response = requests.post(url, json=payload, headers=headers, timeout=25)
