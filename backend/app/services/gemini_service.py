@@ -41,7 +41,7 @@ Extract all text for the following standard packaging fields:
 - MRP: Stamped or printed Maximum Retail Price with any tax clauses (null if blank/unstamped).
 - CONSUMER_CARE: Consumer complaint contact person, address, helpline phone/toll-free, email, or website.
 - COUNTRY_OF_ORIGIN: Country of origin or manufacture. (CRITICAL: Do NOT infer this from the manufacturer address! Only extract if there is an explicit statement like 'Made in X', 'Country of Origin: X', or 'Produce of X'. Otherwise, set is_present to false).
-- UNIT_SALE_PRICE: Unit Sale Price if printed (e.g., ₹ per g/ml). Look carefully in the dot-matrix coding window (alongside MRP/Date). The label (e.g., '₹ PER g:') and the actual value (e.g., '0.36') might be separated across columns or lines. Combine them into a single string if found.
+- UNIT_SALE_PRICE: Unit Sale Price if printed. This is the hardest field to detect! It is usually stamped in the white dot-matrix box. The text '₹ PER g' or 'USP' is often on the LEFT column, and the actual number (e.g., '0.36') is on the far RIGHT column of the same row, separated by wide whitespace or other codes. You MUST visually scan horizontally across the dot-matrix block. Example: If you see '₹ PER g:' on the left and '0.36' on the right, extract '₹ PER g: 0.36'.
 
 Also extract metadata:
 - product_name: Full product title or name on the package

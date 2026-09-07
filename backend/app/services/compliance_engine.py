@@ -117,10 +117,24 @@ class LegalMetrologyRuleEngine:
 
         is_imported = "import" in mfg_address_text
 
+        FIELD_METADATA = {
+            "MANUFACTURER_ADDRESS": ("Name & Address of Mfg/Packer", "Rule 6(1)(a)"),
+            "GENERIC_NAME": ("Generic / Common Name", "Rule 6(1)(b)"),
+            "NET_QUANTITY": ("Net Quantity (Metric)", "Rule 6(1)(c)"),
+            "DATE_OF_MANUFACTURE": ("Date of Mfg / Packing", "Rule 6(1)(d)"),
+            "MRP": ("Maximum Retail Price", "Rule 6(1)(e)"),
+            "UNIT_SALE_PRICE": ("Unit Sale Price (USP)", "Rule 6(1)(e) [2022 Amendment]"),
+            "CONSUMER_CARE": ("Consumer Care Details", "Rule 6(1)(f)"),
+            "COUNTRY_OF_ORIGIN": ("Country of Origin", "Rule 6(1)(g)")
+        }
+
         for decl in declarations:
             code = decl.get("field_code", "")
-            field_name = decl.get("field_name", "")
-            rule_ref = decl.get("statutory_rule_ref", "")
+            
+            # Override LLM hallucinated metadata with our source of truth
+            meta = FIELD_METADATA.get(code, (decl.get("field_name", code), decl.get("statutory_rule_ref", "")))
+            field_name = meta[0]
+            rule_ref = meta[1]
             is_present = decl.get("is_present", False)
             detected_value = decl.get("detected_value") or ""
             raw_text = decl.get("raw_ocr_text") or ""
