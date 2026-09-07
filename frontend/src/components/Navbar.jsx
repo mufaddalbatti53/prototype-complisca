@@ -83,6 +83,30 @@ export default function Navbar({ activeTab, setActiveTab }) {
           </div>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation (Visible only on small screens) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gov-900/95 backdrop-blur-xl border-t border-white/[0.08] shadow-[0_-4px_25px_rgba(0,0,0,0.5)] z-50 px-2 py-2 flex items-center justify-around pb-safe">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 min-w-[64px] ${
+                isActive
+                  ? 'text-cyan-400'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <div className={`p-1.5 rounded-lg mb-1 ${isActive ? 'bg-cyan-500/20 shadow-sm shadow-cyan-500/20' : 'bg-transparent'}`}>
+                <Icon className={`w-5 h-5 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
+              </div>
+              <span className={`text-[10px] font-bold tracking-tight ${isActive ? 'text-cyan-300' : 'text-slate-500'}`}>
+                {item.label.split(' ')[0]} {/* Shorten label for mobile */}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
     </header>
-  );
-}

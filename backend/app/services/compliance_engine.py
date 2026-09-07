@@ -103,14 +103,19 @@ class LegalMetrologyRuleEngine:
                     "compliance_status": "VIOLATION"
                 })
 
-        # Determine package quantity scale if net qty is extracted
+        # Determine package quantity scale and manufacturer location
         net_qty_text = ""
+        mfg_address_text = ""
         for d in declarations:
             if d.get("field_code") == "NET_QUANTITY":
                 net_qty_text = (d.get("detected_value") or "").lower()
+            elif d.get("field_code") == "MANUFACTURER_ADDRESS":
+                mfg_address_text = f"{d.get('detected_value') or ''} {d.get('raw_ocr_text') or ''}".lower()
 
         # Check if pack is > 1kg or > 1L
         is_large_pack = any(term in net_qty_text for term in ["kg", "litre", "liter"]) and not any(term in net_qty_text for term in ["mg", "50 g", "100 g", "250 g", "500 g"])
+
+        is_imported = "import" in mfg_address_text
 
         for decl in declarations:
             code = decl.get("field_code", "")
@@ -134,16 +139,24 @@ class LegalMetrologyRuleEngine:
             # Case 1: Field is missing, blank, or un-stamped placeholder on this backside label
             if not is_present or not detected_value.strip() or detected_value.strip().endswith(":"):
                 if code == "UNIT_SALE_PRICE":
-                    # Under 2022 amendment, USP is mandatory only for packs > 1kg / > 1L or multi-packs
-                    if is_large_pack:
+                    # Under 2022 amendment, USP is strictly mandatory for ALL pre-packaged commodities
+                    status = "VIOLATION"
+                    violation_code = "ERR_UNIT_SALE_PRICE_MISSING"
+                    violation_title = "Unit Sale Price (USP) Missing"
+                    violation_desc = "The 2022 Amendment strictly requires Unit Sale Price (USP) for all packages."
+                    remedy = "Declare Unit Sale Price (e.g. ₹ per g / per ml) in mandatory stamping area."
+                    violations_count += 1
+                elif code == "COUNTRY_OF_ORIGIN":
+                    if is_imported:
                         status = "VIOLATION"
-                        violation_code = "ERR_UNIT_SALE_PRICE_MISSING"
-                        violation_title = "Unit Sale Price (USP) Missing"
-                        violation_desc = "Packages above 1kg/1L strictly require Unit Sale Price (USP) under 2022 Amendment."
-                        remedy = "Declare Unit Sale Price (e.g. ₹ per g / per ml) in mandatory stamping area."
+                        violation_code = "ERR_COUNTRY_OF_ORIGIN_MISSING"
+                        violation_title = "Country of Origin Missing (Imported Product)"
+                        violation_desc = "Rule 6(1)(g) strictly mandates a specific 'Country of Origin' declaration for imported products."
+                        remedy = "Declare the specific Country of Origin (e.g. 'Made in [Country]')."
                         violations_count += 1
                     else:
-                        status = "COMPLIANT" # Exempt for single small packs (e.g. chips/namkeen <= 1kg)
+                        status = "COMPLIANT" # Exempt for domestic products
+                        detected_value = "Exempt (Domestic Product)"
                 else:
                     # STRICT RULE: If anything mandatory is missing, unstamped, or blank, it is a VIOLATION!
                     status = "VIOLATION"

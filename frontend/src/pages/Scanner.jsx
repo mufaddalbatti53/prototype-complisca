@@ -235,15 +235,15 @@ export default function Scanner() {
       {!inspectionResult && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left: Capture Workbench */}
-          <div className="lg:col-span-7 glass-panel rounded-2xl p-6 shadow-card-dark space-y-6">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+          <div className="lg:col-span-7 glass-panel rounded-2xl p-4 sm:p-6 shadow-card-dark space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2 shrink-0">
                 <span className="flex h-2 w-2 rounded-full bg-cyan-400"></span>
                 <span>1. Capture Packaging Image</span>
               </h2>
 
               {/* Mode Switcher */}
-              <div className="flex bg-gov-950/90 rounded-xl p-1 border border-white/[0.08]">
+              <div className="flex overflow-x-auto w-full sm:w-auto bg-gov-950/90 rounded-xl p-1 border border-white/[0.08] hide-scrollbar">
                 <button
                   onClick={() => setMode('upload')}
                   className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -417,7 +417,7 @@ export default function Scanner() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-300 block mb-1.5">
                     Estimated PDP Area (cm²)
@@ -557,7 +557,7 @@ export default function Scanner() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left: Interactive Canvas */}
-            <div className="lg:col-span-7 h-[720px]">
+            <div className="lg:col-span-7 h-[500px] lg:h-[720px]">
               <InspectionCanvas
                 inspection={inspectionResult}
                 selectedDecl={selectedDecl}
