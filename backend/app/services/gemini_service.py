@@ -10,10 +10,13 @@ logger = logging.getLogger(__name__)
 
 # Pinned model hierarchy prioritized for maximum visual accuracy, high availability, and determinism
 FLAGSHIP_MODELS = [
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-1.5-pro"
+    getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash"),
+    "gemini-2.5-flash",
+    "gemini-flash-latest",
+    "gemini-3.6-flash",
+    "gemini-2.5-pro",
+    "gemini-3.5-flash",
+    "gemini-flash-lite-latest"
 ]
 
 # PURE OCR & TEXT EXTRACTION PROMPT (Zero legal logic or compliance scoring in the AI prompt)
