@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000/api/v1';
-export const STORAGE_BASE = 'http://localhost:8000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const API_BASE = `${BACKEND_URL}/api/v1`;
+export const STORAGE_BASE = BACKEND_URL;
 
 const client = axios.create({
   baseURL: API_BASE,
@@ -61,7 +62,7 @@ export const api = {
 
   // Health check
   checkHealth: async () => {
-    const res = await axios.get('http://localhost:8000/api/health');
+    const res = await axios.get(`${BACKEND_URL}/api/health`);
     return res.data;
   }
 };
