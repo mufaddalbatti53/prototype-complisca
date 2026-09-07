@@ -10,13 +10,10 @@ logger = logging.getLogger(__name__)
 
 # Pinned model hierarchy prioritized for maximum visual accuracy, high availability, and determinism
 FLAGSHIP_MODELS = [
-    "gemini-3.1-flash-lite",   # Pinned dated high-availability flash model (Proven 100% deterministic, 200 OK)
-    "gemini-3-flash-preview",  # Pinned high-availability flash model (200 OK)
-    "gemini-flash-lite-latest",# Pinned ultra-fast production flash model (200 OK)
-    "gemini-3.6-flash",        # SOTA model
-    "gemini-flash-latest",     # Flagship production model
-    "gemini-3.7-flash",        # Deep reasoning model
-    "gemini-3.5-flash"         # Fallback
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-pro"
 ]
 
 # PURE OCR & TEXT EXTRACTION PROMPT (Zero legal logic or compliance scoring in the AI prompt)
@@ -41,7 +38,11 @@ Extract all text for the following standard packaging fields:
 - MRP: Stamped or printed Maximum Retail Price with any tax clauses (null if blank/unstamped).
 - CONSUMER_CARE: Consumer complaint contact person, address, helpline phone/toll-free, email, or website.
 - COUNTRY_OF_ORIGIN: Country of origin or manufacture. (CRITICAL: Do NOT infer this from the manufacturer address! Only extract if there is an explicit statement like 'Made in X', 'Country of Origin: X', or 'Produce of X'. Otherwise, set is_present to false).
-- UNIT_SALE_PRICE: Unit Sale Price if printed. This is the hardest field to detect! It is usually stamped in the white dot-matrix box. The text '₹ PER g' or 'USP' is often on the LEFT column, and the actual number (e.g., '0.36') is on the far RIGHT column of the same row, separated by wide whitespace or other codes. You MUST visually scan horizontally across the dot-matrix block. Example: If you see '₹ PER g:' on the left and '0.36' on the right, extract '₹ PER g: 0.36'.
+- UNIT_SALE_PRICE: Unit Sale Price (USP) if printed or stamped.
+  IMPORTANT SCANNING DIRECTION FOR STAMPED / DOT-MATRIX BOXES:
+  On Indian snack food packages (e.g., Bingo Mad Angles, Lays, Kurkure, ITC, Britannia, Parle), the Unit Sale Price is usually printed inside a white or yellow dot-matrix stamping box.
+  The label ('₹ PER g:', 'USP:', '₹ PER ml:') is printed on the LEFT, and the numerical value (e.g., '0.36', '0.20', '0.50') is printed on the far RIGHT of the SAME row, separated by wide whitespace or batch codes.
+  You MUST combine left and right text into one complete line (e.g. '₹ PER g: 0.36'). Look for '₹ PER g', '₹/g', 'Rs/g', 'USP', 'Unit Sale Price'.
 
 Also extract metadata:
 - product_name: Full product title or name on the package

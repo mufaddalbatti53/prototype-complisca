@@ -117,27 +117,198 @@ class LegalMetrologyRuleEngine:
 
         is_imported = "import" in mfg_address_text
 
+    @classmethod
+    def canonicalize_field_code(cls, raw_code: str, raw_name: str = "", raw_rule: str = "") -> str:
+        """
+        Normalizes any field code, name, or rule reference to canonical Legal Metrology field keys.
+        Prevents LLM hallucinations from bypassing compliance evaluation.
+        """
+        code_str = str(raw_code or "").upper().strip()
+        name_str = str(raw_name or "").upper().strip()
+        rule_str = str(raw_rule or "").upper().strip()
+        combined = f"{code_str} {name_str} {rule_str}"
+
+        if any(k in combined for k in ["UNIT_SALE_PRICE", "UNIT SALE PRICE", "USP", "PRICE PER G", "PRICE PER ML", "PRICE PER KG", "RULE 6(1)(I)", "6(1)(I)", "RULE 6(1)(E) AMENDMENT"]):
+            return "UNIT_SALE_PRICE"
+        if any(k in combined for k in ["MANUFACTURER_ADDRESS", "MANUFACTURER", "PACKER", "IMPORTER", "MFG_ADDRESS", "RULE 6(1)(A)", "6(1)(A)"]):
+            return "MANUFACTURER_ADDRESS"
+        if any(k in combined for k in ["GENERIC_NAME", "COMMON_NAME", "COMMODITY", "RULE 6(1)(B)", "6(1)(B)"]):
+            return "GENERIC_NAME"
+        if any(k in combined for k in ["NET_QUANTITY", "NET QTY", "QUANTITY", "WEIGHT", "VOLUME", "RULE 6(1)(C)", "6(1)(C)"]):
+            return "NET_QUANTITY"
+        if any(k in combined for k in ["DATE_OF_MANUFACTURE", "MFG_DATE", "EXPIRY", "BEST_BEFORE", "RULE 6(1)(D)", "6(1)(D)"]):
+            return "DATE_OF_MANUFACTURE"
+        if any(k in combined for k in ["MRP", "MAXIMUM RETAIL PRICE", "RETAIL PRICE", "PRICE", "RULE 6(1)(E)", "6(1)(E)"]) and "UNIT" not in combined and "USP" not in combined:
+            return "MRP"
+        if any(k in combined for k in ["CONSUMER_CARE", "CUSTOMER_CARE", "HELPLINE", "COMPLAINT", "REDRESSAL", "RULE 6(1)(F)", "6(1)(F)"]):
+            return "CONSUMER_CARE"
+        if any(k in combined for k in ["COUNTRY_OF_ORIGIN", "ORIGIN", "MADE IN", "RULE 6(1)(G)", "6(1)(G)", "RULE 6(1)(H)", "6(1)(H)"]):
+            return "COUNTRY_OF_ORIGIN"
+
+        return code_str or "GENERIC_FIELD"
+
+    @classmethod
+    def extract_usp_regex_fallback(cls, declarations: List[Dict[str, Any]]) -> Optional[str]:
+        """
+        Regex fallback to extract Unit Sale Price (USP) from unstructured raw OCR text or dot-matrix strings.
+        Scans patterns across wide whitespace gap between '₹ PER g:' label and numerical rate '0.36'.
+        """
+        all_texts = []
+        for d in declarations:
+            val = str(d.get("detected_value") or "")
+            raw = str(d.get("raw_ocr_text") or "")
+            if val:
+                all_texts.append(val)
+            if raw:
+                all_texts.append(raw)
+
+        full_corpus = " \n ".join(all_texts)
+
+        patterns = [
+            # Pattern 1: ₹ PER g: 0.36 or Rs./g 0.36 or Rs per g 0.36
+            r'(?:₹|rs\.?|re\.?|inr)\s*(?:per|\/)\s*(?:g|gm|gram|ml|l|kg)\s*:?\s*(\d+(?:\.\d+)?)',
+            # Pattern 2: 0.36 / g or 0.36 per g or 0.36/g
+            r'(\d+(?:\.\d+)?)\s*(?:p|paisa|paise)?\s*(?:per|\/)\s*(?:g|gm|gram|ml|l|kg)',
+            # Pattern 3: USP: 0.36 or USP Rs. 0.36
+            r'(?:usp|unit\s*sale\s*price)\s*:?\s*(?:₹|rs\.?|re\.?)?\s*(\d+(?:\.\d+)?(?:\s*(?:per|\/)\s*(?:g|gm|ml|kg))?)'
+        ]
+
+        for pat in patterns:
+            match = re.search(pat, full_corpus, re.IGNORECASE)
+            if match:
+                matched_str = match.group(0).strip()
+                # Clean up extracted format
+                if "per" not in matched_str.lower() and "/" not in matched_str.lower():
+                    matched_str = f"₹ {matched_str} / g"
+                return matched_str
+
+        return None
+
+    @classmethod
+    def verify_all_declarations(
+        cls,
+        declarations: List[Dict[str, Any]],
+        pdp_area_sqcm: float = 100.0,
+        is_single_panel: bool = True
+    ) -> Tuple[List[Dict[str, Any]], float, str, int, int]:
+        """
+        Runs calibrated compliance verification with zero-false-positive heuristics.
+        """
+        prescribed_font_height = cls.get_prescribed_font_height(pdp_area_sqcm)
+        violations_count = 0
+        warnings_count = 0
+        verified_declarations = []
+
+        total_weight = 0
+        achieved_weight = 0
+
+        FIELD_WEIGHTS = {
+            "MANUFACTURER_ADDRESS": 20,
+            "GENERIC_NAME": 10,
+            "NET_QUANTITY": 25,
+            "DATE_OF_MANUFACTURE": 15,
+            "MRP": 25,
+            "CONSUMER_CARE": 20,
+            "COUNTRY_OF_ORIGIN": 10,
+            "UNIT_SALE_PRICE": 10
+        }
+
+        # Canonical Statutory Declarations under Legal Metrology Rules, 2011
+        MANDATORY_SPECS = {
+            "MANUFACTURER_ADDRESS": ("Name and Address of Manufacturer / Packer / Importer", "Rule 6(1)(a)", 20),
+            "GENERIC_NAME": ("Generic or Common Name of Commodity", "Rule 6(1)(b)", 10),
+            "NET_QUANTITY": ("Net Quantity in Standard Units", "Rule 6(1)(c)", 25),
+            "DATE_OF_MANUFACTURE": ("Month & Year of Manufacture / Packing / Expiry", "Rule 6(1)(d)", 15),
+            "MRP": ("Maximum Retail Price (MRP)", "Rule 6(1)(e)", 25),
+            "CONSUMER_CARE": ("Consumer Care Helpline & Contact Details", "Rule 6(1)(f)", 20),
+            "COUNTRY_OF_ORIGIN": ("Country of Origin", "Rule 6(1)(g)", 10),
+            "UNIT_SALE_PRICE": ("Unit Sale Price (USP)", "Rule 6(1)(e) Amendment", 10)
+        }
+
+        # Step 1: Canonicalize field_code for all incoming declarations
+        for decl in declarations:
+            canon_code = cls.canonicalize_field_code(
+                decl.get("field_code"),
+                decl.get("field_name"),
+                decl.get("statutory_rule_ref")
+            )
+            decl["field_code"] = canon_code
+
+        # Step 2: Check Python Regex fallback for Unit Sale Price if missing
+        usp_decl = next((d for d in declarations if d.get("field_code") == "UNIT_SALE_PRICE"), None)
+        usp_val = (usp_decl.get("detected_value") or "").strip() if usp_decl else ""
+
+        INVALID_VALUES = {"null", "none", "n/a", "na", "missing", "[missing]", "unstamped", "blank", "not visible", "not declared", "satisfies statutory requirements", "compliant", "-", "exempt"}
+
+        if not usp_decl or not usp_val or usp_val.lower() in INVALID_VALUES or usp_val.endswith(":"):
+            fallback_usp = cls.extract_usp_regex_fallback(declarations)
+            if fallback_usp:
+                if usp_decl:
+                    usp_decl["is_present"] = True
+                    usp_decl["detected_value"] = fallback_usp
+                else:
+                    declarations.append({
+                        "field_code": "UNIT_SALE_PRICE",
+                        "field_name": "Unit Sale Price (USP)",
+                        "statutory_rule_ref": "Rule 6(1)(e) Amendment",
+                        "is_present": True,
+                        "detected_value": fallback_usp,
+                        "raw_ocr_text": fallback_usp,
+                        "confidence_score": 0.95
+                    })
+
+        # Step 3: Ensure all mandatory declarations exist in inspection checklist
+        existing_codes = {d.get("field_code") for d in declarations if d.get("field_code")}
+        for m_code, (m_name, m_rule, m_weight) in MANDATORY_SPECS.items():
+            if m_code not in existing_codes:
+                declarations.append({
+                    "field_code": m_code,
+                    "field_name": m_name,
+                    "statutory_rule_ref": m_rule,
+                    "is_present": False,
+                    "detected_value": None,
+                    "raw_ocr_text": None,
+                    "compliance_status": "VIOLATION"
+                })
+
+        # Determine package quantity scale and manufacturer location
+        net_qty_text = ""
+        mfg_address_text = ""
+        for d in declarations:
+            if d.get("field_code") == "NET_QUANTITY":
+                net_qty_text = (d.get("detected_value") or "").lower()
+            elif d.get("field_code") == "MANUFACTURER_ADDRESS":
+                mfg_address_text = f"{d.get('detected_value') or ''} {d.get('raw_ocr_text') or ''}".lower()
+
+        is_imported = "import" in mfg_address_text
+
         FIELD_METADATA = {
             "MANUFACTURER_ADDRESS": ("Name & Address of Mfg/Packer", "Rule 6(1)(a)"),
             "GENERIC_NAME": ("Generic / Common Name", "Rule 6(1)(b)"),
             "NET_QUANTITY": ("Net Quantity (Metric)", "Rule 6(1)(c)"),
             "DATE_OF_MANUFACTURE": ("Date of Mfg / Packing", "Rule 6(1)(d)"),
             "MRP": ("Maximum Retail Price", "Rule 6(1)(e)"),
-            "UNIT_SALE_PRICE": ("Unit Sale Price (USP)", "Rule 6(1)(e) [2022 Amendment]"),
+            "UNIT_SALE_PRICE": ("Unit Sale Price (USP)", "Rule 6(1)(e) Amendment"),
             "CONSUMER_CARE": ("Consumer Care Details", "Rule 6(1)(f)"),
             "COUNTRY_OF_ORIGIN": ("Country of Origin", "Rule 6(1)(g)")
         }
 
+        processed_codes = set()
+
         for decl in declarations:
             code = decl.get("field_code", "")
+            if code in processed_codes:
+                continue
+            processed_codes.add(code)
             
-            # Override LLM hallucinated metadata with our source of truth
+            # Override LLM metadata with authoritative Legal Metrology source of truth
             meta = FIELD_METADATA.get(code, (decl.get("field_name", code), decl.get("statutory_rule_ref", "")))
             field_name = meta[0]
             rule_ref = meta[1]
+
             is_present = decl.get("is_present", False)
-            detected_value = decl.get("detected_value") or ""
-            raw_text = decl.get("raw_ocr_text") or ""
+            detected_value = str(decl.get("detected_value") or "").strip()
+            raw_text = str(decl.get("raw_ocr_text") or "").strip()
             measured_font_height = decl.get("measured_font_height_mm") or 2.0
             panel_side = decl.get("panel_side", "PDP")
 
@@ -150,14 +321,18 @@ class LegalMetrologyRuleEngine:
             violation_desc = None
             remedy = None
 
-            # Case 1: Field is missing, blank, or un-stamped placeholder on this backside label
-            if not is_present or not detected_value.strip() or detected_value.strip().endswith(":"):
+            # Sanitize presence and value
+            if not is_present or not detected_value or detected_value.lower() in INVALID_VALUES or detected_value.endswith(":"):
+                is_present = False
+                detected_value = None
+
+            # Case 1: Field is missing, blank, or un-stamped placeholder
+            if not is_present or detected_value is None:
                 if code == "UNIT_SALE_PRICE":
-                    # Under 2022 amendment, USP is strictly mandatory for ALL pre-packaged commodities
                     status = "VIOLATION"
                     violation_code = "ERR_UNIT_SALE_PRICE_MISSING"
                     violation_title = "Unit Sale Price (USP) Missing"
-                    violation_desc = "The 2022 Amendment strictly requires Unit Sale Price (USP) for all packages."
+                    violation_desc = "Under the 2022 Legal Metrology Amendment, Unit Sale Price (USP) is strictly mandatory for all pre-packaged commodities."
                     remedy = "Declare Unit Sale Price (e.g. ₹ per g / per ml) in mandatory stamping area."
                     violations_count += 1
                 elif code == "COUNTRY_OF_ORIGIN":
@@ -169,10 +344,10 @@ class LegalMetrologyRuleEngine:
                         remedy = "Declare the specific Country of Origin (e.g. 'Made in [Country]')."
                         violations_count += 1
                     else:
-                        status = "COMPLIANT" # Exempt for domestic products
+                        status = "COMPLIANT"
                         detected_value = "Exempt (Domestic Product)"
+                        is_present = True
                 else:
-                    # STRICT RULE: If anything mandatory is missing, unstamped, or blank, it is a VIOLATION!
                     status = "VIOLATION"
                     violation_code = f"ERR_{code}_MISSING"
                     violation_title = f"Mandatory Declaration Missing: {field_name}"
@@ -187,7 +362,6 @@ class LegalMetrologyRuleEngine:
                 # --- RULE 6(1)(e): Maximum Retail Price (MRP) ---
                 if code == "MRP":
                     has_tax_clause = any(phrase in full_content for phrase in cls.STATUTORY_TAX_PHRASES)
-                    # Check for dot-matrix / stamped variations like 'incl.' or 'taxes'
                     if not has_tax_clause:
                         if ("incl" in full_content and "tax" in full_content) or "inclusive" in full_content:
                             has_tax_clause = True
@@ -211,10 +385,8 @@ class LegalMetrologyRuleEngine:
 
                 # --- RULE 6(1)(c): Net Quantity ---
                 elif code == "NET_QUANTITY":
-                    # Check for strictly prohibited non-standard symbols like 'gms'
                     has_prohibited_unit = False
                     for bad_unit in cls.PROHIBITED_UNITS:
-                        # Match word boundary: e.g. 50 gms, 250gms
                         pattern = rf'\b\d+\s*{bad_unit}\b'
                         if re.search(pattern, full_content):
                             has_prohibited_unit = True
@@ -227,7 +399,6 @@ class LegalMetrologyRuleEngine:
                             break
 
                     if not has_prohibited_unit:
-                        # Check for prohibited vague terms like 'approx'
                         for term in ["approx", "when packed", "nearly"]:
                             if term in full_content:
                                 status = "VIOLATION"
@@ -240,7 +411,6 @@ class LegalMetrologyRuleEngine:
 
                 # --- RULE 6(1)(a): Manufacturer Address ---
                 elif code == "MANUFACTURER_ADDRESS":
-                    # Check for postal landmarks or PIN code
                     has_pin = bool(re.search(r'\b\d{6}\b', detected_value))
                     has_landmarks = any(w in full_content for w in ["delhi", "mumbai", "bengaluru", "chennai", "kolkata", "hyderabad", "pune", "ahmedabad", "gurugram", "noida", "road", "street", "plot", "phase", "dist", "state", "india", "pvt", "ltd", "corp"])
                     if not has_pin and not has_landmarks:
@@ -305,3 +475,4 @@ class LegalMetrologyRuleEngine:
             verdict = "COMPLIANT"
 
         return verified_declarations, overall_score, verdict, violations_count, warnings_count
+
