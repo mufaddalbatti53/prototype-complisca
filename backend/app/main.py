@@ -64,7 +64,8 @@ def auto_migrate_schema():
     except Exception as e:
         logger.warning(f"Engine migration notice: {e}")
 
-auto_migrate_schema()
+if engine.dialect.name == "sqlite":
+    auto_migrate_schema()
 
 # Seed default rules and parties
 with SessionLocal() as db:
