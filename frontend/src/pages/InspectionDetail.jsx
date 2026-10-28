@@ -84,8 +84,8 @@ export default function InspectionDetail({ inspectionId, onBack }) {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-28 text-center text-slate-400 space-y-4">
-        <Loader2 className="w-10 h-10 animate-spin mx-auto text-cyan-400" />
+      <div className="max-w-7xl mx-auto px-4 py-28 text-center text-slate-500 space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin mx-auto text-brand-600" />
         <p className="text-sm font-semibold">Loading statutory audit evidence record...</p>
       </div>
     );
@@ -93,9 +93,9 @@ export default function InspectionDetail({ inspectionId, onBack }) {
 
   if (!inspection) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center text-slate-400 glass-panel rounded-2xl">
-        <p className="text-base font-bold text-white">Inspection record not found.</p>
-        <button onClick={onBack} className="mt-4 text-cyan-400 hover:underline text-xs font-bold">
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center text-slate-500 bg-white border border-slate-200 rounded-2xl shadow-sm">
+        <p className="text-base font-bold text-slate-900">Inspection record not found.</p>
+        <button onClick={onBack} className="mt-4 text-brand-600 hover:underline text-xs font-bold">
           Return to Audit History
         </button>
       </div>
@@ -105,35 +105,35 @@ export default function InspectionDetail({ inspectionId, onBack }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Top Header */}
-      <div className="glass-panel rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-cyan-500/25 shadow-card-dark">
+      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3.5">
           <button
             onClick={onBack}
-            className="p-2.5 rounded-xl bg-gov-900 hover:bg-gov-800 border border-white/10 text-slate-300 hover:text-white transition shadow"
+            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition shadow-sm"
             title="Back to History"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-              <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950 px-2.5 py-1 rounded-lg border border-cyan-500/40">
+              <span className="text-xs font-mono font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-200">
                 Ref: {inspection.notice_number || inspection.id}
               </span>
-              <span className="text-xs text-slate-400 font-mono">
+              <span className="text-xs text-slate-500 font-mono">
                 {new Date(inspection.created_at).toLocaleString()}
               </span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${
                 inspection.notice_status === 'REPLIED'
-                  ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                   : inspection.notice_status === 'PROSECUTION_INITIATED'
-                  ? 'bg-purple-950 text-purple-300 border-purple-500/40'
-                  : 'bg-amber-950 text-amber-300 border-amber-500/40'
+                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
               }`}>
                 {inspection.notice_status || 'SHOW_CAUSE_ISSUED'}
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-white mt-1">
-              {inspection.product_name} <span className="text-cyan-400 font-normal text-lg">({inspection.brand})</span>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">
+              {inspection.product_name} <span className="text-brand-600 font-normal text-lg">({inspection.brand})</span>
             </h1>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function InspectionDetail({ inspectionId, onBack }) {
             href={api.getPdfReportUrl(inspection.id)}
             target="_blank"
             rel="noreferrer"
-            className="bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 shadow-glow-red transition"
+            className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 shadow-sm transition"
           >
             <FileDown className="w-4 h-4" />
             <span>Download Form 1 Notice</span>
@@ -152,9 +152,9 @@ export default function InspectionDetail({ inspectionId, onBack }) {
             href={api.getJsonReportUrl(inspection.id)}
             target="_blank"
             rel="noreferrer"
-            className="bg-gov-800 hover:bg-gov-700 text-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-semibold border border-white/10 flex items-center space-x-1.5 transition shadow"
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 flex items-center space-x-1.5 transition shadow-sm"
           >
-            <FileJson className="w-4 h-4 text-cyan-400" />
+            <FileJson className="w-4 h-4 text-brand-600" />
             <span>Export JSON</span>
           </a>
         </div>
@@ -162,15 +162,15 @@ export default function InspectionDetail({ inspectionId, onBack }) {
 
       {/* Show-Cause Notice & Noticee Response Panel */}
       {inspection.compliance_verdict === 'NON_COMPLIANT' && (
-        <div className="glass-panel rounded-2xl border border-amber-500/30 p-5 space-y-4 bg-gradient-to-r from-amber-950/20 via-gov-900/40 to-gov-950/80">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
+        <div className="bg-amber-50/50 rounded-2xl border border-amber-200 p-5 space-y-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/80 pb-3">
             <div className="flex items-center space-x-2">
-              <Clock className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-bold text-white">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <h3 className="text-sm font-bold text-slate-900">
                 Statutory Show-Cause Notice Period (Section 15 & 18, Legal Metrology Act)
               </h3>
             </div>
-            <span className="text-[11px] font-mono font-bold text-amber-300 bg-amber-950 px-2.5 py-1 rounded-lg border border-amber-500/40">
+            <span className="text-[11px] font-mono font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-300">
               Notice Window: 15 Statutory Days from Issuance
             </span>
           </div>
@@ -178,23 +178,23 @@ export default function InspectionDetail({ inspectionId, onBack }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Existing Explanation or Submission */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-300 block">
+              <label className="text-xs font-bold text-slate-700 block">
                 Inspected Entity Explanation & Rectification Record:
               </label>
               {inspection.party_reply ? (
-                <div className="p-3.5 rounded-xl bg-gov-950 border border-emerald-500/30 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-emerald-400 font-bold">
+                <div className="p-3.5 rounded-xl bg-white border border-emerald-300 space-y-2 shadow-sm">
+                  <div className="flex items-center justify-between text-[11px] text-emerald-700 font-bold">
                     <span>✓ Legal Reply Logged</span>
-                    <span className="font-mono text-slate-400">
+                    <span className="font-mono text-slate-500">
                       {inspection.party_reply_date ? new Date(inspection.party_reply_date).toLocaleDateString() : 'Recorded'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-200 leading-relaxed font-mono">
+                  <p className="text-xs text-slate-800 leading-relaxed font-mono">
                     "{inspection.party_reply}"
                   </p>
                 </div>
               ) : (
-                <div className="p-4 rounded-xl bg-gov-950/80 border border-white/[0.06] text-xs text-slate-400 italic">
+                <div className="p-4 rounded-xl bg-white border border-slate-200 text-xs text-slate-500 italic">
                   No show-cause explanation has been submitted yet by the noticee ({inspection.store_name}).
                 </div>
               )}
@@ -202,11 +202,11 @@ export default function InspectionDetail({ inspectionId, onBack }) {
 
             {/* Response Form */}
             <form onSubmit={handleSubmitReply} className="space-y-2.5">
-              <label className="text-xs font-bold text-slate-300 block flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 block flex items-center justify-between">
                 <span>Submit / Update Explanation (Noticee Action):</span>
                 {replySuccess && (
-                  <span className="text-emerald-400 text-[11px] font-bold flex items-center">
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                  <span className="text-emerald-700 text-[11px] font-bold flex items-center">
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" />
                     Reply Recorded!
                   </span>
                 )}
@@ -216,13 +216,13 @@ export default function InspectionDetail({ inspectionId, onBack }) {
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="State corrective remedy (e.g. Non-compliant packaging stock recalled; manufacturing stamping line re-calibrated with metric units)..."
-                className="w-full glass-input rounded-xl p-3 text-xs text-white placeholder-slate-500"
+                className="w-full rounded-xl p-3 text-xs text-slate-900 bg-white border border-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
               />
               <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={replying || !replyText.trim()}
-                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow transition disabled:opacity-40"
+                  className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition disabled:opacity-40"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>{replying ? 'Logging...' : 'Log Show-Cause Reply'}</span>
@@ -233,8 +233,8 @@ export default function InspectionDetail({ inspectionId, onBack }) {
 
           {/* Statutory Enforcement Escalation Bar (Officer & Superadmin) */}
           {(role === 'SUPERADMIN' || role === 'OFFICER') && (
-            <div className="pt-3 border-t border-white/[0.08] flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[11px] font-bold text-slate-400">
+            <div className="pt-3 border-t border-amber-200/80 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] font-bold text-slate-600">
                 Statutory Enforcement Actions:
               </span>
               <div className="flex items-center space-x-2">
@@ -249,7 +249,7 @@ export default function InspectionDetail({ inspectionId, onBack }) {
                       alert('Failed to escalate notice');
                     }
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold hover:bg-amber-500/30 transition"
+                  className="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold hover:bg-amber-200 transition shadow-sm"
                 >
                   Issue Final Warning
                 </button>
@@ -266,7 +266,7 @@ export default function InspectionDetail({ inspectionId, onBack }) {
                       }
                     }
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[11px] font-bold hover:bg-purple-500/30 transition"
+                  className="px-3 py-1.5 rounded-lg bg-purple-100 text-purple-900 border border-purple-300 text-[11px] font-bold hover:bg-purple-200 transition shadow-sm"
                 >
                   Initiate Sec 36 Prosecution
                 </button>
@@ -281,7 +281,7 @@ export default function InspectionDetail({ inspectionId, onBack }) {
                       alert('Failed to close notice');
                     }
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold hover:bg-emerald-500/30 transition"
+                  className="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-bold hover:bg-emerald-200 transition shadow-sm"
                 >
                   Mark Rectified & Close
                 </button>

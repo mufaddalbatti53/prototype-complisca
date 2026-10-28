@@ -8,29 +8,39 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#ecfeff',
-          100: '#cffafe',
-          200: '#a5f3fc',
-          300: '#67e8f9',
-          400: '#22d3ee',
-          500: '#06b6d4',
-          600: '#0891b2',
-          700: '#0e7490',
-          800: '#155e75',
-          900: '#164e63',
-          950: '#083344',
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9',
+          600: '#0284c7', // Primary Brand Blue
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
+          950: '#082f49',
+        },
+        accent: {
+          50: '#ecfdf5',
+          100: '#d1fae5',
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981', // Brand Emerald Green (Logo Checkmark)
+          600: '#059669',
+          700: '#047857',
         },
         gov: {
-          950: '#070B19',
-          900: '#0B132B',
-          850: '#111C3D',
-          800: '#1C2541',
-          750: '#223055',
-          700: '#2D3E6B',
-          600: '#3D548E',
-          500: '#526EA8',
-          400: '#7E95C5',
-          300: '#A9BCE0',
+          950: '#0f172a', // Deep slate for dark contrasts when needed
+          900: '#ffffff', // Cards become clean white
+          850: '#f8fafc', // Light slate-50
+          800: '#f1f5f9', // Slate-100
+          750: '#e2e8f0', // Slate-200 border
+          700: '#cbd5e1', // Slate-300
+          600: '#94a3b8',
+          500: '#64748b',
+          400: '#475569',
+          300: '#334155',
         },
         legal: {
           compliant: '#10B981',
@@ -39,18 +49,17 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       boxShadow: {
-        'glow-cyan': '0 0 25px -5px rgba(6, 182, 212, 0.3)',
-        'glow-red': '0 0 25px -5px rgba(239, 68, 68, 0.3)',
-        'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.3)',
-        'card-dark': '0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.05)',
-      },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'mesh-glow': 'radial-gradient(at 10% 20%, rgba(6, 182, 212, 0.08) 0px, transparent 50%), radial-gradient(at 90% 80%, rgba(99, 102, 241, 0.08) 0px, transparent 50%)',
+        'xs': '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
+        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
+        'card-hover': '0 10px 25px -5px rgba(2, 132, 199, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
+        'glow-cyan': '0 0 20px -3px rgba(2, 132, 199, 0.25)',
+        'glow-red': '0 0 20px -3px rgba(239, 68, 68, 0.2)',
+        'glow-emerald': '0 0 20px -3px rgba(16, 185, 129, 0.25)',
+        'shutter': '0 0 0 4px #e0f2fe, 0 8px 20px -4px rgba(2, 132, 199, 0.4)',
       }
     },
   },

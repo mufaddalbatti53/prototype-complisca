@@ -44,7 +44,7 @@ export default function App() {
 
   return (
     <RoleProvider>
-      <div className="min-h-screen bg-gov-950 text-slate-100 flex flex-col selection:bg-cyan-500 selection:text-gov-950">
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-brand-500 selection:text-white">
         <Navbar
           activeTab={activeTab === 'detail' ? 'history' : activeTab}
           setActiveTab={(tab) => {
@@ -54,8 +54,8 @@ export default function App() {
         />
 
         {serverStatus === 'waking' && (
-          <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-center text-xs text-amber-300 font-semibold flex items-center justify-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-center text-xs text-amber-800 font-medium flex items-center justify-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
             <span>Waking up cloud server from standby (Render Free Tier) — please allow ~20-30s for the first response...</span>
           </div>
         )}
@@ -76,14 +76,16 @@ export default function App() {
         </main>
 
         {/* GovTech Footer */}
-        <footer className="bg-gov-900 border-t border-gov-800 py-6 px-4 text-center text-xs text-gray-500">
+        <footer className="bg-white border-t border-slate-200 py-6 px-4 text-center text-xs text-slate-500">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex items-center space-x-2">
-              <span className="font-semibold text-gray-400">CompliScan</span>
+              <span className="font-semibold text-slate-800">CompliScan</span>
               <span>•</span>
-              <span>Tech Setu — Smart India Hackathon 2026</span>
+              <span className="text-brand-600 font-semibold">Tech Setu</span>
+              <span>•</span>
+              <span>Smart India Hackathon 2026</span>
             </div>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-slate-500">
               National Enforcement System for Legal Metrology Act, 2009 & LMPC Rules, 2011.
             </p>
           </div>

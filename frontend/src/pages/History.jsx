@@ -58,17 +58,17 @@ export default function History({ onSelectInspection }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}
-      <div className="border-b border-white/[0.08] pb-5">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+      <div className="border-b border-slate-200 pb-5">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
           Inspection History & Evidence Repository
         </h1>
-        <p className="text-sm text-slate-300 mt-1.5">
+        <p className="text-sm text-slate-600 mt-1.5">
           Archived statutory records, digital evidence lockers, and issued Form 1 non-compliance notices under LMPC Rules 2011.
         </p>
       </div>
 
       {/* Search & Filter Toolbar */}
-      <div className="glass-panel rounded-2xl p-4 flex flex-col md:flex-row gap-3.5 items-center justify-between shadow-card-dark">
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3.5 items-center justify-between">
         <form onSubmit={handleSearchSubmit} className="flex-1 w-full md:w-auto relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
           <input
@@ -76,13 +76,13 @@ export default function History({ onSelectInspection }) {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by Product Name, Brand, Retailer, or Notice Ref..."
-            className="w-full glass-input rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500"
+            className="w-full rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 bg-slate-50 border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
           />
         </form>
 
         {/* Verdict Filters */}
         <div className="flex items-center space-x-2 w-full md:w-auto overflow-x-auto">
-          <span className="text-xs text-slate-400 font-bold mr-1">Status:</span>
+          <span className="text-xs text-slate-500 font-bold mr-1">Status:</span>
           {[
             { label: 'All Records', val: '' },
             { label: 'Non-Compliant', val: 'NON_COMPLIANT' },
@@ -94,8 +94,8 @@ export default function History({ onSelectInspection }) {
               onClick={() => setVerdictFilter(v.val)}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
                 verdictFilter === v.val
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-                  : 'bg-gov-950/80 text-slate-400 hover:text-white border border-white/[0.06]'
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
               }`}
             >
               {v.label}
@@ -106,12 +106,12 @@ export default function History({ onSelectInspection }) {
 
       {/* Records Grid */}
       {loading ? (
-        <div className="py-20 text-center text-slate-400 text-sm font-medium">
+        <div className="py-20 text-center text-slate-500 text-sm font-medium">
           Loading statutory repository records...
         </div>
       ) : inspections.length === 0 ? (
-        <div className="glass-panel rounded-2xl p-16 text-center text-slate-400">
-          <p className="text-base font-bold text-slate-200">No matching inspection records found.</p>
+        <div className="bg-white rounded-2xl p-16 text-center text-slate-500 border border-slate-200 shadow-sm">
+          <p className="text-base font-bold text-slate-800">No matching inspection records found.</p>
           <p className="text-xs text-slate-500 mt-1">Try refining your search query or run a new inspection scan.</p>
         </div>
       ) : (
@@ -121,10 +121,10 @@ export default function History({ onSelectInspection }) {
             return (
               <div
                 key={item.id}
-                className="glass-panel rounded-2xl shadow-card-dark overflow-hidden flex flex-col glass-panel-hover"
+                className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md hover:border-slate-300 transition duration-150"
               >
                 {/* Packaging Header */}
-                <div className="relative h-48 bg-gov-950 flex items-center justify-center p-3 border-b border-white/[0.08]">
+                <div className="relative h-48 bg-slate-100 flex items-center justify-center p-3 border-b border-slate-200">
                   {thumb ? (
                     <img
                       src={`${STORAGE_BASE}${thumb}`}
@@ -132,24 +132,24 @@ export default function History({ onSelectInspection }) {
                       className="max-h-full max-w-full object-contain rounded-lg"
                     />
                   ) : (
-                    <span className="text-xs text-slate-500">No Image Evidence</span>
+                    <span className="text-xs text-slate-400">No Image Evidence</span>
                   )}
 
                   <div className="absolute top-3 right-3">
                     <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase border shadow-lg ${
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border shadow-sm ${
                         item.compliance_verdict === 'COMPLIANT'
-                          ? 'bg-emerald-950/90 text-emerald-400 border-emerald-500 shadow-glow-emerald'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           : item.compliance_verdict === 'WARNING'
-                          ? 'bg-amber-950/90 text-amber-300 border-amber-500'
-                          : 'bg-red-950/90 text-red-400 border-red-500 shadow-glow-red'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
                       }`}
                     >
                       {item.compliance_verdict}
                     </span>
                   </div>
 
-                  <div className="absolute bottom-2.5 left-2.5 bg-gov-950/90 px-2.5 py-1 rounded-lg border border-white/10 text-[11px] font-mono font-bold text-cyan-300">
+                  <div className="absolute bottom-2.5 left-2.5 bg-white/95 px-2.5 py-1 rounded-lg border border-slate-200 text-[11px] font-mono font-bold text-slate-800 shadow-sm">
                     Score: {item.overall_compliance_score}%
                   </div>
                 </div>
@@ -160,32 +160,32 @@ export default function History({ onSelectInspection }) {
                     <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
                       {item.category}
                     </span>
-                    <h3 className="text-base font-bold text-white truncate mt-0.5">
+                    <h3 className="text-base font-bold text-slate-900 truncate mt-0.5">
                       {item.product_name}
                     </h3>
-                    <span className="text-xs text-cyan-300 block font-semibold">{item.brand}</span>
+                    <span className="text-xs text-brand-600 block font-semibold">{item.brand}</span>
 
-                    <div className="mt-3.5 space-y-1.5 text-xs text-slate-300 border-t border-white/[0.08] pt-3">
-                      <div className="flex items-center space-x-2 text-slate-400 text-[11px]">
-                        <Store className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                    <div className="mt-3.5 space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                      <div className="flex items-center space-x-2 text-slate-500 text-[11px]">
+                        <Store className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                         <span className="truncate">{item.store_name}</span>
                       </div>
-                      <div className="flex items-center space-x-2 text-slate-400 text-[11px]">
-                        <MapPin className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                      <div className="flex items-center space-x-2 text-slate-500 text-[11px]">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                         <span>{item.location}</span>
                       </div>
-                      <div className="flex items-center space-x-2 text-slate-400 text-[11px]">
-                        <Calendar className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                      <div className="flex items-center space-x-2 text-slate-500 text-[11px]">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                         <span>{new Date(item.created_at).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Footer Actions */}
-                  <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                     <button
                       onClick={() => onSelectInspection && onSelectInspection(item.id)}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-bold flex items-center space-x-1.5"
+                      className="text-xs text-brand-600 hover:text-brand-700 font-bold flex items-center space-x-1.5"
                     >
                       <Eye className="w-4 h-4" />
                       <span>Inspect Audit</span>
@@ -196,14 +196,14 @@ export default function History({ onSelectInspection }) {
                         href={api.getPdfReportUrl(item.id)}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-2 rounded-xl bg-red-950/70 border border-red-800/80 text-red-400 hover:text-red-300 transition shadow"
+                        className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition shadow-sm"
                         title="Download Statutory Notice PDF"
                       >
                         <FileDown className="w-4 h-4" />
                       </a>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        className="p-2 rounded-xl bg-gov-900 border border-white/10 text-slate-400 hover:text-red-400 transition"
+                        className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition"
                         title="Delete Record"
                       >
                         <Trash2 className="w-4 h-4" />

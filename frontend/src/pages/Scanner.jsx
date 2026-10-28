@@ -237,80 +237,49 @@ export default function Scanner() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Hero Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2">
         <div>
-          <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25 mb-2">
-            <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>
-            <span className="text-[11px] uppercase font-bold tracking-wider text-cyan-300">
-              Tech Setu • Automated Inspection Pipeline
-            </span>
+          <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-sky-600 mb-1">
+            NEW INSPECTION
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-            Packaged Commodity Compliance Scanner
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Check a package in seconds.
           </h1>
-          <p className="text-sm text-slate-300 mt-1.5 max-w-3xl leading-relaxed">
-            Instant statutory verification under the <b>Legal Metrology (Packaged Commodities) Rules, 2011</b>. Automated extraction of mandatory declarations, Principal Display Panel (PDP) font size ratio measurement, and digital seizure notice generation.
+          <p className="text-sm text-slate-500 mt-1.5 max-w-2xl leading-relaxed">
+            Snap or upload the front of the pack. We read every mandatory declaration, measure the font height against Rule 7, and prepare the notice if something is off.
           </p>
         </div>
 
-        {inspectionResult && (
-          <button
-            onClick={resetScanner}
-            className="flex items-center space-x-2 bg-gradient-to-r from-gov-700 to-gov-800 hover:from-gov-600 hover:to-gov-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold border border-white/10 shadow-lg transition duration-200"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
-            <span>New Inspection Scan</span>
-          </button>
-        )}
-      </div>
-
-      {/* 1-Click Quick Demo Presets */}
-      {!inspectionResult && (
-        <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-cyan-500/25 bg-gradient-to-r from-gov-900/90 via-gov-850/80 to-gov-900/90 shadow-lg">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-bold text-white block">
-                No physical packaging packet or photo on hand?
-              </span>
-              <span className="text-[11px] text-slate-300">
-                Select one of our 2 pre-loaded official demo packaging labels to test the pipeline:
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+        {!inspectionResult ? (
+          <div className="flex items-center gap-2 self-start md:self-end">
             {DEMO_PACKETS.map((packet) => (
               <button
                 key={packet.id}
                 type="button"
                 onClick={() => loadDemoPacket(packet.id)}
-                className="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gov-800/80 hover:bg-gov-700/90 text-white border border-cyan-500/30 hover:border-cyan-400 transition-all shadow-md group"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 shadow-xs hover:border-sky-500 transition-all flex items-center space-x-1.5"
               >
-                <img
-                  src={packet.thumbnail}
-                  alt={packet.title}
-                  className="w-8 h-8 object-cover rounded-lg border border-white/20 group-hover:scale-105 transition-transform"
-                />
-                <div className="text-left">
-                  <div className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
-                    {packet.title}
-                  </div>
-                  <div className="text-[10px] text-slate-400">{packet.badge} • 1-Click Test</div>
-                </div>
+                <span>{packet.title}</span>
               </button>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <button
+            onClick={resetScanner}
+            className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 shadow-xs transition"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-sky-600" />
+            <span>New Inspection Scan</span>
+          </button>
+        )}
+      </div>
 
       {/* Error Message */}
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-red-950/80 border border-red-500/60 text-red-200 text-sm flex items-center space-x-3 shadow-glow-red">
-          <AlertOctagon className="w-5 h-5 text-red-400 flex-shrink-0" />
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center space-x-3 shadow-xs">
+          <AlertOctagon className="w-5 h-5 text-red-500 flex-shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
@@ -319,61 +288,49 @@ export default function Scanner() {
       {!inspectionResult && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left: Capture Workbench */}
-          <div className="lg:col-span-7 glass-panel rounded-2xl p-4 sm:p-6 shadow-card-dark space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2 shrink-0">
-                <span className="flex h-2 w-2 rounded-full bg-cyan-400"></span>
-                <span>1. Capture Packaging Image</span>
+          <div className="lg:col-span-7 glass-panel rounded-2xl p-5 sm:p-6 shadow-xs border border-slate-200/80 bg-white space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                1. Capture the pack
               </h2>
 
               {/* Mode Switcher */}
-              <div className="flex overflow-x-auto w-full sm:w-auto bg-gov-950/90 rounded-xl p-1 border border-white/[0.08] hide-scrollbar">
+              <div className="flex bg-slate-100 p-1 rounded-xl text-xs space-x-1">
                 <button
+                  type="button"
                   onClick={() => setMode('upload')}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-3 py-1.5 rounded-lg font-semibold transition ${
                     mode === 'upload'
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-white text-slate-900 shadow-xs font-bold'
+                      : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  <UploadCloud className="w-3.5 h-3.5" />
-                  <span>Upload</span>
+                  Upload
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setMode('camera');
                     setCameraModalOpen(true);
                   }}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-3 py-1.5 rounded-lg font-semibold transition ${
                     mode === 'camera'
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-white text-slate-900 shadow-xs font-bold'
+                      : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>Live Camera</span>
+                  Camera
                 </button>
                 <button
+                  type="button"
                   onClick={() => setMode('url')}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-3 py-1.5 rounded-lg font-semibold transition ${
                     mode === 'url'
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-white text-slate-900 shadow-xs font-bold'
+                      : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  <LinkIcon className="w-3.5 h-3.5" />
-                  <span>E-Commerce URL</span>
-                </button>
-                <button
-                  onClick={() => setMode('demo')}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    mode === 'demo'
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Demo Images</span>
+                  Web link
                 </button>
               </div>
             </div>
@@ -394,56 +351,33 @@ export default function Scanner() {
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className="group border-2 border-dashed border-slate-700 hover:border-cyan-400/80 rounded-2xl p-8 sm:p-10 text-center cursor-pointer transition-all duration-300 bg-gov-950/40 hover:bg-gov-950/80 flex flex-col items-center justify-center min-h-[280px]"
+                    className="border-2 border-dashed border-slate-200 hover:border-sky-400 rounded-2xl p-8 sm:p-12 text-center cursor-pointer transition bg-slate-50/60 hover:bg-slate-50 flex flex-col items-center justify-center min-h-[260px]"
                   >
-                    <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-4 border border-cyan-500/20 group-hover:scale-110 transition-transform shadow-glow-cyan">
-                      <UploadCloud className="w-8 h-8" />
+                    <div className="w-12 h-12 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center mb-3 shadow-xs">
+                      <UploadCloud className="w-6 h-6" />
                     </div>
-                    <span className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">
-                      Click to upload or drag packaging photo here
+                    <span className="text-sm font-bold text-slate-900">
+                      Drop a photo here, or browse
                     </span>
                     <span className="text-xs text-slate-400 mt-1 max-w-sm">
-                      High-resolution photo of Front Principal Display Panel (PDP) or Information Panel (JPG, PNG, WEBP)
+                      Best results: the front panel, flat, well lit. JPG, PNG or WEBP.
                     </span>
-
-                    {/* Quick Demo Shortcuts in Dropzone */}
-                    <div className="mt-5 pt-4 border-t border-white/[0.08] w-full max-w-md flex flex-col items-center space-y-2">
-                      <span className="text-[11px] text-slate-400 font-semibold">
-                        Don't have a packaging photo on your device? Select a demo packet:
-                      </span>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {DEMO_PACKETS.map((packet) => (
-                          <button
-                            key={packet.id}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              loadDemoPacket(packet.id);
-                            }}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gov-850 hover:bg-gov-800 text-cyan-300 border border-cyan-500/30 flex items-center space-x-2 transition hover:scale-105 shadow-sm"
-                          >
-                            <img src={packet.thumbnail} alt="" className="w-5 h-5 rounded object-cover border border-white/20" />
-                            <span>Select {packet.title}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </div>
                 ) : (
-                  <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-gov-950 p-4 flex flex-col items-center shadow-inner">
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 p-4 flex flex-col items-center shadow-xs">
                     <img
                       src={previewUrl}
                       alt="Packaging Preview"
-                      className="max-h-[340px] w-auto object-contain rounded-xl border border-white/[0.06] shadow-2xl"
+                      className="max-h-[320px] w-auto object-contain rounded-xl border border-slate-200/80 shadow-md"
                     />
-                    <div className="w-full flex justify-between items-center mt-3 pt-3 border-t border-white/[0.08]">
-                      <span className="text-xs font-mono text-cyan-300 truncate max-w-xs">{file?.name}</span>
+                    <div className="w-full flex justify-between items-center mt-3 pt-3 border-t border-slate-200">
+                      <span className="text-xs font-mono text-slate-700 font-semibold truncate max-w-xs">{file?.name}</span>
                       <button
                         onClick={() => {
                           setFile(null);
                           setPreviewUrl('');
                         }}
-                        className="text-xs text-red-400 hover:text-red-300 font-bold transition"
+                        className="text-xs text-rose-600 hover:text-rose-700 font-bold transition"
                       >
                         Remove & Reselect
                       </button>
@@ -455,30 +389,32 @@ export default function Scanner() {
 
             {/* Mode 2: Live Camera Viewfinder */}
             {mode === 'camera' && (
-              <div className="text-center p-8 bg-gov-950/60 rounded-2xl border border-white/[0.08] space-y-4">
+              <div className="text-center p-8 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                 {previewUrl ? (
                   <div className="space-y-3">
                     <img
                       src={previewUrl}
                       alt="Captured Label"
-                      className="max-h-[300px] mx-auto object-contain rounded-xl border border-white/10 shadow-2xl"
+                      className="max-h-[300px] mx-auto object-contain rounded-xl border border-slate-200 shadow-md"
                     />
                     <button
                       onClick={() => setCameraModalOpen(true)}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 font-bold"
+                      className="text-xs text-sky-600 hover:text-sky-700 font-bold"
                     >
                       Retake with Camera
                     </button>
                   </div>
                 ) : (
                   <>
-                    <Camera className="w-14 h-14 text-cyan-400 mx-auto opacity-80 animate-pulse" />
-                    <p className="text-sm text-slate-200 font-medium">
+                    <div className="w-16 h-16 rounded-full bg-sky-100 text-sky-600 mx-auto flex items-center justify-center shadow-xs">
+                      <Camera className="w-8 h-8" />
+                    </div>
+                    <p className="text-sm text-slate-700 font-medium">
                       Align the Principal Display Panel (PDP) within the on-screen framing guide.
                     </p>
                     <button
                       onClick={() => setCameraModalOpen(true)}
-                      className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white px-6 py-3 rounded-xl text-xs font-bold shadow-glow-cyan transition duration-200"
+                      className="bg-gradient-to-r from-[#0284c7] to-[#0369a1] text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-md hover:from-[#0369a1] hover:to-[#075985] transition"
                     >
                       Open Live Camera Viewfinder
                     </button>
@@ -489,8 +425,8 @@ export default function Scanner() {
 
             {/* Mode 3: E-Commerce URL */}
             {mode === 'url' && (
-              <div className="space-y-3 bg-gov-950/70 p-6 rounded-2xl border border-white/[0.08]">
-                <label className="text-xs font-bold text-slate-200 block">
+              <div className="space-y-3 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                <label className="text-xs font-bold text-slate-800 block">
                   Paste E-Commerce Product Listing URL (Amazon, Flipkart, Blinkit, Zepto):
                 </label>
                 <div className="relative">
@@ -499,168 +435,103 @@ export default function Scanner() {
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
                     placeholder="https://www.amazon.in/dp/B0..."
-                    className="w-full glass-input rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
+                <p className="text-[11px] text-slate-500 leading-relaxed">
                   CompliScan extracts high-resolution packaging images and audits mandatory digital commerce declarations under the Legal Metrology (Packaged Commodities) Amendment Rules, 2021.
                 </p>
-              </div>
-            )}
-
-            {/* Mode 4: Dedicated Demo Image Picker */}
-            {mode === 'demo' && (
-              <div className="space-y-4 bg-gov-950/60 p-5 rounded-2xl border border-white/[0.08]">
-                <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-                  <div className="flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4 text-cyan-400" />
-                    <span className="text-xs font-bold text-white">
-                      Official Preloaded Demo Packaging Labels
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    2 SAMPLES AVAILABLE
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-300">
-                  Select either demo packet below to instantly load the high-resolution photo into the scanner workstation:
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {DEMO_PACKETS.map((packet) => (
-                    <div
-                      key={packet.id}
-                      onClick={() => loadDemoPacket(packet.id)}
-                      className="glass-panel p-4 rounded-xl border border-white/10 hover:border-cyan-400/60 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col justify-between group space-y-3 bg-gov-900/60"
-                    >
-                      <div className="space-y-2.5">
-                        <div className="h-44 rounded-lg overflow-hidden bg-gov-950/80 border border-white/10 flex items-center justify-center p-2">
-                          <img
-                            src={packet.thumbnail}
-                            alt={packet.title}
-                            className="max-h-full max-w-full object-contain rounded group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
-                            {packet.title}
-                          </span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-                            {packet.badge}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 leading-relaxed">
-                          {packet.description}
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          loadDemoPacket(packet.id);
-                        }}
-                        className="w-full py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-md"
-                      >
-                        <Play className="w-3.5 h-3.5" />
-                        <span>Select & Inspect This Packet</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </div>
 
           {/* Right: Inspection Parameters & Trigger */}
-          <div className="lg:col-span-5 glass-panel rounded-2xl p-6 shadow-card-dark space-y-5 flex flex-col justify-between">
+          <div className="lg:col-span-5 glass-panel rounded-2xl p-6 shadow-xs border border-slate-200/80 bg-white space-y-4 flex flex-col justify-between">
             <div className="space-y-4">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider border-b border-white/[0.08] pb-3 flex items-center space-x-2">
-                <Sliders className="w-4 h-4 text-cyan-400" />
-                <span>2. Inspection Context & Parameters</span>
+              <h2 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+                2. Where are you inspecting?
               </h2>
 
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                  Product Category
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
-                >
-                  <option className="bg-gov-950">Packaged Food & Beverage</option>
-                  <option className="bg-gov-950">Personal Care & Cosmetics</option>
-                  <option className="bg-gov-950">Household Cleaning & Detergents</option>
-                  <option className="bg-gov-950">Electronics & Electrical Goods</option>
-                  <option className="bg-gov-950">Apparel & Textiles</option>
-                  <option className="bg-gov-950">General Packaged Commodity</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">
+                    Product category
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+                  >
+                    <option>Packaged Food & Beverage</option>
+                    <option>Personal Care & Cosmetics</option>
+                    <option>Household Cleaning & Detergents</option>
+                    <option>Electronics & Electrical Goods</option>
+                    <option>Apparel & Textiles</option>
+                    <option>General Packaged Commodity</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-1">
+                    Package shape
+                  </label>
+                  <select
+                    value={pdpShape}
+                    onChange={(e) => setPdpShape(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+                  >
+                    <option value="RECTANGULAR">Rectangular pouch</option>
+                    <option value="CYLINDRICAL">Cylindrical bottle/tin</option>
+                    <option value="SPECIAL">Special shape</option>
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                    Estimated PDP Area (cm²)
+                  <label className="text-xs font-medium text-slate-600 block mb-1">
+                    Front panel area (cm²)
                   </label>
                   <input
                     type="number"
                     value={pdpArea}
                     onChange={(e) => setPdpArea(e.target.value)}
-                    className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 font-mono"
                   />
-                  <span className="text-[10px] text-cyan-400 mt-1 block">Rule 7 Min. Font Matrix</span>
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                    Package Geometry
+                  <label className="text-xs font-medium text-slate-600 block mb-1">
+                    District
                   </label>
-                  <select
-                    value={pdpShape}
-                    onChange={(e) => setPdpShape(e.target.value)}
-                    className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
-                  >
-                    <option value="RECTANGULAR" className="bg-gov-950">Rectangular Carton/Pouch</option>
-                    <option value="CYLINDRICAL" className="bg-gov-950">Cylindrical Bottle/Tin</option>
-                    <option value="SPECIAL" className="bg-gov-950">Special Shape</option>
-                  </select>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center space-x-1.5">
-                  <Store className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Inspected Store / Retail Entity</span>
+                <label className="text-xs font-medium text-slate-600 block mb-1">
+                  Store or retailer
                 </label>
                 <input
                   type="text"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
-                  className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center space-x-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                  <span>District / Enforcement Zone</span>
-                </label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full glass-input rounded-xl px-3.5 py-2.5 text-xs text-white"
+                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
             </div>
 
             {/* Run Analysis Button & Progress */}
-            <div className="pt-4 border-t border-white/[0.08] space-y-3">
+            <div className="pt-2 space-y-3">
               <button
                 onClick={runAnalysis}
                 disabled={loading || (mode !== 'url' && !file) || (mode === 'url' && !urlInput.trim())}
-                className="w-full bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-blue-500 text-white py-3.5 rounded-xl font-bold text-sm shadow-glow-cyan flex items-center justify-center space-x-2 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-[#0284c7] to-[#0369a1] hover:from-[#0369a1] hover:to-[#075985] text-white py-3.5 rounded-xl font-bold text-sm shadow-md shadow-sky-600/20 flex items-center justify-center space-x-2 transition active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -668,23 +539,20 @@ export default function Scanner() {
                     <span>Executing Tech Setu Pipeline...</span>
                   </>
                 ) : (
-                  <>
-                    <Sparkles className="w-5 h-5 text-cyan-200" />
-                    <span>Run LMPC 2011 Compliance Audit</span>
-                  </>
+                  <span>Run compliance check</span>
                 )}
               </button>
 
               {/* Progress Indicator */}
               {loading && (
-                <div className="p-4 bg-gov-950/90 rounded-xl border border-cyan-500/30 space-y-2.5 text-xs font-mono shadow-xl">
-                  <div className="flex justify-between items-center text-cyan-300">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5 text-xs font-mono shadow-xs">
+                  <div className="flex justify-between items-center text-slate-700">
                     <span className="font-bold flex items-center space-x-2">
-                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                      <span className="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span>
                       <span>Execution Progress</span>
-                      <span className="text-slate-400 font-normal">({elapsedSeconds}s)</span>
+                      <span className="text-slate-500 font-normal">({elapsedSeconds}s)</span>
                     </span>
-                    <span className="font-extrabold text-cyan-300">
+                    <span className="font-extrabold text-sky-700">
                       {pipelineStep >= 6
                         ? '100%'
                         : pipelineStep === 5
@@ -698,12 +566,12 @@ export default function Scanner() {
                         : '15%'}
                     </span>
                   </div>
-                  <div className="w-full bg-gov-900 rounded-full h-2.5 overflow-hidden border border-white/10 relative">
+                  <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden relative">
                     <div
                       className={`h-full transition-all duration-300 rounded-full ${
                         pipelineStep >= 6
-                          ? 'bg-gradient-to-r from-emerald-400 to-green-500'
-                          : 'bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500'
+                          ? 'bg-emerald-500'
+                          : 'bg-gradient-to-r from-sky-500 to-blue-600'
                       }`}
                       style={{
                         width: `${
@@ -722,15 +590,15 @@ export default function Scanner() {
                       }}
                     ></div>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-300">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
                     <span className="flex items-center space-x-1.5">
-                      <span className="text-cyan-400 font-bold">
+                      <span className="text-sky-600 font-bold">
                         {pipelineStep >= 6 ? '✓' : `[Stage ${Math.min(5, pipelineStep)}/5]`}:
                       </span>
                       <span>
                         {pipelineStep === 1 && '1. Validating package capture & color balance...'}
-                        {pipelineStep === 2 && '2. OpenCV Auto-Deskew & Contrast CLAHE enhancement...'}
-                        {pipelineStep === 3 && '3. Multimodal AI Vision reading statutory label text...'}
+                        {pipelineStep === 2 && '2. OpenCV enhancement & resolution standardization...'}
+                        {pipelineStep === 3 && '3. Multimodal Vision reading statutory label declarations...'}
                         {pipelineStep === 4 && '4. Deterministic LMPC 2011 Legal Rule Verification...'}
                         {pipelineStep === 5 && '5. Compiling Official Form 1 Notice & Evidence Locker...'}
                         {pipelineStep >= 6 && 'Statutory Inspection Complete!'}
@@ -751,28 +619,28 @@ export default function Scanner() {
       {inspectionResult && (
         <div className="space-y-6 animate-fade-in">
           {/* Top Banner Ribbon */}
-          <div className="glass-panel rounded-2xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-cyan-500/30 shadow-card-dark">
+          <div className="glass-panel rounded-2xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 border border-slate-200 shadow-xs bg-white">
             <div className="flex items-center space-x-3.5">
-              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+              <div className="p-2.5 rounded-xl bg-sky-50 border border-sky-100 text-sky-600">
                 <FileCheck2 className="w-6 h-6" />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h2 className="text-lg font-extrabold text-white">
+                  <h2 className="text-lg font-extrabold text-slate-900">
                     {inspectionResult.product_name}
                   </h2>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gov-800 text-cyan-300 border border-white/10">
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                     {inspectionResult.brand}
                   </span>
                 </div>
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-slate-500 font-mono">
                   Inspected at {inspectionResult.store_name} • {inspectionResult.location}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center space-x-3">
-              <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/80 px-3.5 py-1.5 rounded-xl border border-cyan-500/40 shadow-sm">
+              <span className="text-xs font-mono font-bold text-sky-700 bg-sky-50 px-3.5 py-1.5 rounded-xl border border-sky-200 shadow-xs">
                 Memo Ref: {inspectionResult.notice_number}
               </span>
             </div>

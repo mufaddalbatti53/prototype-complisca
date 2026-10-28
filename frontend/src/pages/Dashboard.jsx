@@ -44,18 +44,18 @@ export default function Dashboard({ onSelectInspection }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Dashboard Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
-          <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25 mb-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-            <span className="text-[11px] uppercase font-bold tracking-wider text-cyan-300">
-              National Legal Metrology Enforcement Cell
+          <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200 mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-600"></span>
+            <span className="text-[11px] uppercase font-bold tracking-wider text-sky-700">
+              National Legal Metrology Enforcement Cell • Tech Setu
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
             Enforcement & Compliance Dashboard
           </h1>
-          <p className="text-sm text-slate-300 mt-1.5">
+          <p className="text-sm text-slate-500 mt-1.5">
             Real-time analytics across retail & e-commerce packaging audits, repeat offender monitoring, and seizure notice issuance.
           </p>
         </div>
@@ -63,9 +63,9 @@ export default function Dashboard({ onSelectInspection }) {
         <button
           onClick={fetchStats}
           disabled={loading}
-          className="bg-gov-800 hover:bg-gov-700 text-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center space-x-2 border border-white/10 self-start transition shadow-md"
+          className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 border border-slate-200 self-start transition shadow-xs"
         >
-          <RefreshCw className={`w-4 h-4 text-cyan-400 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 text-sky-600 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh Data</span>
         </button>
       </div>
@@ -73,75 +73,75 @@ export default function Dashboard({ onSelectInspection }) {
       {/* 4 Top KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Total Audits */}
-        <div className="glass-panel rounded-2xl p-6 shadow-card-dark relative overflow-hidden group">
+        <div className="glass-panel rounded-2xl p-6 shadow-xs border border-slate-200 bg-white relative overflow-hidden group">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-xs font-semibold text-slate-400">Total Label Audits</span>
-              <h3 className="text-3xl font-mono font-extrabold text-white mt-1.5">
+              <span className="text-xs font-semibold text-slate-500">Total Label Audits</span>
+              <h3 className="text-3xl font-mono font-extrabold text-slate-900 mt-1.5">
                 {stats?.total_inspections || 0}
               </h3>
             </div>
-            <div className="p-3 rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 shadow-glow-cyan">
+            <div className="p-3 rounded-xl bg-sky-50 text-sky-600 border border-sky-200">
               <Package className="w-6 h-6" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-xs text-slate-400">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-400 mr-1.5" />
+          <div className="mt-4 flex items-center text-xs text-slate-500">
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-600 mr-1.5" />
             <span>Under LMPC Rules, 2011</span>
           </div>
         </div>
 
         {/* Overall Compliance Rate */}
-        <div className="glass-panel rounded-2xl p-6 shadow-card-dark relative overflow-hidden group">
+        <div className="glass-panel rounded-2xl p-6 shadow-xs border border-slate-200 bg-white relative overflow-hidden group">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-xs font-semibold text-slate-400">Compliance Rate</span>
-              <h3 className="text-3xl font-mono font-extrabold text-emerald-400 mt-1.5">
+              <span className="text-xs font-semibold text-slate-500">Compliance Rate</span>
+              <h3 className="text-3xl font-mono font-extrabold text-emerald-600 mt-1.5">
                 {stats?.overall_compliance_rate || 0}%
               </h3>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-glow-emerald">
+            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200">
               <CheckCircle2 className="w-6 h-6" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-xs text-slate-400">
-            <span>Compliant Packages: <b className="text-white font-mono">{stats?.compliant_count || 0}</b></span>
+          <div className="mt-4 flex items-center text-xs text-slate-500">
+            <span>Compliant Packages: <b className="text-slate-800 font-mono">{stats?.compliant_count || 0}</b></span>
           </div>
         </div>
 
         {/* Statutory Violations */}
-        <div className="glass-panel rounded-2xl p-6 shadow-card-dark relative overflow-hidden group">
+        <div className="glass-panel rounded-2xl p-6 shadow-xs border border-slate-200 bg-white relative overflow-hidden group">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-xs font-semibold text-red-400">Statutory Violations</span>
-              <h3 className="text-3xl font-mono font-extrabold text-red-400 mt-1.5">
+              <span className="text-xs font-semibold text-rose-600">Statutory Violations</span>
+              <h3 className="text-3xl font-mono font-extrabold text-rose-600 mt-1.5">
                 {stats?.non_compliant_count || 0}
               </h3>
             </div>
-            <div className="p-3 rounded-xl bg-red-500/15 text-red-400 border border-red-500/30 shadow-glow-red">
+            <div className="p-3 rounded-xl bg-rose-50 text-rose-600 border border-rose-200">
               <ShieldAlert className="w-6 h-6" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-xs text-red-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400 mr-1.5 animate-pulse"></span>
+          <div className="mt-4 flex items-center text-xs text-rose-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5 animate-pulse"></span>
             <span>Section 18 Notice Required</span>
           </div>
         </div>
 
         {/* Warnings / Borderline */}
-        <div className="glass-panel rounded-2xl p-6 shadow-card-dark relative overflow-hidden group">
+        <div className="glass-panel rounded-2xl p-6 shadow-xs border border-slate-200 bg-white relative overflow-hidden group">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-xs font-semibold text-amber-400">Warnings / Minor</span>
-              <h3 className="text-3xl font-mono font-extrabold text-amber-300 mt-1.5">
+              <span className="text-xs font-semibold text-amber-700">Warnings / Minor</span>
+              <h3 className="text-3xl font-mono font-extrabold text-amber-800 mt-1.5">
                 {stats?.warning_count || 0}
               </h3>
             </div>
-            <div className="p-3 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            <div className="p-3 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
               <AlertTriangle className="w-6 h-6" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-xs text-slate-400">
+          <div className="mt-4 flex items-center text-xs text-slate-500">
             <span>Font Size & Incomplete Address</span>
           </div>
         </div>
@@ -150,10 +150,10 @@ export default function Dashboard({ onSelectInspection }) {
       {/* Middle Grid: Violation Breakdown & Category Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Violations by Statutory Rule */}
-        <div className="lg:col-span-7 glass-panel rounded-2xl p-6 shadow-card-dark space-y-4">
-          <div className="flex items-center justify-between border-b border-white/[0.08] pb-3.5">
-            <h3 className="text-sm font-bold text-white flex items-center space-x-2">
-              <ShieldAlert className="w-4 h-4 text-red-400" />
+        <div className="lg:col-span-7 glass-panel rounded-2xl p-6 shadow-xs border border-slate-200 bg-white space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+              <ShieldAlert className="w-4 h-4 text-rose-600" />
               <span>Infringements by Statutory Rule (LMPC 2011)</span>
             </h3>
             <span className="text-xs text-slate-400 font-mono">Enforcement Priority</span>
@@ -163,17 +163,17 @@ export default function Dashboard({ onSelectInspection }) {
             {stats?.violations_by_rule?.length > 0 ? (
               stats.violations_by_rule.map((item, idx) => (
                 <div key={idx} className="space-y-1.5 text-xs">
-                  <div className="flex justify-between text-slate-300">
-                    <span className="font-bold text-white">
+                  <div className="flex justify-between text-slate-600">
+                    <span className="font-bold text-slate-800">
                       [{item.rule_code}] {item.rule_name}
                     </span>
-                    <span className="font-mono text-red-400 font-bold">
+                    <span className="font-mono text-rose-600 font-bold">
                       {item.count} breaches ({item.percentage}%)
                     </span>
                   </div>
-                  <div className="w-full bg-gov-950 rounded-full h-2.5 overflow-hidden border border-white/[0.08]">
+                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
                     <div
-                      className="bg-gradient-to-r from-red-500 to-amber-500 h-full rounded-full transition-all duration-500"
+                      className="bg-gradient-to-r from-rose-500 to-amber-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${Math.min(100, item.percentage)}%` }}
                     ></div>
                   </div>
@@ -188,10 +188,10 @@ export default function Dashboard({ onSelectInspection }) {
         </div>
 
         {/* Category Compliance Matrix */}
-        <div className="lg:col-span-5 glass-panel rounded-2xl p-6 shadow-card-dark space-y-4">
-          <div className="flex items-center justify-between border-b border-white/[0.08] pb-3.5">
-            <h3 className="text-sm font-bold text-white flex items-center space-x-2">
-              <Layers className="w-4 h-4 text-cyan-400" />
+        <div className="lg:col-span-5 glass-panel rounded-2xl p-6 shadow-xs border border-slate-200 bg-white space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+              <Layers className="w-4 h-4 text-sky-600" />
               <span>Category Compliance Performance</span>
             </h3>
           </div>
@@ -199,15 +199,15 @@ export default function Dashboard({ onSelectInspection }) {
           <div className="space-y-3 pt-1">
             {stats?.category_stats?.length > 0 ? (
               stats.category_stats.map((cat, idx) => (
-                <div key={idx} className="p-3.5 rounded-xl bg-gov-950/80 border border-white/[0.08] flex items-center justify-between text-xs">
+                <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
                   <div>
-                    <span className="font-bold text-white block">{cat.category}</span>
-                    <span className="text-slate-400 text-[11px] mt-0.5 block">
+                    <span className="font-bold text-slate-800 block">{cat.category}</span>
+                    <span className="text-slate-500 text-[11px] mt-0.5 block">
                       {cat.inspections_count} Audits • {cat.violations_count} Breaches
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="font-mono font-extrabold text-emerald-400 block text-sm">
+                    <span className="font-mono font-extrabold text-emerald-600 block text-sm">
                       {cat.compliance_rate}%
                     </span>
                     <span className="text-[10px] text-slate-400 uppercase font-semibold">Compliant</span>
@@ -224,15 +224,15 @@ export default function Dashboard({ onSelectInspection }) {
       </div>
 
       {/* Bottom: Recent Inspections Table */}
-      <div className="glass-panel rounded-2xl border border-white/[0.08] shadow-card-dark overflow-hidden">
-        <div className="p-6 border-b border-white/[0.08] flex items-center justify-between">
-          <h3 className="text-base font-extrabold text-white">Recent Enforcement Inspections</h3>
+      <div className="glass-panel rounded-2xl border border-slate-200 shadow-xs bg-white overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="text-base font-extrabold text-slate-900">Recent Enforcement Inspections</h3>
           <span className="text-xs text-slate-400 font-mono">Real-Time Audit Records</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-gov-950/90 text-slate-400 border-b border-white/[0.08] uppercase font-bold text-[11px] tracking-wider">
+            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 uppercase font-bold text-[11px] tracking-wider">
               <tr>
                 <th className="p-4">Product & Brand</th>
                 <th className="p-4">Category</th>
@@ -243,36 +243,36 @@ export default function Dashboard({ onSelectInspection }) {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06] text-slate-200">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {stats?.recent_inspections?.length > 0 ? (
                 stats.recent_inspections.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-white/[0.02] transition">
-                    <td className="p-4 font-bold text-white">
+                  <tr key={idx} className="hover:bg-slate-50/70 transition">
+                    <td className="p-4 font-bold text-slate-900">
                       {item.product_name} <span className="text-slate-400 text-xs font-normal">({item.brand})</span>
                     </td>
-                    <td className="p-4 text-slate-300">{item.category}</td>
+                    <td className="p-4 text-slate-600">{item.category}</td>
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border ${
                           item.compliance_verdict === 'COMPLIANT'
-                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : item.compliance_verdict === 'WARNING'
-                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                            : 'bg-red-500/15 text-red-400 border-red-500/30'
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
                         }`}
                       >
                         {item.compliance_verdict}
                       </span>
                     </td>
-                    <td className="p-4 font-mono font-bold text-cyan-300">{item.overall_compliance_score}%</td>
-                    <td className="p-4 font-mono text-red-400 font-bold">{item.violations_count}</td>
-                    <td className="p-4 text-slate-400 font-mono text-[11px]">
+                    <td className="p-4 font-mono font-bold text-sky-700">{item.overall_compliance_score}%</td>
+                    <td className="p-4 font-mono text-rose-600 font-bold">{item.violations_count}</td>
+                    <td className="p-4 text-slate-500 font-mono text-[11px]">
                       {item.created_at ? new Date(item.created_at).toLocaleString() : '-'}
                     </td>
                     <td className="p-4 text-right space-x-2">
                       <button
                         onClick={() => onSelectInspection && onSelectInspection(item.id)}
-                        className="text-cyan-400 hover:text-cyan-300 font-bold"
+                        className="text-sky-600 hover:text-sky-700 font-bold"
                       >
                         Inspect Audit
                       </button>
@@ -280,7 +280,7 @@ export default function Dashboard({ onSelectInspection }) {
                         href={api.getPdfReportUrl(item.id)}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-1.5 rounded-lg bg-red-950/60 border border-red-800/80 text-red-400 hover:text-red-300 inline-flex items-center transition"
+                        className="p-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 inline-flex items-center transition"
                         title="Download Form 1 Notice PDF"
                       >
                         <FileDown className="w-3.5 h-3.5" />
