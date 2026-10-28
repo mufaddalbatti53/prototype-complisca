@@ -13,6 +13,7 @@ FLAGSHIP_MODELS = [
     "gemini-3.1-flash-lite",     # Proven fastest multimodal throughput (2.1s - 3.8s)
     "gemini-flash-lite-latest",  # Official latest fast flash-lite alias (2.6s)
     "gemini-3.5-flash-lite",     # High-speed SOTA flash-lite (2.3s)
+    "gemini-2.5-flash",          # Highly resilient fallback
     getattr(settings, "GEMINI_MODEL", "gemini-3.1-flash-lite")
 ]
 
@@ -27,6 +28,12 @@ CRITICAL EXTRACTION DIRECTIVES:
 3. If a field or its stamped value is absent, missing, or blank (for example: only a prompt like 'MRP:' or 'N. QTY:' or 'MFD:' is printed without any stamped value, or the field is completely missing), set is_present to false and detected_value to null.
 4. If a field has printed or stamped text (e.g., '# MRP RS. 10/- (INCL. OF ALL TAXES)', '50 g', 'PEPSICO INDIA...'), set is_present to true and extract the verbatim string into detected_value.
 5. Provide the bounding box coordinates [ymin, xmin, ymax, xmax] normalized to 0-1000 scale for each detected declaration.
+
+CRITICAL JSON SYNTAX & ESCAPING DIRECTIVES:
+- Output MUST be 100% syntactically valid JSON.
+- In detected_value and raw_ocr_text, NEVER output unescaped double quotes (\"). If packaging text contains quotation marks (e.g. "VIRGINIA HOUSE"), escape them as \\\" or replace them with single quotes ('VIRGINIA HOUSE').
+- Never leave trailing commas before } or ].
+- Do NOT output prose or commentary outside the JSON object.
 
 FIELD DISAMBIGUATION RULES (CRITICAL):
 - NET_QUANTITY vs GENERIC_NAME:
@@ -83,6 +90,60 @@ Respond ONLY with a valid JSON object matching this exact schema:
 """
 
 class GeminiService:
+    @staticmethod
+    def parse_resilient_json(text: str) -> dict:
+        """
+        Parses JSON output from LLMs with multi-layer auto-repair:
+        1. Standard json.loads
+        2. json-repair library (handles unescaped internal quotes, unquoted keys, missing commas)
+        3. Sanitization of trailing commas, control characters, and regex extraction
+        """
+        cleaned = text.strip()
+        if cleaned.startswith("```json"):
+            cleaned = cleaned[7:]
+        elif cleaned.startswith("```"):
+            cleaned = cleaned[3:]
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3]
+        cleaned = cleaned.strip()
+
+        # If surrounded by non-JSON preamble/epilogue, extract the outermost JSON object
+        if not (cleaned.startswith("{") and cleaned.endswith("}")):
+            json_match = re.search(r"(\{[\s\S]*\})", cleaned)
+            if json_match:
+                cleaned = json_match.group(1).strip()
+
+        # Attempt 1: Standard Python json.loads
+        try:
+            return json.loads(cleaned)
+        except Exception as e1:
+            logger.info(f"Standard json.loads encountered syntax issue ({e1}). Attempting json_repair...")
+
+        # Attempt 2: json-repair package
+        try:
+            import json_repair
+            repaired = json_repair.loads(cleaned)
+            if isinstance(repaired, dict):
+                logger.info("Successfully repaired malformed Gemini JSON via json_repair.loads")
+                return repaired
+        except Exception as e2:
+            logger.info(f"json_repair.loads error ({e2}). Attempting sanitize and repair_json...")
+
+        # Attempt 3: Remove trailing commas and sanitize before repair_json
+        try:
+            import json_repair
+            sanitized = re.sub(r",\s*([\]\}])", r"\1", cleaned)
+            repaired_str = json_repair.repair_json(sanitized)
+            repaired_dict = json.loads(repaired_str)
+            if isinstance(repaired_dict, dict):
+                logger.info("Successfully repaired malformed Gemini JSON via sanitized repair_json")
+                return repaired_dict
+        except Exception as e3:
+            pass
+
+        # If all repairs fail, re-raise original JSON error with snippet context
+        raise e1
+
     @classmethod
     def analyze_packaging_image(cls, image_path: str, local_ocr_tokens: Optional[List[Dict[str, Any]]] = None) -> dict:
         """
@@ -140,8 +201,8 @@ class GeminiService:
                 continue
             seen_models.add(model_name)
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={settings.GEMINI_API_KEY}"
-            # Fast 10s timeout to prevent request stalls and guarantee rapid failover
-            req_timeout = 10
+            # Resilient 18s timeout to ensure high-res multimodal packets complete cleanly
+            req_timeout = 18
             try:
                 response = requests.post(url, json=payload, headers=headers, timeout=req_timeout)
                 if response.status_code == 200:
@@ -152,22 +213,7 @@ class GeminiService:
                         # Exclude thinking/reasoning parts to isolate pure JSON payload
                         non_thought_parts = [p.get("text", "") for p in parts if "text" in p and not p.get("thought")]
                         raw_text = "".join(non_thought_parts) if non_thought_parts else "".join([p.get("text", "") for p in parts if "text" in p])
-                        cleaned = raw_text.strip()
-                        if cleaned.startswith("```json"):
-                            cleaned = cleaned[7:]
-                        elif cleaned.startswith("```"):
-                            cleaned = cleaned[3:]
-                        if cleaned.endswith("```"):
-                            cleaned = cleaned[:-3]
-                        cleaned = cleaned.strip()
-
-                        # If there is extra preamble or trailing text, extract the root JSON object
-                        if not (cleaned.startswith("{") and cleaned.endswith("}")):
-                            json_match = re.search(r'(\{[\s\S]*\})', cleaned)
-                            if json_match:
-                                cleaned = json_match.group(1).strip()
-
-                        parsed = json.loads(cleaned)
+                        parsed = cls.parse_resilient_json(raw_text)
                         logger.info(f"Deterministic packaging text extracted using pinned model: {model_name} (seed=42, temp=0.0)")
                         return parsed
                 else:
