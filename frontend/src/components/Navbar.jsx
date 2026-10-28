@@ -78,7 +78,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
             <span>·</span>
             <span>PS 26262</span>
             <span>·</span>
-            <span className="text-slate-300 hidden sm:inline">APPROVAL PROCESS HANDBOOK (APH) AUTOMATION</span>
+            <span className="text-slate-300 hidden sm:inline">C.O.M.P.L.I.S.C.A.N. — STATUTORY OVERSIGHT & ALERT NETWORK</span>
           </div>
 
           {/* Time-Machine Clock Simulation Widget (Evaluator Demo Feature) */}
@@ -146,22 +146,26 @@ export default function Navbar({ activeTab, setActiveTab }) {
                 setMobileMenuOpen(false);
               }}
             >
-              {/* Civic Seal Emblem */}
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-[#1e3a8a] to-[#0f172a] border border-[#c5a028]/60 flex items-center justify-center text-amber-400 shadow-md group-hover:scale-105 transition-transform">
-                <span className="font-serif font-bold text-xl sm:text-2xl tracking-tighter">CS</span>
+              {/* Old Style CompliScan Logo Emblem */}
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white border border-slate-200/80 p-1 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform shrink-0">
+                <img
+                  src="/logo-icon.png"
+                  alt="C.O.M.P.L.I.S.C.A.N. Emblem"
+                  className="w-full h-full object-contain"
+                />
               </div>
 
               <div>
                 <div className="flex items-center space-x-2">
-                  <h1 className="font-serif font-bold text-lg sm:text-xl text-[#1e293b] tracking-tight group-hover:text-[#1e3a8a] transition-colors">
-                    CompliScan
+                  <h1 className="font-serif font-bold text-base sm:text-lg text-[#0f172a] tracking-tight group-hover:text-[#0e7490] transition-colors">
+                    C.O.M.P.L.I.S.C.A.N.
                   </h1>
-                  <span className="hidden sm:inline font-mono text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300 font-bold">
-                    AICTE Regulation
+                  <span className="hidden md:inline font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold">
+                    AICTE PS 26262
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium leading-tight hidden sm:block">
-                  Integrated Approval Workflow, Compliance Monitoring & Alert Management System
+                <p className="text-[10.5px] text-slate-500 font-medium leading-tight hidden sm:block max-w-md lg:max-w-xl truncate">
+                  Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network
                 </p>
               </div>
             </div>

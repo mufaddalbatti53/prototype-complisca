@@ -74,8 +74,8 @@ with SessionLocal() as db:
     seed_default_parties(db)
 
 app = FastAPI(
-    title="CompliScan — Legal Metrology Compliance Engine",
-    description="Automated scanning and compliance verification system for Legal Metrology (Packaged Commodities) Rules, 2011.",
+    title="C.O.M.P.L.I.S.C.A.N. — Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network",
+    description="Integrated AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System (PS 26262) & Legal Metrology Inspection Engine.",
     version=settings.VERSION,
     docs_url="/docs",
     redoc_url="/redoc"

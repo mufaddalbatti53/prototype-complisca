@@ -133,7 +133,8 @@ function AppContent() {
       <footer className="bg-white border-t border-[oklch(0.9_0.01_90)] py-6 px-4 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-            <span className="font-serif font-bold text-slate-900 text-sm">CompliScan</span>
+            <img src="/logo-icon.png" alt="C.O.M.P.L.I.S.C.A.N. Logo" className="w-5 h-5 object-contain" />
+            <span className="font-serif font-bold text-slate-900 text-sm">C.O.M.P.L.I.S.C.A.N.</span>
             <span>·</span>
             <span className="text-[#1e3a8a] font-semibold">Team TECH SETU</span>
             <span>·</span>
@@ -144,7 +145,7 @@ function AppContent() {
             </span>
           </div>
           <p className="text-[11px] text-slate-500 max-w-xl">
-            Integrated AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System.
+            Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network.
             Engineered under the Approval Process Handbook (APH) Regulations.
           </p>
         </div>
