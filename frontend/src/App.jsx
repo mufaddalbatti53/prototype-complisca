@@ -60,7 +60,7 @@ export default function App() {
           </div>
         )}
 
-        <main className="flex-1 pb-20">
+        <main className="flex-1 pb-12">
           {activeTab === 'scanner' && <Scanner />}
           {activeTab === 'dashboard' && <Dashboard onSelectInspection={handleSelectInspection} />}
           {activeTab === 'history' && <History onSelectInspection={handleSelectInspection} />}

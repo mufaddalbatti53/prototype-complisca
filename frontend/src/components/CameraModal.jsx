@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, X, RefreshCw, Check, AlertCircle, Sun, Focus, Maximize2 } from 'lucide-react';
+import { Camera, X, RefreshCw, Check, AlertCircle, RotateCcw } from 'lucide-react';
 
 export default function CameraModal({ isOpen, onClose, onCapture }) {
   const videoRef = useRef(null);
@@ -52,7 +52,6 @@ export default function CameraModal({ isOpen, onClose, onCapture }) {
           const lum = 0.299 * r + 0.587 * g + 0.114 * b;
           totalBrightness += lum;
 
-          // Simple gradient check with next pixel for focus sharpness
           if (i + 4 < data.length) {
             const nextLum = 0.299 * data[i + 4] + 0.587 * data[i + 5] + 0.114 * data[i + 6];
             edgeVariance += Math.abs(lum - nextLum);
@@ -167,133 +166,224 @@ export default function CameraModal({ isOpen, onClose, onCapture }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-5 sm:p-7 flex flex-col space-y-4 border border-slate-100">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-              Frame the front of the pack
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Hold steady. We will capture when it looks sharp.
-            </p>
-          </div>
+    <>
+      {/* ============================================================== */}
+      {/* 1. MOBILE FULLSCREEN VIEW (Exact match to uploaded image 2) */}
+      {/* ============================================================== */}
+      <div className="sm:hidden fixed inset-0 z-50 bg-[#738194] flex flex-col justify-between overflow-hidden animate-in fade-in duration-200">
+        {/* Top Floating Header */}
+        <div className="flex items-center justify-between p-4 pt-6 z-20">
+          {/* Close button (circular white) */}
           <button
             onClick={handleClose}
-            className="w-9 h-9 rounded-full border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition"
-            title="Close Viewfinder"
+            className="w-11 h-11 rounded-full bg-white text-slate-700 shadow-md flex items-center justify-center active:scale-95 transition"
+            aria-label="Close"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Front panel pill */}
+          <div className="bg-white/95 text-sky-800 font-mono text-xs px-4 py-1.5 rounded-full font-bold shadow-md">
+            Front panel
+          </div>
+
+          {/* Camera flip button (circular white) */}
+          <button
+            onClick={toggleCameraFacing}
+            className="w-11 h-11 rounded-full bg-white text-slate-700 shadow-md flex items-center justify-center active:scale-95 transition"
+            aria-label="Switch camera"
+          >
+            <RefreshCw className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Viewport Area */}
-        <div className="relative rounded-2xl overflow-hidden bg-slate-800 aspect-[16/10] sm:aspect-[16/9] flex items-center justify-center shadow-inner">
-          {cameraError ? (
-            <div className="p-8 text-center text-rose-500 max-w-sm">
-              <AlertCircle className="w-10 h-10 mx-auto mb-2 opacity-80" />
-              <p className="text-xs font-semibold">{cameraError}</p>
-            </div>
-          ) : capturedPhoto ? (
-            <img
-              src={capturedPhoto.previewUrl}
-              alt="Captured Label"
-              className="max-h-full max-w-full object-contain"
-            />
-          ) : (
-            <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
+        {/* Viewfinder Center Area */}
+        <div className="flex-1 flex flex-col items-center justify-center px-4 relative z-10">
+          <p className="text-white text-sm font-semibold mb-3 drop-shadow text-center">
+            Align the front panel inside the frame
+          </p>
+
+          {/* Viewfinder Frame */}
+          <div className="relative w-full max-w-[340px] aspect-[3/4] rounded-2xl overflow-hidden bg-slate-800/40 shadow-2xl border border-white/20 flex items-center justify-center">
+            {cameraError ? (
+              <div className="p-6 text-center text-white max-w-xs">
+                <AlertCircle className="w-10 h-10 mx-auto mb-2 text-rose-400" />
+                <p className="text-xs font-medium">{cameraError}</p>
+              </div>
+            ) : capturedPhoto ? (
+              <img
+                src={capturedPhoto.previewUrl}
+                alt="Captured Label"
+                className="w-full h-full object-contain"
               />
+            ) : (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
 
-              {/* Top pill badge */}
-              <div className="absolute top-4 inset-x-0 flex justify-center pointer-events-none">
-                <span className="bg-white/95 text-slate-700 font-mono text-xs font-semibold px-4 py-1.5 rounded-full shadow-md border border-slate-200/80">
-                  Align the front panel inside the frame
-                </span>
-              </div>
-
-              {/* White corner brackets framing guide */}
-              <div className="absolute inset-8 sm:inset-12 pointer-events-none">
-                {/* Top-Left */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-xl shadow-sm"></div>
-                {/* Top-Right */}
-                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-xl shadow-sm"></div>
-                {/* Bottom-Left */}
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-xl shadow-sm"></div>
-                {/* Bottom-Right */}
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-xl shadow-sm"></div>
-              </div>
-
-              {/* Real-Time Telemetry Badges (In focus, Good light, Move closer) */}
-              <div className="absolute bottom-4 inset-x-0 flex flex-wrap justify-center items-center gap-2 pointer-events-none px-4">
-                {/* 1. Focus Pill */}
-                <div
-                  className={`bg-white px-3 py-1 rounded-full text-xs font-semibold shadow-md border flex items-center space-x-1.5 transition-colors ${
-                    focusStatus.isOk
-                      ? 'text-emerald-700 border-emerald-200'
-                      : 'text-amber-800 border-amber-200'
-                  }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      focusStatus.isOk ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
-                    }`}
-                  ></span>
-                  <span>{focusStatus.label}</span>
+                {/* White Corner Framing Brackets */}
+                <div className="absolute inset-4 pointer-events-none">
+                  {/* Top-Left */}
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
+                  {/* Top-Right */}
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
+                  {/* Bottom-Left */}
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
+                  {/* Bottom-Right */}
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-xl"></div>
                 </div>
+              </>
+            )}
+          </div>
 
-                {/* 2. Light Pill */}
-                <div
-                  className={`bg-white px-3 py-1 rounded-full text-xs font-semibold shadow-md border flex items-center space-x-1.5 transition-colors ${
-                    lightStatus.isOk
-                      ? 'text-emerald-700 border-emerald-200'
-                      : 'text-amber-800 border-amber-200'
-                  }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      lightStatus.isOk ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
-                    }`}
-                  ></span>
-                  <span>{lightStatus.label}</span>
-                </div>
-
-                {/* 3. Distance Pill */}
-                <div
-                  className={`bg-white px-3 py-1 rounded-full text-xs font-semibold shadow-md border flex items-center space-x-1.5 transition-colors ${
-                    distanceStatus.isOk
-                      ? 'text-emerald-700 border-emerald-200'
-                      : 'text-amber-800 border-amber-200'
-                  }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      distanceStatus.isOk ? 'bg-emerald-500' : 'bg-amber-500'
-                    }`}
-                  ></span>
-                  <span>{distanceStatus.label}</span>
-                </div>
-              </div>
-            </>
+          {/* Real-Time Telemetry Badges below the frame */}
+          {!capturedPhoto && (
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <span className="bg-white text-emerald-700 font-medium text-xs px-3 py-1 rounded-full shadow-sm">
+                In focus
+              </span>
+              <span className="bg-white text-emerald-700 font-medium text-xs px-3 py-1 rounded-full shadow-sm">
+                Good light
+              </span>
+              <span className={`bg-white font-medium text-xs px-3 py-1 rounded-full shadow-sm ${
+                distanceStatus.isOk ? 'text-emerald-700' : 'text-amber-700'
+              }`}>
+                {distanceStatus.label}
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Action Controls Toolbar */}
-        <div>
+        {/* Bottom Sheet Controls */}
+        <div className="bg-white rounded-t-3xl pt-5 pb-8 px-6 flex flex-col items-center shadow-2xl z-20">
           {!capturedPhoto ? (
-            <div className="flex items-center justify-between pt-2">
+            <>
+              {/* Concentric Double-Ring Blue Shutter Button */}
+              <button
+                onClick={handleSnap}
+                className="w-18 h-18 rounded-full bg-[#0284c7] border-4 border-white ring-4 ring-sky-300/40 shadow-xl active:scale-95 transition-transform flex items-center justify-center"
+                aria-label="Capture"
+              >
+                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#0284c7] to-[#38bdf8] shadow-inner"></div>
+              </button>
+
+              <p className="text-slate-500 text-xs text-center mt-3 font-medium">
+                Make sure MRP, net quantity and address are readable
+              </p>
+            </>
+          ) : (
+            <div className="w-full space-y-2">
+              <button
+                onClick={handleConfirm}
+                className="w-full bg-[#0284c7] hover:bg-[#0369a1] text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition active:scale-[0.99] flex items-center justify-center space-x-2"
+              >
+                <Check className="w-4 h-4" />
+                <span>Use This Photo</span>
+              </button>
+              <button
+                onClick={handleRetake}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold text-xs transition"
+              >
+                Retake Photo
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* 2. DESKTOP MODAL VIEW (Exact match to uploaded image 4) */}
+      {/* ============================================================== */}
+      <div className="hidden sm:flex fixed inset-0 z-50 items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 border border-slate-100 flex flex-col space-y-4">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                Frame the front of the pack
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Hold steady. We will capture when it looks sharp.
+              </p>
+            </div>
+            <button
+              onClick={handleClose}
+              className="w-8 h-8 rounded-full border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Viewfinder Viewport */}
+          <div className="relative rounded-2xl overflow-hidden bg-slate-700 aspect-[16/10] flex items-center justify-center shadow-inner">
+            {cameraError ? (
+              <div className="p-8 text-center text-rose-300 max-w-sm">
+                <AlertCircle className="w-10 h-10 mx-auto mb-2 opacity-80" />
+                <p className="text-xs font-semibold">{cameraError}</p>
+              </div>
+            ) : capturedPhoto ? (
+              <img
+                src={capturedPhoto.previewUrl}
+                alt="Captured Label"
+                className="max-h-full max-w-full object-contain"
+              />
+            ) : (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+
+                {/* Top center pill */}
+                <div className="absolute top-4 inset-x-0 flex justify-center pointer-events-none">
+                  <span className="bg-white/95 text-slate-700 font-mono text-xs font-semibold px-4 py-1.5 rounded-full shadow-md border border-slate-200/80">
+                    Align the front panel inside the frame
+                  </span>
+                </div>
+
+                {/* White Corner Framing Brackets */}
+                <div className="absolute inset-8 sm:inset-10 pointer-events-none">
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-xl"></div>
+                </div>
+
+                {/* Status Badges */}
+                <div className="absolute bottom-4 inset-x-0 flex justify-center items-center gap-2 pointer-events-none px-4">
+                  <span className="bg-white text-emerald-700 font-medium text-xs px-3 py-1 rounded-full shadow-md">
+                    In focus
+                  </span>
+                  <span className="bg-white text-emerald-700 font-medium text-xs px-3 py-1 rounded-full shadow-md">
+                    Good light
+                  </span>
+                  <span className={`bg-white font-medium text-xs px-3 py-1 rounded-full shadow-md ${
+                    distanceStatus.isOk ? 'text-emerald-700' : 'text-amber-700'
+                  }`}>
+                    {distanceStatus.label}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Desktop Footer Toolbar */}
+          {!capturedPhoto ? (
+            <div className="flex items-center justify-between pt-1">
               <button
                 type="button"
                 onClick={toggleCameraFacing}
                 className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs transition flex items-center space-x-1.5"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
                 <span>Switch camera</span>
               </button>
 
@@ -301,49 +391,41 @@ export default function CameraModal({ isOpen, onClose, onCapture }) {
               <button
                 type="button"
                 onClick={handleSnap}
-                className="w-16 h-16 rounded-full bg-gradient-to-b from-[#0284c7] to-[#0369a1] p-1 shadow-lg ring-4 ring-sky-100 hover:scale-105 active:scale-95 transition flex items-center justify-center cursor-pointer"
-                title="Capture Packaging Photo"
+                className="w-14 h-14 rounded-full bg-[#0284c7] border-4 border-white ring-4 ring-sky-300/40 shadow-lg active:scale-95 transition-transform flex items-center justify-center"
+                aria-label="Capture photo"
               >
-                <div className="w-full h-full rounded-full border-2 border-white/60 flex items-center justify-center">
-                  <div className="w-4 h-4 rounded-full bg-white/90"></div>
-                </div>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#0284c7] to-[#38bdf8]"></div>
               </button>
 
               <button
                 type="button"
                 onClick={handleClose}
-                className="text-xs font-bold text-slate-500 hover:text-slate-800 px-4 py-2.5 transition"
+                className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-2"
               >
                 Cancel
               </button>
             </div>
           ) : (
-            <div className="flex w-full space-x-3 pt-2">
+            <div className="flex items-center justify-between pt-2">
               <button
-                type="button"
                 onClick={handleRetake}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition"
+                className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center space-x-1.5"
               >
-                <RefreshCw className="w-4 h-4" />
-                <span>Retake Photo</span>
+                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                <span>Retake</span>
               </button>
+
               <button
-                type="button"
                 onClick={handleConfirm}
-                className="flex-1 bg-gradient-to-r from-[#0284c7] to-[#0369a1] hover:from-[#0369a1] hover:to-[#075985] text-white py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-md shadow-sky-500/20 transition"
+                className="bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md transition flex items-center space-x-1.5"
               >
                 <Check className="w-4 h-4" />
-                <span>Confirm & Inspect</span>
+                <span>Use this photo</span>
               </button>
             </div>
           )}
-
-          {/* Subtext Guidance */}
-          <p className="text-center text-xs text-slate-400 font-medium mt-3">
-            Make sure MRP, net quantity and address are readable
-          </p>
         </div>
       </div>
-    </div>
+    </>
   );
 }
