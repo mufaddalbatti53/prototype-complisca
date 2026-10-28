@@ -53,7 +53,12 @@ Extract all text for the following standard packaging fields:
 - NET_QUANTITY: Stamped or printed net weight, volume, or count (null if blank/unstamped).
 - DATE_OF_MANUFACTURE: Stamped or printed month/year of manufacture, packing, or expiry (null if blank/unstamped).
 - MRP: Stamped or printed Maximum Retail Price with any tax clauses (null if blank/unstamped).
-- CONSUMER_CARE: Consumer complaint contact person, address, helpline phone/toll-free, email, or website.
+- CONSUMER_CARE: Consumer complaint contact person, designation, address, helpline phone/toll-free, email, or website.
+  IMPORTANT SCANNING GUIDANCE:
+  On Indian snack & food packaging (such as Bingo Mad Angles, ITC, Parle, Britannia, Haldiram's, Nestle, PepsiCo):
+  * The consumer redressal declaration is frequently headed with 'FOR FEEDBACK/COMPLAINT CONTACT:' or 'FEEDBACK / COMPLAINTS:' or 'CUSTOMER CARE / HELPLINE'.
+  * Look on BOTH the left and right panels for Consumer Care Office addresses (e.g. 'CONSUMER CARE OFFICE, ITC LIMITED...'), toll-free helpline numbers (e.g. '1800 425 444 444', '1800 103 1947'), and emails (e.g. 'itccares@itc.in', 'wecare@in.nestle.com').
+  * You MUST extract this complete feedback/complaint block into CONSUMER_CARE and set is_present=true! Do NOT mark CONSUMER_CARE as false/null when feedback/complaint info is printed!
 - COUNTRY_OF_ORIGIN: Country of origin or manufacture. (CRITICAL: Do NOT infer this from the manufacturer address! Only extract if there is an explicit statement like 'Made in X', 'Country of Origin: X', or 'Produce of X'. Otherwise, set is_present to false).
 - UNIT_SALE_PRICE: Unit Sale Price (USP) if printed or stamped.
   IMPORTANT SCANNING DIRECTION FOR STAMPED / DOT-MATRIX BOXES:
