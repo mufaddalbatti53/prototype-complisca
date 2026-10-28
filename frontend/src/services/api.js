@@ -85,6 +85,11 @@ export const api = {
     return res.data;
   },
 
+  resetRules: async () => {
+    const res = await client.post('/rules/reset');
+    return res.data;
+  },
+
   // 6. Dashboard Analytics
   getDashboardAnalytics: async () => {
     const res = await client.get('/analytics/dashboard');

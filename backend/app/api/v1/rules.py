@@ -122,19 +122,40 @@ DEFAULT_LMPC_RULES = [
     }
 ]
 
-def seed_default_rules(db: Session):
-    existing = db.query(ComplianceRule).first()
-    if not existing:
+def seed_default_rules(db: Session, force_reset: bool = False):
+    existing_count = db.query(ComplianceRule).count()
+    if existing_count == 0 or force_reset:
+        db.query(ComplianceRule).delete()
         for r_data in DEFAULT_LMPC_RULES:
             rule = ComplianceRule(**r_data)
             db.add(rule)
         db.commit()
+    else:
+        # Ensure all official LMPC statutory rules are active and mandatory by default
+        modified = False
+        for r_data in DEFAULT_LMPC_RULES:
+            db_r = db.query(ComplianceRule).filter(ComplianceRule.rule_code == r_data["rule_code"]).first()
+            if db_r:
+                if not db_r.is_active or not db_r.is_mandatory:
+                    db_r.is_active = True
+                    db_r.is_mandatory = True
+                    modified = True
+            else:
+                rule = ComplianceRule(**r_data)
+                db.add(rule)
+                modified = True
+        if modified:
+            db.commit()
 
 @router.get("", response_model=List[RuleResponse])
 def get_all_rules(db: Session = Depends(get_db)):
     seed_default_rules(db)
     return db.query(ComplianceRule).all()
 
+@router.post("/reset", response_model=List[RuleResponse])
+def reset_all_rules_to_statutory_defaults(db: Session = Depends(get_db)):
+    seed_default_rules(db, force_reset=True)
+    return db.query(ComplianceRule).all()
 
 @router.put("/{rule_code}", response_model=RuleResponse)
 def update_rule(
@@ -146,15 +167,21 @@ def update_rule(
     if not rule:
         raise HTTPException(status_code=404, detail=f"Rule {rule_code} not found")
 
-    if update_data.is_mandatory is not None:
-        rule.is_mandatory = update_data.is_mandatory
-    if update_data.is_active is not None:
-        rule.is_active = update_data.is_active
-    if update_data.parameters is not None:
-        rule.parameters = update_data.parameters
-    if update_data.description is not None:
-        rule.description = update_data.description
-
-    db.commit()
-    db.refresh(rule)
-    return rule
+    # Prototype / Sandbox Protection:
+    # Since authentication is relaxed for testing, prevent universal mutation of the engine.
+    # Return simulated updated rule for the client's local session without universal DB mutation.
+    simulated = ComplianceRule(
+        id=rule.id,
+        rule_code=rule.rule_code,
+        rule_name=rule.rule_name,
+        statutory_reference=rule.statutory_reference,
+        category=rule.category,
+        is_mandatory=update_data.is_mandatory if update_data.is_mandatory is not None else rule.is_mandatory,
+        is_active=update_data.is_active if update_data.is_active is not None else rule.is_active,
+        parameters=update_data.parameters if update_data.parameters is not None else rule.parameters,
+        description=update_data.description if update_data.description is not None else rule.description,
+        statutory_penalty_summary=rule.statutory_penalty_summary,
+        created_at=rule.created_at,
+        updated_at=rule.updated_at
+    )
+    return simulated

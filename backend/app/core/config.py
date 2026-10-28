@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     
     # CORS
     CORS_ORIGINS: list[str] = [
+        "https://prototype-complisca.vercel.app",
+        "https://prototype-compliscan.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",

@@ -84,3 +84,4 @@ class UrlScanRequest(BaseModel):
     store_name: Optional[str] = "E-Commerce Inspection"
     location: Optional[str] = "Online / Marketplace"
     pdp_area_sqcm: Optional[float] = 120.0
+    rules_config: Optional[List[Dict[str, Any]]] = None

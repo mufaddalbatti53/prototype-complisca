@@ -37,6 +37,7 @@ async def upload_and_analyze_packaging(
     inspector_name: str = Form("Enforcement Officer"),
     pdp_area_sqcm: float = Form(100.0),
     pdp_shape: str = Form("RECTANGULAR"),
+    rules_config: str = Form(None),
     db: Session = Depends(get_db)
 ):
     """
@@ -99,17 +100,26 @@ async def upload_and_analyze_packaging(
                 bbox, img_height=1000, pdp_height_cm=15.0
             )
 
-    # Fetch active configurable rules from database (fixes audit finding 4.1)
-    db_rules = db.query(ComplianceRule).all()
-    active_rules_config = [
-        {
-            "rule_code": r.rule_code,
-            "is_active": r.is_active,
-            "is_mandatory": r.is_mandatory,
-            "parameters": r.parameters
-        }
-        for r in db_rules
-    ]
+    # Fetch active configurable rules: uses tester's local sandbox rules if provided, else universal DB defaults
+    active_rules_config = []
+    if rules_config:
+        try:
+            import json
+            active_rules_config = json.loads(rules_config)
+        except Exception:
+            active_rules_config = []
+
+    if not active_rules_config:
+        db_rules = db.query(ComplianceRule).all()
+        active_rules_config = [
+            {
+                "rule_code": r.rule_code,
+                "is_active": r.is_active,
+                "is_mandatory": r.is_mandatory,
+                "parameters": r.parameters
+            }
+            for r in db_rules
+        ]
 
     # 4. Deterministic Rule Engine Verification (100% in code, zero AI scoring)
     verified_decls, overall_score, verdict, violations_cnt, warnings_cnt = (
@@ -313,16 +323,18 @@ async def scan_ecommerce_url(
                 bbox, img_height=1000, pdp_height_cm=15.0
             )
 
-    db_rules = db.query(ComplianceRule).all()
-    active_rules_config = [
-        {
-            "rule_code": r.rule_code,
-            "is_active": r.is_active,
-            "is_mandatory": r.is_mandatory,
-            "parameters": r.parameters
-        }
-        for r in db_rules
-    ]
+    active_rules_config = req.rules_config
+    if not active_rules_config:
+        db_rules = db.query(ComplianceRule).all()
+        active_rules_config = [
+            {
+                "rule_code": r.rule_code,
+                "is_active": r.is_active,
+                "is_mandatory": r.is_mandatory,
+                "parameters": r.parameters
+            }
+            for r in db_rules
+        ]
 
     # Verify Rules deterministically in Python with DB active rules
     verified_decls, overall_score, verdict, violations_cnt, warnings_cnt = (

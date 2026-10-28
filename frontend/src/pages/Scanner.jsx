@@ -109,18 +109,32 @@ export default function Scanner() {
 
     try {
       let result = null;
+      const savedLocalRules = sessionStorage.getItem('compliscan_local_rules');
 
       if (mode === 'url') {
         if (!urlInput.trim()) {
           throw new Error('Please enter a valid product listing URL.');
         }
         setPipelineStep(2);
+        let localRulesParsed = null;
+        try {
+          if (savedLocalRules) {
+            localRulesParsed = JSON.parse(savedLocalRules).map((r) => ({
+              rule_code: r.rule_code,
+              is_active: r.is_active,
+              is_mandatory: r.is_mandatory,
+              parameters: r.parameters
+            }));
+          }
+        } catch (e) {}
+
         result = await api.scanUrl({
           url: urlInput.trim(),
           category,
           store_name: storeName,
           location,
-          pdp_area_sqcm: parseFloat(pdpArea) || 120.0
+          pdp_area_sqcm: parseFloat(pdpArea) || 120.0,
+          rules_config: localRulesParsed
         });
       } else {
         if (!file) {
@@ -135,6 +149,20 @@ export default function Scanner() {
         formData.append('inspector_name', inspectorName);
         formData.append('pdp_area_sqcm', pdpArea.toString());
         formData.append('pdp_shape', pdpShape);
+
+        if (savedLocalRules) {
+          try {
+            const rulesConfigPayload = JSON.stringify(
+              JSON.parse(savedLocalRules).map((r) => ({
+                rule_code: r.rule_code,
+                is_active: r.is_active,
+                is_mandatory: r.is_mandatory,
+                parameters: r.parameters
+              }))
+            );
+            formData.append('rules_config', rulesConfigPayload);
+          } catch (e) {}
+        }
 
         setTimeout(() => setPipelineStep(2), 800);  // OpenCV Preprocessing
         setTimeout(() => setPipelineStep(3), 2000); // OCR & Dimensions
