@@ -27,24 +27,42 @@ Base.metadata.create_all(bind=engine)
 
 # Auto-migrate SQLite schema if new columns are missing in existing tables
 def auto_migrate_schema():
+    needed_cols = [
+        ("party_id", "VARCHAR(50)"),
+        ("notice_due_date", "DATETIME"),
+        ("notice_status", "VARCHAR(50) DEFAULT 'SHOW_CAUSE_ISSUED'"),
+        ("party_reply", "TEXT"),
+        ("party_reply_date", "DATETIME"),
+    ]
+    # 1. Direct SQLite connection migration
     try:
-        with engine.connect() as conn:
+        db_path = settings.STORAGE_DIR / "compliscan.db"
+        if db_path.exists():
+            import sqlite3
+            conn = sqlite3.connect(str(db_path))
+            cur = conn.cursor()
+            cur.execute("PRAGMA table_info(inspections)")
+            existing_cols = {row[1] for row in cur.fetchall()}
+            for col_name, col_type in needed_cols:
+                if col_name not in existing_cols:
+                    cur.execute(f"ALTER TABLE inspections ADD COLUMN {col_name} {col_type}")
+                    logger.info(f"Direct SQLite migration: added column {col_name} to inspections")
+            conn.commit()
+            conn.close()
+    except Exception as e:
+        logger.warning(f"Direct SQLite migration notice: {e}")
+
+    # 2. SQLAlchemy engine.begin() migration
+    try:
+        with engine.begin() as conn:
             result = conn.exec_driver_sql("PRAGMA table_info(inspections)")
             existing_cols = {row[1] for row in result.fetchall()}
-            needed_cols = [
-                ("party_id", "VARCHAR(50)"),
-                ("notice_due_date", "DATETIME"),
-                ("notice_status", "VARCHAR(50) DEFAULT 'SHOW_CAUSE_ISSUED'"),
-                ("party_reply", "TEXT"),
-                ("party_reply_date", "DATETIME"),
-            ]
             for col_name, col_type in needed_cols:
                 if col_name not in existing_cols:
                     conn.exec_driver_sql(f"ALTER TABLE inspections ADD COLUMN {col_name} {col_type}")
-                    logger.info(f"Auto-migrated database schema: added column {col_name} to inspections")
-            conn.commit()
+                    logger.info(f"Engine migration: added column {col_name} to inspections")
     except Exception as e:
-        logger.warning(f"Auto-migration note: {e}")
+        logger.warning(f"Engine migration notice: {e}")
 
 auto_migrate_schema()
 
@@ -120,6 +138,7 @@ def root():
     return {
         "system": "CompliScan Legal Metrology Compliance Engine",
         "version": settings.VERSION,
+        "build": "2026.10.28.01",
         "status": "OPERATIONAL",
         "jurisdiction": "Legal Metrology Act, 2009 & LMPC Rules, 2011 (India)",
         "docs": "/docs"
