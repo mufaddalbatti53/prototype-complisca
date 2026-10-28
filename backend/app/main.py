@@ -25,6 +25,29 @@ for directory in [
 # Create Database tables
 Base.metadata.create_all(bind=engine)
 
+# Auto-migrate SQLite schema if new columns are missing in existing tables
+def auto_migrate_schema():
+    try:
+        with engine.connect() as conn:
+            result = conn.exec_driver_sql("PRAGMA table_info(inspections)")
+            existing_cols = {row[1] for row in result.fetchall()}
+            needed_cols = [
+                ("party_id", "VARCHAR(50)"),
+                ("notice_due_date", "DATETIME"),
+                ("notice_status", "VARCHAR(50) DEFAULT 'SHOW_CAUSE_ISSUED'"),
+                ("party_reply", "TEXT"),
+                ("party_reply_date", "DATETIME"),
+            ]
+            for col_name, col_type in needed_cols:
+                if col_name not in existing_cols:
+                    conn.exec_driver_sql(f"ALTER TABLE inspections ADD COLUMN {col_name} {col_type}")
+                    logger.info(f"Auto-migrated database schema: added column {col_name} to inspections")
+            conn.commit()
+    except Exception as e:
+        logger.warning(f"Auto-migration note: {e}")
+
+auto_migrate_schema()
+
 # Seed default rules and parties
 with SessionLocal() as db:
     seed_default_rules(db)
