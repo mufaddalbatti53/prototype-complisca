@@ -10,12 +10,14 @@ logger = logging.getLogger(__name__)
 
 # Pinned model hierarchy prioritized for maximum visual accuracy, high availability, and ultra-fast throughput
 FLAGSHIP_MODELS = [
-    "gemini-3.5-flash-lite",  # Ultra-fast SOTA production flash model (proven ~3.3s response time)
-    "gemini-3.5-flash",       # High-accuracy SOTA production model (proven reliable ~10s response time)
+    "gemini-3.5-flash-lite",     # Ultra-fast SOTA production flash model (proven 1.97s response time)
+    "gemini-flash-lite-latest",  # Official latest fast flash-lite alias
+    "gemini-3.5-flash",          # High-accuracy SOTA production model
+    "gemini-flash-latest",       # Official latest flash alias
     getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash"),
-    "gemini-3.8-flash",       # Advanced multimodal preview model
-    "gemini-3.7-flash",       # High-capacity multimodal model
-    "gemini-3.1-flash-lite"   # High-availability fallback
+    "gemini-3.8-flash",          # Advanced multimodal preview model
+    "gemini-3.7-flash",          # High-capacity multimodal model
+    "gemini-3.1-flash-lite"      # High-availability fallback
 ]
 
 # PURE OCR & TEXT EXTRACTION PROMPT (Zero legal logic or compliance scoring in the AI prompt)

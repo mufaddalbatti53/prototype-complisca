@@ -72,6 +72,7 @@ export default function Scanner() {
   // Execution states
   const [loading, setLoading] = useState(false);
   const [pipelineStep, setPipelineStep] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState('0.0');
   const [inspectionResult, setInspectionResult] = useState(null);
   const [selectedDecl, setSelectedDecl] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -135,16 +136,22 @@ export default function Scanner() {
     setLoading(true);
     setErrorMsg(null);
     setPipelineStep(1);
+    setElapsedSeconds('0.0');
+
+    const startTime = Date.now();
+    const timerInterval = setInterval(() => {
+      setElapsedSeconds(((Date.now() - startTime) / 1000).toFixed(1));
+    }, 100);
 
     let pipelineTimers = [];
     try {
       let result = null;
       const savedLocalRules = sessionStorage.getItem('compliscan_local_rules');
 
-      pipelineTimers.push(setTimeout(() => setPipelineStep(2), 700));
-      pipelineTimers.push(setTimeout(() => setPipelineStep(3), 1600));
-      pipelineTimers.push(setTimeout(() => setPipelineStep(4), 2600));
-      pipelineTimers.push(setTimeout(() => setPipelineStep(5), 3800));
+      pipelineTimers.push(setTimeout(() => setPipelineStep(2), 1000));
+      pipelineTimers.push(setTimeout(() => setPipelineStep(3), 2200));
+      pipelineTimers.push(setTimeout(() => setPipelineStep(4), 3800));
+      pipelineTimers.push(setTimeout(() => setPipelineStep(5), 5500));
 
       if (mode === 'url') {
         if (!urlInput.trim()) {
@@ -201,6 +208,10 @@ export default function Scanner() {
         result = await api.uploadAndScan(formData);
       }
 
+      // Smooth completion transition: flash 100% green before displaying evidence
+      setPipelineStep(6);
+      await new Promise((resolve) => setTimeout(resolve, 350));
+
       setInspectionResult(result);
       broadcastSync('INSPECTION_CREATED', result);
       if (result?.declarations?.length > 0) {
@@ -209,6 +220,7 @@ export default function Scanner() {
     } catch (err) {
       setErrorMsg(err.response?.data?.detail || err.message || 'Inspection failed.');
     } finally {
+      clearInterval(timerInterval);
       pipelineTimers.forEach((t) => clearTimeout(t));
       setLoading(false);
       setPipelineStep(0);
@@ -665,27 +677,69 @@ export default function Scanner() {
 
               {/* Progress Indicator */}
               {loading && (
-                <div className="p-4 bg-gov-950/90 rounded-xl border border-cyan-500/30 space-y-2.5 text-xs font-mono">
+                <div className="p-4 bg-gov-950/90 rounded-xl border border-cyan-500/30 space-y-2.5 text-xs font-mono shadow-xl">
                   <div className="flex justify-between items-center text-cyan-300">
-                    <span className="font-bold">Execution Progress</span>
-                    <span className="font-extrabold">{Math.min(100, pipelineStep * 20)}%</span>
+                    <span className="font-bold flex items-center space-x-2">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                      <span>Execution Progress</span>
+                      <span className="text-slate-400 font-normal">({elapsedSeconds}s)</span>
+                    </span>
+                    <span className="font-extrabold text-cyan-300">
+                      {pipelineStep >= 6
+                        ? '100%'
+                        : pipelineStep === 5
+                        ? '92%'
+                        : pipelineStep === 4
+                        ? '78%'
+                        : pipelineStep === 3
+                        ? '55%'
+                        : pipelineStep === 2
+                        ? '35%'
+                        : '15%'}
+                    </span>
                   </div>
-                  <div className="w-full bg-gov-900 rounded-full h-2 overflow-hidden border border-white/10">
+                  <div className="w-full bg-gov-900 rounded-full h-2.5 overflow-hidden border border-white/10 relative">
                     <div
-                      className="bg-gradient-to-r from-cyan-400 to-blue-500 h-full transition-all duration-500"
-                      style={{ width: `${Math.min(100, pipelineStep * 20)}%` }}
+                      className={`h-full transition-all duration-300 rounded-full ${
+                        pipelineStep >= 6
+                          ? 'bg-gradient-to-r from-emerald-400 to-green-500'
+                          : 'bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500'
+                      }`}
+                      style={{
+                        width: `${
+                          pipelineStep >= 6
+                            ? 100
+                            : pipelineStep === 5
+                            ? 92
+                            : pipelineStep === 4
+                            ? 78
+                            : pipelineStep === 3
+                            ? 55
+                            : pipelineStep === 2
+                            ? 35
+                            : 15
+                        }%`
+                      }}
                     ></div>
                   </div>
-                  <p className="text-[11px] text-slate-300 flex items-center space-x-2">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-                    <span>
-                      {pipelineStep === 1 && '1. Validating package capture...'}
-                      {pipelineStep === 2 && '2. OpenCV Pre-processing (Auto-Deskew & Contrast CLAHE)...'}
-                      {pipelineStep === 3 && '3. Spatial Dimension & Font Height Extraction...'}
-                      {pipelineStep === 4 && '4. Gemini Flash AI + Deterministic LMPC 2011 Engine...'}
-                      {pipelineStep >= 5 && '5. Compiling Official Form 1 Notice & Evidence...'}
+                  <div className="flex items-center justify-between text-[11px] text-slate-300">
+                    <span className="flex items-center space-x-1.5">
+                      <span className="text-cyan-400 font-bold">
+                        {pipelineStep >= 6 ? '✓' : `[Stage ${Math.min(5, pipelineStep)}/5]`}:
+                      </span>
+                      <span>
+                        {pipelineStep === 1 && '1. Validating package capture & color balance...'}
+                        {pipelineStep === 2 && '2. OpenCV Auto-Deskew & Contrast CLAHE enhancement...'}
+                        {pipelineStep === 3 && '3. Multimodal AI Vision reading statutory label text...'}
+                        {pipelineStep === 4 && '4. Deterministic LMPC 2011 Legal Rule Verification...'}
+                        {pipelineStep === 5 && '5. Compiling Official Form 1 Notice & Evidence Locker...'}
+                        {pipelineStep >= 6 && 'Statutory Inspection Complete!'}
+                      </span>
                     </span>
-                  </p>
+                    <span className="text-[10px] text-slate-400 shrink-0 font-mono">
+                      {pipelineStep >= 6 ? '100% Done' : 'Processing'}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
