@@ -64,8 +64,8 @@ class ImagePreprocessor:
             rotated = cv2.warpAffine(enhanced, rot_mat, (orig_w, orig_h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
 
         # 5. Standardize to fixed canonical resolution if exceeding max dimension
-        # (deterministic aspect-ratio preserving downscale using cv2.INTER_AREA)
-        TARGET_MAX_DIM = 1600
+        # (deterministic aspect-ratio preserving downscale using cv2.INTER_AREA for maximum OCR throughput)
+        TARGET_MAX_DIM = 1280
         max_dim = max(orig_w, orig_h)
         if max_dim > TARGET_MAX_DIM:
             scale = TARGET_MAX_DIM / float(max_dim)
@@ -73,9 +73,9 @@ class ImagePreprocessor:
             std_h = int(round(orig_h * scale))
             rotated = cv2.resize(rotated, (std_w, std_h), interpolation=cv2.INTER_AREA)
 
-        # 6. Save preprocessed output with fixed, deterministic compression parameters
+        # 6. Save preprocessed output with optimized compression for fast API transmission
         import hashlib
-        cv2.imwrite(output_path, rotated, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        cv2.imwrite(output_path, rotated, [cv2.IMWRITE_JPEG_QUALITY, 85])
 
         with open(output_path, "rb") as f:
             image_sha256 = hashlib.sha256(f.read()).hexdigest()

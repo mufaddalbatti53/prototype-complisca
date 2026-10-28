@@ -23,7 +23,7 @@ export const api = {
     return res.data;
   },
 
-  // 2. Inspection Repository
+  // 2. Inspection Repository & Notice Actions
   getInspections: async (params = {}) => {
     const res = await client.get('/inspections', { params });
     return res.data;
@@ -39,11 +39,42 @@ export const api = {
     return res.data;
   },
 
-  // 3. Reports & Notices
+  getAgingBuckets: async () => {
+    const res = await client.get('/inspections/aging-buckets');
+    return res.data;
+  },
+
+  submitPartyReply: async (inspectionId, payload) => {
+    const res = await client.post(`/inspections/${inspectionId}/reply`, payload);
+    return res.data;
+  },
+
+  escalateNotice: async (inspectionId, payload) => {
+    const res = await client.post(`/inspections/${inspectionId}/escalate`, payload);
+    return res.data;
+  },
+
+  // 3. Enterprise Party / Entity Management
+  getParties: async (params = {}) => {
+    const res = await client.get('/parties', { params });
+    return res.data;
+  },
+
+  createParty: async (partyData) => {
+    const res = await client.post('/parties', partyData);
+    return res.data;
+  },
+
+  updatePartyStatus: async (partyId, status) => {
+    const res = await client.patch(`/parties/${partyId}/status`, { status });
+    return res.data;
+  },
+
+  // 4. Reports & Notices
   getPdfReportUrl: (inspectionId) => `${API_BASE}/reports/${inspectionId}/pdf`,
   getJsonReportUrl: (inspectionId) => `${API_BASE}/reports/${inspectionId}/json`,
 
-  // 4. Configurable Rules
+  // 5. Configurable Rules
   getRules: async () => {
     const res = await client.get('/rules');
     return res.data;
@@ -54,7 +85,7 @@ export const api = {
     return res.data;
   },
 
-  // 5. Dashboard Analytics
+  // 6. Dashboard Analytics
   getDashboardAnalytics: async () => {
     const res = await client.get('/analytics/dashboard');
     return res.data;

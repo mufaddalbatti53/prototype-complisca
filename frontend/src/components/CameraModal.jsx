@@ -61,14 +61,29 @@ export default function CameraModal({ isOpen, onClose, onCapture }) {
     }, 'image/jpeg', 0.95);
   };
 
+  const handleClose = () => {
+    if (capturedPhoto?.previewUrl) {
+      URL.revokeObjectURL(capturedPhoto.previewUrl);
+    }
+    setCapturedPhoto(null);
+    onClose();
+  };
+
   const handleConfirm = () => {
     if (capturedPhoto?.file) {
       onCapture(capturedPhoto.file);
+      if (capturedPhoto.previewUrl) {
+        URL.revokeObjectURL(capturedPhoto.previewUrl);
+      }
+      setCapturedPhoto(null);
       onClose();
     }
   };
 
   const handleRetake = () => {
+    if (capturedPhoto?.previewUrl) {
+      URL.revokeObjectURL(capturedPhoto.previewUrl);
+    }
     setCapturedPhoto(null);
     startCamera();
   };
@@ -88,7 +103,7 @@ export default function CameraModal({ isOpen, onClose, onCapture }) {
             <Camera className="w-5 h-5 text-cyan-400" />
             <h3 className="text-sm font-bold text-white">Live Packaging Camera Viewfinder</h3>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white p-1 rounded-lg">
+          <button onClick={handleClose} className="text-gray-400 hover:text-white p-1 rounded-lg">
             <X className="w-5 h-5" />
           </button>
         </div>

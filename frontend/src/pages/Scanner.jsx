@@ -585,7 +585,10 @@ export default function Scanner() {
       {/* Camera Modal */}
       <CameraModal
         isOpen={cameraModalOpen}
-        onClose={() => setCameraModalOpen(false)}
+        onClose={() => {
+          setCameraModalOpen(false);
+          if (!file) setMode('upload');
+        }}
         onCapture={handleCameraCapture}
       />
     </div>

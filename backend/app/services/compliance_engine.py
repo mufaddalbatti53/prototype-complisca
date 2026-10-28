@@ -1,5 +1,5 @@
 import re
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
 class LegalMetrologyRuleEngine:
     """
@@ -47,75 +47,6 @@ class LegalMetrologyRuleEngine:
             if pdp_area_sqcm <= threshold:
                 return min_height
         return 2.5
-
-    @classmethod
-    def verify_all_declarations(
-        cls,
-        declarations: List[Dict[str, Any]],
-        pdp_area_sqcm: float = 100.0,
-        is_single_panel: bool = True
-    ) -> Tuple[List[Dict[str, Any]], float, str, int, int]:
-        """
-        Runs calibrated compliance verification with zero-false-positive heuristics.
-        """
-        prescribed_font_height = cls.get_prescribed_font_height(pdp_area_sqcm)
-        violations_count = 0
-        warnings_count = 0
-        verified_declarations = []
-
-        total_weight = 0
-        achieved_weight = 0
-
-        FIELD_WEIGHTS = {
-            "MANUFACTURER_ADDRESS": 20,
-            "GENERIC_NAME": 10,
-            "NET_QUANTITY": 25,
-            "DATE_OF_MANUFACTURE": 15,
-            "MRP": 25,
-            "CONSUMER_CARE": 20,
-            "COUNTRY_OF_ORIGIN": 10,
-            "UNIT_SALE_PRICE": 10
-        }
-
-        # Canonical Statutory Declarations under Legal Metrology Rules, 2011
-        MANDATORY_SPECS = {
-            "MANUFACTURER_ADDRESS": ("Name and Address of Manufacturer / Packer / Importer", "Rule 6(1)(a)", 20),
-            "GENERIC_NAME": ("Generic or Common Name of Commodity", "Rule 6(1)(b)", 10),
-            "NET_QUANTITY": ("Net Quantity in Standard Units", "Rule 6(1)(c)", 25),
-            "DATE_OF_MANUFACTURE": ("Month & Year of Manufacture / Packing / Expiry", "Rule 6(1)(d)", 15),
-            "MRP": ("Maximum Retail Price (MRP)", "Rule 6(1)(e)", 25),
-            "CONSUMER_CARE": ("Consumer Care Helpline & Contact Details", "Rule 6(1)(f)", 20),
-            "COUNTRY_OF_ORIGIN": ("Country of Origin", "Rule 6(1)(g)", 10),
-            "UNIT_SALE_PRICE": ("Unit Sale Price (USP)", "Rule 6(1)(e) Amendment", 10)
-        }
-
-        # Ensure all mandatory declarations exist in inspection checklist
-        existing_codes = {d.get("field_code") for d in declarations if d.get("field_code")}
-        for m_code, (m_name, m_rule, m_weight) in MANDATORY_SPECS.items():
-            if m_code not in existing_codes:
-                declarations.append({
-                    "field_code": m_code,
-                    "field_name": m_name,
-                    "statutory_rule_ref": m_rule,
-                    "is_present": False,
-                    "detected_value": None,
-                    "raw_ocr_text": None,
-                    "compliance_status": "VIOLATION"
-                })
-
-        # Determine package quantity scale and manufacturer location
-        net_qty_text = ""
-        mfg_address_text = ""
-        for d in declarations:
-            if d.get("field_code") == "NET_QUANTITY":
-                net_qty_text = (d.get("detected_value") or "").lower()
-            elif d.get("field_code") == "MANUFACTURER_ADDRESS":
-                mfg_address_text = f"{d.get('detected_value') or ''} {d.get('raw_ocr_text') or ''}".lower()
-
-        # Check if pack is > 1kg or > 1L
-        is_large_pack = any(term in net_qty_text for term in ["kg", "litre", "liter"]) and not any(term in net_qty_text for term in ["mg", "50 g", "100 g", "250 g", "500 g"])
-
-        is_imported = "import" in mfg_address_text
 
     @classmethod
     def canonicalize_field_code(cls, raw_code: str, raw_name: str = "", raw_rule: str = "") -> str:
@@ -231,15 +162,36 @@ class LegalMetrologyRuleEngine:
         cls,
         declarations: List[Dict[str, Any]],
         pdp_area_sqcm: float = 100.0,
-        is_single_panel: bool = True
+        is_single_panel: bool = True,
+        active_rules_config: Optional[List[Dict[str, Any]]] = None
     ) -> Tuple[List[Dict[str, Any]], float, str, int, int]:
         """
         Runs calibrated compliance verification with zero-false-positive heuristics.
+        Incorporates configurable active rule toggles from database.
         """
         prescribed_font_height = cls.get_prescribed_font_height(pdp_area_sqcm)
         violations_count = 0
         warnings_count = 0
         verified_declarations = []
+
+        # Parse active rules configuration from database if provided
+        active_rules_by_code = {}
+        if active_rules_config:
+            for r in active_rules_config:
+                rc = r.get("rule_code")
+                if rc:
+                    active_rules_by_code[rc] = r
+
+        RULE_CODE_MAP = {
+            "MANUFACTURER_ADDRESS": "LMPC_RULE_6_1_A",
+            "GENERIC_NAME": "LMPC_RULE_6_1_B",
+            "NET_QUANTITY": "LMPC_RULE_6_1_C",
+            "DATE_OF_MANUFACTURE": "LMPC_RULE_6_1_D",
+            "MRP": "LMPC_RULE_6_1_E",
+            "UNIT_SALE_PRICE": "LMPC_RULE_6_1_E",
+            "CONSUMER_CARE": "LMPC_RULE_6_1_F",
+            "COUNTRY_OF_ORIGIN": "LMPC_RULE_6_1_A"
+        }
 
         total_weight = 0
         achieved_weight = 0
@@ -388,13 +340,24 @@ class LegalMetrologyRuleEngine:
             violation_desc = None
             remedy = None
 
+            # Check if this rule is de-activated via the Rules Engine Config in DB
+            associated_rule = RULE_CODE_MAP.get(code)
+            rule_entry = active_rules_by_code.get(associated_rule) if associated_rule else None
+            is_rule_active = rule_entry.get("is_active", True) if rule_entry else True
+
             # Sanitize presence and value
             if not is_present or not detected_value or detected_value.lower() in INVALID_VALUES or detected_value.endswith(":"):
                 is_present = False
                 detected_value = None
 
-            # Case 1: Field is missing, blank, or un-stamped placeholder
-            if not is_present or detected_value is None:
+            # If rule is de-activated in DB, exempt this declaration from violations
+            if not is_rule_active:
+                status = "COMPLIANT"
+                detected_value = detected_value or "Exempt (Deactivated by Authority)"
+                is_present = True
+
+            # Case 1: Field is missing, blank, or un-stamped placeholder (and rule is active)
+            elif not is_present or detected_value is None:
                 if code == "UNIT_SALE_PRICE":
                     status = "VIOLATION"
                     violation_code = "ERR_UNIT_SALE_PRICE_MISSING"

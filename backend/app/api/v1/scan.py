@@ -2,15 +2,19 @@ import os
 import uuid
 import shutil
 import logging
+import datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from backend.app.core.database import get_db
 from backend.app.core.config import settings
 from backend.app.models.inspection import Inspection
 from backend.app.models.declaration import ExtractedDeclaration
+from backend.app.models.rule import ComplianceRule
+from backend.app.models.party import Party
 from backend.app.schemas.inspection import InspectionResponse, UrlScanRequest
 from backend.app.services.preprocessor import ImagePreprocessor
 from backend.app.services.gemini_service import GeminiService
@@ -95,11 +99,24 @@ async def upload_and_analyze_packaging(
                 bbox, img_height=1000, pdp_height_cm=15.0
             )
 
+    # Fetch active configurable rules from database (fixes audit finding 4.1)
+    db_rules = db.query(ComplianceRule).all()
+    active_rules_config = [
+        {
+            "rule_code": r.rule_code,
+            "is_active": r.is_active,
+            "is_mandatory": r.is_mandatory,
+            "parameters": r.parameters
+        }
+        for r in db_rules
+    ]
+
     # 4. Deterministic Rule Engine Verification (100% in code, zero AI scoring)
     verified_decls, overall_score, verdict, violations_cnt, warnings_cnt = (
         LegalMetrologyRuleEngine.verify_all_declarations(
             raw_declarations,
-            pdp_area_sqcm=calc_pdp_area
+            pdp_area_sqcm=calc_pdp_area,
+            active_rules_config=active_rules_config
         )
     )
 
@@ -167,7 +184,21 @@ async def upload_and_analyze_packaging(
     except Exception as e:
         report_pdf_path = None
 
-    # 7. Persist to Database
+    # 7. Persist to Database and link to Regulated Commercial Entity
+    party_filters = []
+    if det_brand:
+        party_filters.append(Party.name.ilike(f"%{det_brand}%"))
+    if store_name:
+        party_filters.append(Party.name.ilike(f"%{store_name}%"))
+    
+    matched_party = db.query(Party).filter(or_(*party_filters)).first() if party_filters else None
+    party_id = matched_party.id if matched_party else None
+
+    if matched_party:
+        matched_party.total_inspections = (matched_party.total_inspections or 0) + 1
+        if violations_cnt > 0:
+            matched_party.total_violations = (matched_party.total_violations or 0) + 1
+
     inspection = Inspection(
         id=file_id,
         product_name=det_product,
@@ -188,7 +219,10 @@ async def upload_and_analyze_packaging(
         source_type="IMAGE_UPLOAD",
         summary=executive_summary,
         notice_number=notice_no,
-        report_pdf_path=report_pdf_path
+        report_pdf_path=report_pdf_path,
+        party_id=party_id,
+        notice_due_date=datetime.datetime.utcnow() + datetime.timedelta(days=15),
+        notice_status="SHOW_CAUSE_ISSUED" if violations_cnt > 0 else "CLOSED"
     )
     db.add(inspection)
     db.flush()
@@ -279,11 +313,23 @@ async def scan_ecommerce_url(
                 bbox, img_height=1000, pdp_height_cm=15.0
             )
 
-    # Verify Rules deterministically in Python
+    db_rules = db.query(ComplianceRule).all()
+    active_rules_config = [
+        {
+            "rule_code": r.rule_code,
+            "is_active": r.is_active,
+            "is_mandatory": r.is_mandatory,
+            "parameters": r.parameters
+        }
+        for r in db_rules
+    ]
+
+    # Verify Rules deterministically in Python with DB active rules
     verified_decls, overall_score, verdict, violations_cnt, warnings_cnt = (
         LegalMetrologyRuleEngine.verify_all_declarations(
             raw_declarations,
-            pdp_area_sqcm=calc_pdp_area
+            pdp_area_sqcm=calc_pdp_area,
+            active_rules_config=active_rules_config
         )
     )
 
@@ -346,6 +392,21 @@ async def scan_ecommerce_url(
     except Exception:
         report_pdf_path = None
 
+    # Auto-link to matching regulated party entity if exists
+    party_filters = []
+    if det_brand:
+        party_filters.append(Party.name.ilike(f"%{det_brand}%"))
+    if req.store_name:
+        party_filters.append(Party.name.ilike(f"%{req.store_name}%"))
+    
+    matched_party = db.query(Party).filter(or_(*party_filters)).first() if party_filters else None
+    party_id = matched_party.id if matched_party else None
+
+    if matched_party:
+        matched_party.total_inspections = (matched_party.total_inspections or 0) + 1
+        if violations_cnt > 0:
+            matched_party.total_violations = (matched_party.total_violations or 0) + 1
+
     inspection = Inspection(
         id=file_id,
         product_name=det_product,
@@ -366,7 +427,10 @@ async def scan_ecommerce_url(
         source_url=req.url,
         summary=executive_summary,
         notice_number=notice_no,
-        report_pdf_path=report_pdf_path
+        report_pdf_path=report_pdf_path,
+        party_id=party_id,
+        notice_due_date=datetime.datetime.utcnow() + datetime.timedelta(days=15),
+        notice_status="SHOW_CAUSE_ISSUED" if violations_cnt > 0 else "CLOSED"
     )
     db.add(inspection)
     db.flush()

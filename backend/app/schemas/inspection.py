@@ -58,11 +58,24 @@ class InspectionResponse(BaseModel):
     summary: Optional[str] = None
     notice_number: Optional[str] = None
     report_pdf_path: Optional[str] = None
+    party_id: Optional[str] = None
+    notice_due_date: Optional[datetime] = None
+    notice_status: Optional[str] = "SHOW_CAUSE_ISSUED"
+    party_reply: Optional[str] = None
+    party_reply_date: Optional[datetime] = None
     created_at: datetime
     declarations: List[ExtractedDeclarationSchema] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
+
+class PartyReplyRequest(BaseModel):
+    reply_text: str
+    rectification_evidence: Optional[str] = None
+
+class NoticeEscalateRequest(BaseModel):
+    action: str # FINAL_WARNING, INITIATE_PROSECUTION, CLOSE_NOTICE
+    notes: Optional[str] = None
 
 class UrlScanRequest(BaseModel):
     url: str

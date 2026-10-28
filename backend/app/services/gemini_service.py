@@ -10,13 +10,12 @@ logger = logging.getLogger(__name__)
 
 # Pinned model hierarchy prioritized for maximum visual accuracy, high availability, and determinism
 FLAGSHIP_MODELS = [
-    getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash"),
-    "gemini-2.5-flash",
-    "gemini-flash-latest",
-    "gemini-3.6-flash",
-    "gemini-2.5-pro",
-    "gemini-3.5-flash",
-    "gemini-flash-lite-latest"
+    getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash"),
+    "gemini-3.8-flash",       # Requested primary SOTA model
+    "gemini-3.5-flash",       # Ultra-reliable SOTA production model (proven ~5s latency)
+    "gemini-3.5-flash-lite",  # Ultra-fast production flash model (proven ~3s latency)
+    "gemini-3.6-flash",       # Deep multimodal fallback
+    "gemini-3.1-flash-lite"   # High-availability fallback
 ]
 
 # PURE OCR & TEXT EXTRACTION PROMPT (Zero legal logic or compliance scoring in the AI prompt)
@@ -133,14 +132,18 @@ class GeminiService:
                 continue
             seen_models.add(model_name)
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={settings.GEMINI_API_KEY}"
+            # Responsive timeout: 10s for 3.8 so any preview delay/503 quickly fails over to 3.5-flash
+            req_timeout = 10 if "3.8" in model_name else 15
             try:
-                response = requests.post(url, json=payload, headers=headers, timeout=25)
+                response = requests.post(url, json=payload, headers=headers, timeout=req_timeout)
                 if response.status_code == 200:
                     result_json = response.json()
                     candidates = result_json.get("candidates", [])
                     if candidates:
                         parts = candidates[0].get("content", {}).get("parts", [])
-                        raw_text = "".join([p.get("text", "") for p in parts if "text" in p])
+                        # Exclude thinking/reasoning parts to isolate pure JSON payload
+                        non_thought_parts = [p.get("text", "") for p in parts if "text" in p and not p.get("thought")]
+                        raw_text = "".join(non_thought_parts) if non_thought_parts else "".join([p.get("text", "") for p in parts if "text" in p])
                         cleaned = raw_text.strip()
                         if cleaned.startswith("```json"):
                             cleaned = cleaned[7:]
@@ -148,8 +151,15 @@ class GeminiService:
                             cleaned = cleaned[3:]
                         if cleaned.endswith("```"):
                             cleaned = cleaned[:-3]
+                        cleaned = cleaned.strip()
 
-                        parsed = json.loads(cleaned.strip())
+                        # If there is extra preamble or trailing text, extract the root JSON object
+                        if not (cleaned.startswith("{") and cleaned.endswith("}")):
+                            json_match = re.search(r'(\{[\s\S]*\})', cleaned)
+                            if json_match:
+                                cleaned = json_match.group(1).strip()
+
+                        parsed = json.loads(cleaned)
                         logger.info(f"Deterministic packaging text extracted using pinned model: {model_name} (seed=42, temp=0.0)")
                         return parsed
                 else:

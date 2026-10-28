@@ -4,15 +4,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend.app.core.config import settings
 from backend.app.core.database import engine, Base, SessionLocal
-from backend.app.api.v1 import scan, inspections, reports, rules, analytics
+from backend.app.api.v1 import scan, inspections, reports, rules, analytics, parties
 from backend.app.api.v1.rules import seed_default_rules
+from backend.app.api.v1.parties import seed_default_parties
 
 # Create Database tables
 Base.metadata.create_all(bind=engine)
 
-# Seed default rules
+# Seed default rules and parties
 with SessionLocal() as db:
     seed_default_rules(db)
+    seed_default_parties(db)
 
 app = FastAPI(
     title="CompliScan — Legal Metrology Compliance Engine",
@@ -40,6 +42,7 @@ app.include_router(inspections.router, prefix=settings.API_V1_STR)
 app.include_router(reports.router, prefix=settings.API_V1_STR)
 app.include_router(rules.router, prefix=settings.API_V1_STR)
 app.include_router(analytics.router, prefix=settings.API_V1_STR)
+app.include_router(parties.router, prefix=settings.API_V1_STR)
 
 @app.api_route("/", methods=["GET", "HEAD", "POST"])
 def root():

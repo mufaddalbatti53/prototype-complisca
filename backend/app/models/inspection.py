@@ -39,9 +39,14 @@ class Inspection(Base):
     summary = Column(Text, nullable=True)
     executive_findings = Column(JSON, default=dict)
     
-    # Statutory Notice Details
+    # Statutory Notice & Aging Bucket Details
     notice_number = Column(String(100), nullable=True)
     report_pdf_path = Column(String(255), nullable=True)
+    party_id = Column(String(50), nullable=True, index=True)
+    notice_due_date = Column(DateTime, nullable=True)
+    notice_status = Column(String(50), default="SHOW_CAUSE_ISSUED") # SHOW_CAUSE_ISSUED, REPLIED, UNDER_REVIEW, PROSECUTION_INITIATED, CLOSED
+    party_reply = Column(Text, nullable=True)
+    party_reply_date = Column(DateTime, nullable=True)
     
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
         "GEMINI_API_KEY", 
         "AQ.Ab8RN6LKIYapKpDDcFouJYcl_-iXuzjFMHdkR6uoQe417JJPug"
     )
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
     
     # Database
     DATABASE_URL: str = os.getenv(
@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = BASE_DIR / "storage" / "uploads"
     PROCESSED_DIR: Path = BASE_DIR / "storage" / "processed"
     REPORT_DIR: Path = BASE_DIR / "storage" / "reports"
+    SAMPLES_DIR: Path = BASE_DIR / "storage" / "samples"
     
     # CORS
     CORS_ORIGINS: list[str] = [
@@ -52,3 +53,4 @@ settings.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 settings.PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 settings.REPORT_DIR.mkdir(parents=True, exist_ok=True)
+settings.SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
