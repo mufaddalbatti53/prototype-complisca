@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { api, STORAGE_BASE } from '../services/api';
 import { subscribeSync } from '../services/sync';
+import { formatIST } from '../utils/date';
 
 export default function Dashboard({ onSelectInspection }) {
   const [stats, setStats] = useState(null);
@@ -267,7 +268,7 @@ export default function Dashboard({ onSelectInspection }) {
                     <td className="p-4 font-mono font-bold text-sky-700">{item.overall_compliance_score}%</td>
                     <td className="p-4 font-mono text-rose-600 font-bold">{item.violations_count}</td>
                     <td className="p-4 text-slate-500 font-mono text-[11px]">
-                      {item.created_at ? new Date(item.created_at).toLocaleString() : '-'}
+                      {formatIST(item.created_at)}
                     </td>
                     <td className="p-4 text-right space-x-2">
                       <button

@@ -1,6 +1,7 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
+from backend.app.core.config import to_ist_iso
 
 class BoundingBox(BaseModel):
     # Normalized coordinates [ymin, xmin, ymax, xmax] (0-1000) or pixel values
@@ -65,6 +66,18 @@ class InspectionResponse(BaseModel):
     party_reply_date: Optional[datetime] = None
     created_at: datetime
     declarations: List[ExtractedDeclarationSchema] = Field(default_factory=list)
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, dt: datetime, _info):
+        return to_ist_iso(dt)
+
+    @field_serializer("notice_due_date")
+    def serialize_due_date(self, dt: Optional[datetime], _info):
+        return to_ist_iso(dt)
+
+    @field_serializer("party_reply_date")
+    def serialize_reply_date(self, dt: Optional[datetime], _info):
+        return to_ist_iso(dt)
 
     class Config:
         from_attributes = True

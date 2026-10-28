@@ -16,6 +16,7 @@ import {
 import { api, STORAGE_BASE } from '../services/api';
 import { useRole } from '../context/RoleContext';
 import { subscribeSync, broadcastSync } from '../services/sync';
+import { formatIST } from '../utils/date';
 
 export default function AgingBuckets({ onSelectInspection }) {
   const { role } = useRole();
@@ -247,6 +248,8 @@ export default function AgingBuckets({ onSelectInspection }) {
                     <span className="text-slate-500">Zone: <span className="text-slate-800">{notice.location}</span></span>
                     <span>•</span>
                     <span className="font-mono text-amber-700">Age: <b>{notice.age_days} days</b></span>
+                    <span>•</span>
+                    <span className="font-mono text-slate-500">Issued: {formatIST(notice.created_at, false)}</span>
                   </div>
 
                   <div className="pt-1 flex items-center space-x-2">

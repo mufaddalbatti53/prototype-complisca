@@ -3,6 +3,8 @@ from sqlalchemy import Column, String, Integer, Float, DateTime, Text, JSON
 from sqlalchemy.orm import relationship
 from backend.app.core.database import Base
 
+from backend.app.core.config import get_ist_now
+
 class Inspection(Base):
     __tablename__ = "inspections"
 
@@ -48,7 +50,7 @@ class Inspection(Base):
     party_reply = Column(Text, nullable=True)
     party_reply_date = Column(DateTime, nullable=True)
     
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=get_ist_now)
+    updated_at = Column(DateTime, default=get_ist_now, onupdate=get_ist_now)
 
     declarations = relationship("ExtractedDeclaration", back_populates="inspection", cascade="all, delete-orphan")

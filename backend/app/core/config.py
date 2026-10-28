@@ -58,6 +58,34 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+# Indian Standard Time (IST - UTC+05:30) statutory timezone helpers
+import datetime
+IST_TIMEZONE = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+
+def get_ist_now() -> datetime.datetime:
+    """Returns current datetime in Indian Standard Time (UTC+05:30)."""
+    return datetime.datetime.now(IST_TIMEZONE)
+
+def to_ist(dt) -> datetime.datetime:
+    """Converts a naive or aware datetime/ISO-string to IST datetime."""
+    if dt is None:
+        return get_ist_now()
+    if isinstance(dt, str):
+        try:
+            parsed = datetime.datetime.fromisoformat(dt.replace("Z", "+00:00"))
+            return to_ist(parsed)
+        except Exception:
+            return get_ist_now()
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
+    return dt.astimezone(IST_TIMEZONE)
+
+def to_ist_iso(dt) -> str | None:
+    """Returns ISO 8601 formatted string with +05:30 IST timezone."""
+    if dt is None:
+        return None
+    return to_ist(dt).isoformat()
+
 # Ensure directories exist
 settings.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
-from backend.app.core.config import settings
+from backend.app.core.config import settings, to_ist_iso
 from backend.app.models.inspection import Inspection
 from backend.app.services.report_generator import InspectionReportGenerator
 
@@ -103,6 +103,6 @@ def export_json_report(
             }
             for d in inspection.declarations
         ],
-        "created_at": inspection.created_at.isoformat() if inspection.created_at else None
+        "created_at": to_ist_iso(inspection.created_at)
     }
     return JSONResponse(content=data)

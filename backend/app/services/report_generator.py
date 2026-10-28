@@ -8,6 +8,7 @@ from reportlab.platypus import (
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch, cm
 import datetime
+from backend.app.core.config import to_ist, get_ist_now
 
 class InspectionReportGenerator:
     @staticmethod
@@ -80,9 +81,10 @@ class InspectionReportGenerator:
         story.append(Spacer(1, 10))
         story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#0B132B'), spaceBefore=2, spaceAfter=8))
 
-        # 2. Metadata Grid
-        notice_no = inspection_data.get("notice_number") or f"LMPC-INSP-{datetime.datetime.now().strftime('%Y%m%d%H%M')}"
-        created_at_str = datetime.datetime.now().strftime("%d-%b-%Y %H:%M:%S IST")
+        # 2. Metadata Grid (Formatted in Indian Standard Time IST)
+        created_dt_ist = to_ist(inspection_data.get("created_at"))
+        notice_no = inspection_data.get("notice_number") or f"LMPC-INSP-{created_dt_ist.strftime('%Y%m%d%H%M')}"
+        created_at_str = created_dt_ist.strftime("%d-%b-%Y %I:%M:%S %p IST")
         
         verdict = inspection_data.get("compliance_verdict", "NON_COMPLIANT")
         verdict_color = colors.HexColor('#E74C3C') if verdict == "NON_COMPLIANT" else (colors.HexColor('#F39C12') if verdict == "WARNING" else colors.HexColor('#2ECC71'))

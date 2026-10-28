@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, FileDown, Trash2, Calendar, Store, MapPin, Eye, ExternalLink } from 'lucide-react';
 import { api, STORAGE_BASE } from '../services/api';
 import { subscribeSync, broadcastSync } from '../services/sync';
+import { formatIST } from '../utils/date';
 
 export default function History({ onSelectInspection }) {
   const [inspections, setInspections] = useState([]);
@@ -201,7 +202,7 @@ export default function History({ onSelectInspection }) {
                       </div>
                       <div className="flex items-center space-x-2 text-slate-500 text-[11px]">
                         <Calendar className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                        <span>{new Date(item.created_at).toLocaleString()}</span>
+                        <span>{formatIST(item.created_at)}</span>
                       </div>
                     </div>
                   </div>

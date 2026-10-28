@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 from backend.app.core.database import get_db
+from backend.app.core.config import to_ist_iso
 from backend.app.models.inspection import Inspection
 from backend.app.models.declaration import ExtractedDeclaration
 from backend.app.schemas.analytics import DashboardStats, ViolationBreakdown, CategoryStat
@@ -84,7 +85,7 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
             "compliance_verdict": r.compliance_verdict,
             "overall_compliance_score": r.overall_compliance_score,
             "violations_count": r.violations_count,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "created_at": to_ist_iso(r.created_at),
             "thumbnail_url": r.images[0].get("preprocessed_url") if r.images else None
         }
         for r in recent_records

@@ -14,6 +14,7 @@ import {
 import { api } from '../services/api';
 import { useRole } from '../context/RoleContext';
 import { subscribeSync, broadcastSync } from '../services/sync';
+import { formatIST, formatISTDate } from '../utils/date';
 import InspectionCanvas from '../components/InspectionCanvas';
 import DeclarationTable from '../components/DeclarationTable';
 import FontAnalysisCard from '../components/FontAnalysisCard';
@@ -120,7 +121,7 @@ export default function InspectionDetail({ inspectionId, onBack }) {
                 Ref: {inspection.notice_number || inspection.id}
               </span>
               <span className="text-xs text-slate-500 font-mono">
-                {new Date(inspection.created_at).toLocaleString()}
+                {formatIST(inspection.created_at)}
               </span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${
                 inspection.notice_status === 'REPLIED'
@@ -186,7 +187,7 @@ export default function InspectionDetail({ inspectionId, onBack }) {
                   <div className="flex items-center justify-between text-[11px] text-emerald-700 font-bold">
                     <span>✓ Legal Reply Logged</span>
                     <span className="font-mono text-slate-500">
-                      {inspection.party_reply_date ? new Date(inspection.party_reply_date).toLocaleDateString() : 'Recorded'}
+                      {inspection.party_reply_date ? formatISTDate(inspection.party_reply_date) : 'Recorded'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-800 leading-relaxed font-mono">

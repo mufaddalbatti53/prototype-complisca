@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
 from backend.app.core.database import get_db
-from backend.app.core.config import settings
+from backend.app.core.config import settings, to_ist_iso
 from backend.app.models.inspection import Inspection
 from backend.app.models.declaration import ExtractedDeclaration
 from backend.app.models.party import Party
@@ -84,7 +84,7 @@ def get_notice_aging_buckets(db: Session = Depends(get_db)):
             "store_name": n.store_name,
             "location": n.location,
             "violations_count": n.violations_count,
-            "created_at": created.isoformat(),
+            "created_at": to_ist_iso(created),
             "age_days": age_days,
             "notice_status": n.notice_status or "SHOW_CAUSE_ISSUED",
             "has_reply": bool(n.party_reply),
