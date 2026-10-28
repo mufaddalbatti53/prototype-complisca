@@ -98,7 +98,7 @@ export default function Documents() {
   };
 
   const handleVerifyRenewal = (docId) => {
-    verifyDocumentRenewal(docId, role, roleConfig.title, 'Certified genuine after physical seal comparison.');
+    verifyDocumentRenewal(docId, 'VERIFIED', 'Certified genuine after physical seal comparison.', role, roleConfig.title);
   };
 
   // Run Gemini Vision OCR on document

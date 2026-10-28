@@ -715,17 +715,37 @@ export function AicteProvider({ children }) {
   // =========================================================================
   // DOCUMENT VALIDITY ACTIONS (Module E)
   // =========================================================================
-  const submitDocumentRenewal = (docId, { issuedOn, expiryDate, fileUrl, note }, actorRole, actorName) => {
+  const submitDocumentRenewal = (docId, fileUrlOrObj, issuedOn, expiryDate, note, actorRole, actorName) => {
+    let payload = {};
+    let role = actorRole || 'INSTITUTION';
+    let name = actorName || 'Institution Registrar';
+
+    if (typeof fileUrlOrObj === 'object' && fileUrlOrObj !== null) {
+      payload = fileUrlOrObj;
+      role = issuedOn || role;
+      name = expiryDate || name;
+    } else {
+      payload = {
+        fileUrl: fileUrlOrObj,
+        issuedOn,
+        expiryDate,
+        note
+      };
+    }
+
     setDocuments((prev) =>
       prev.map((doc) => {
         if (doc.id !== docId) return doc;
 
+        const effectiveIssued = payload.issuedOn || simulatedDate;
+        const effectiveExpiry = payload.expiryDate || '2029-10-28';
+
         logAuditEvent({
-          actorRole,
-          actorName,
+          actorRole: role,
+          actorName: name,
           action: 'DOCUMENT_RENEWAL_SUBMITTED',
           refId: doc.id,
-          note: `Submitted renewal for ${doc.docType}. New validity: ${issuedOn} to ${expiryDate}`
+          note: `Submitted renewal for ${doc.docType}. New validity: ${effectiveIssued} to ${effectiveExpiry}`
         });
 
         addNotification({
@@ -743,10 +763,10 @@ export function AicteProvider({ children }) {
           ...doc,
           status: 'RENEWAL_SUBMITTED',
           pendingRenewal: {
-            issuedOn,
-            expiryDate,
-            fileUrl: fileUrl || '/docs/renewal_certificate.pdf',
-            note,
+            issuedOn: effectiveIssued,
+            expiryDate: effectiveExpiry,
+            fileUrl: payload.fileUrl || '/docs/renewal_certificate.pdf',
+            note: payload.note || '',
             submittedAt: simulatedDate
           }
         };
@@ -754,18 +774,25 @@ export function AicteProvider({ children }) {
     );
   };
 
-  const verifyDocumentRenewal = (docId, verdict, note, actorRole, actorName) => {
+  const verifyDocumentRenewal = (docId, verdict = 'VERIFIED', note = '', actorRole = 'REGIONAL_OFFICER', actorName = 'Regional Officer') => {
+    const isApproved = verdict !== 'REJECTED';
+
     setDocuments((prev) =>
       prev.map((doc) => {
         if (doc.id !== docId) return doc;
 
-        if (verdict === 'VERIFIED' && doc.pendingRenewal) {
+        const pending = doc.pendingRenewal || {
+          issuedOn: simulatedDate,
+          expiryDate: new Date(new Date(simulatedDate).setFullYear(new Date(simulatedDate).getFullYear() + 3)).toISOString().split('T')[0]
+        };
+
+        if (isApproved) {
           logAuditEvent({
             actorRole,
             actorName,
             action: 'DOCUMENT_RENEWAL_VERIFIED',
             refId: doc.id,
-            note: `Renewal approved. Extended validity to ${doc.pendingRenewal.expiryDate}`
+            note: `Renewal approved. Extended validity to ${pending.expiryDate}`
           });
 
           showToast(`Document ${doc.docType} verified and renewed!`, 'success');
@@ -773,8 +800,9 @@ export function AicteProvider({ children }) {
           return {
             ...doc,
             status: 'RENEWED',
-            issuedOn: doc.pendingRenewal.issuedOn,
-            expiryDate: doc.pendingRenewal.expiryDate,
+            issuedOn: pending.issuedOn,
+            expiryDate: pending.expiryDate,
+            daysToExpiry: 1095,
             verifiedAt: simulatedDate,
             verifiedBy: actorName,
             pendingRenewal: null
@@ -921,6 +949,7 @@ export function AicteProvider({ children }) {
         verifyUndertaking,
         submitDocumentRenewal,
         verifyDocumentRenewal,
+        updateConfig: updateConfigJson,
         updateConfigJson,
         resetConfigDefaults,
         runOneClickDemo

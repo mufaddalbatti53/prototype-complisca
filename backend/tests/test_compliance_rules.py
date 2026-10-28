@@ -22,7 +22,7 @@ def test_mrp_tax_inclusivity_compliant():
             "measured_font_height_mm": 3.0
         }
     ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0)
+    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
     assert verified[0]["compliance_status"] == "COMPLIANT"
     assert viols == 0
 
@@ -37,7 +37,7 @@ def test_mrp_missing_tax_clause_violation():
             "measured_font_height_mm": 2.5
         }
     ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0)
+    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
     assert verified[0]["compliance_status"] == "VIOLATION"
     assert verified[0]["violation_code"] == "ERR_MRP_TAX_INCLUSION_MISSING"
     assert viols == 1
@@ -53,7 +53,7 @@ def test_mrp_illegal_taxes_extra_violation():
             "measured_font_height_mm": 2.5
         }
     ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0)
+    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
     assert verified[0]["compliance_status"] == "VIOLATION"
     assert verified[0]["violation_code"] == "ERR_ILLEGAL_TAXES_EXTRA"
     assert viols == 1
@@ -69,7 +69,7 @@ def test_net_quantity_non_standard_unit():
             "measured_font_height_mm": 2.5
         }
     ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0)
+    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
     assert verified[0]["compliance_status"] == "VIOLATION"
     assert verified[0]["violation_code"] == "ERR_NON_STANDARD_UNIT_SYMBOL"
     assert viols == 1
@@ -85,7 +85,7 @@ def test_net_quantity_prohibited_approx():
             "measured_font_height_mm": 3.0
         }
     ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0)
+    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
     assert verified[0]["compliance_status"] == "VIOLATION"
     assert verified[0]["violation_code"] == "ERR_PROHIBITED_QUANTITY_TERM"
 
@@ -100,6 +100,28 @@ def test_consumer_care_incomplete_missing_email():
             "measured_font_height_mm": 2.0
         }
     ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0)
+    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
     assert verified[0]["compliance_status"] == "VIOLATION"
     assert verified[0]["violation_code"] == "ERR_CONSUMER_CARE_INCOMPLETE"
+
+def test_full_package_requires_all_mandatory_fields():
+    # When require_all_mandatory=True, missing mandatory declarations on the package must be flagged
+    single_decl = [
+        {
+            "field_code": "MRP",
+            "field_name": "Maximum Retail Price",
+            "statutory_rule_ref": "Rule 6(1)(e)",
+            "is_present": True,
+            "detected_value": "MRP Rs. 45.00 (inclusive of all taxes)",
+            "measured_font_height_mm": 3.0
+        }
+    ]
+    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(
+        single_decl, pdp_area_sqcm=80.0, require_all_mandatory=True
+    )
+    # The single MRP is compliant, but the other 6-7 mandatory package declarations are missing
+    assert viols > 0
+    assert verdict == "NON_COMPLIANT"
+    missing_codes = [d["field_code"] for d in verified if d.get("compliance_status") == "VIOLATION"]
+    assert "MANUFACTURER_ADDRESS" in missing_codes
+    assert "NET_QUANTITY" in missing_codes

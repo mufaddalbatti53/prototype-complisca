@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, field_serializer, ConfigDict
 from backend.app.core.config import to_ist_iso
 
 class BoundingBox(BaseModel):
@@ -26,8 +26,7 @@ class ExtractedDeclarationSchema(BaseModel):
     violation_description: Optional[str] = None
     legal_remedy_recommendation: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ImageEvidence(BaseModel):
     original_url: str
@@ -79,8 +78,7 @@ class InspectionResponse(BaseModel):
     def serialize_reply_date(self, dt: Optional[datetime], _info):
         return to_ist_iso(dt)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PartyReplyRequest(BaseModel):
     reply_text: str

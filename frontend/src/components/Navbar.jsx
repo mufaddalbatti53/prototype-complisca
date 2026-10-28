@@ -40,6 +40,15 @@ export default function Navbar({ activeTab, setActiveTab }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifDrawerOpen, setNotifDrawerOpen] = useState(false);
 
+  const handleSelectRole = (newRoleId) => {
+    changeRole(newRoleId);
+    setRoleMenuOpen(false);
+    const targetRole = allRoles[newRoleId];
+    if (targetRole && !targetRole.allowedTabs.includes(activeTab)) {
+      setActiveTab(targetRole.allowedTabs[0] || 'applications');
+    }
+  };
+
   // 8 AICTE Navigation Tabs
   const masterNavItems = [
     { id: 'applications', label: 'Applications', icon: FileText, tag: 'Workflow' },
@@ -214,8 +223,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
                             key={r.id}
                             type="button"
                             onClick={() => {
-                              changeRole(r.id);
-                              setRoleMenuOpen(false);
+                              handleSelectRole(r.id);
                             }}
                             className={`w-full text-left p-2.5 rounded-xl text-xs transition-all flex items-start space-x-2.5 ${
                               role === r.id

@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True, env_file=f"{BASE_DIR}/.env")
     PROJECT_NAME: str = "CompliScan"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
@@ -52,9 +53,6 @@ class Settings(BaseSettings):
         "*"
     ]
     
-    class Config:
-        case_sensitive = True
-        env_file = f"{BASE_DIR}/.env"
 
 settings = Settings()
 

@@ -1,7 +1,8 @@
 from typing import Optional, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class RuleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     rule_code: str
     rule_name: str
@@ -12,9 +13,6 @@ class RuleResponse(BaseModel):
     parameters: Dict[str, Any]
     description: Optional[str] = None
     statutory_penalty_summary: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 class RuleUpdate(BaseModel):
     is_mandatory: Optional[bool] = None

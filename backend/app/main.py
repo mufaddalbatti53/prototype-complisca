@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend.app.core.config import settings
 from backend.app.core.database import engine, Base, SessionLocal
+from backend.app import models
 from backend.app.api.v1 import scan, inspections, reports, rules, analytics, parties, aicte
 from backend.app.api.v1.rules import seed_default_rules
 from backend.app.api.v1.parties import seed_default_parties

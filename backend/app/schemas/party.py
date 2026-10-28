@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class PartyBase(BaseModel):
     name: str
@@ -19,11 +19,9 @@ class PartyStatusUpdate(BaseModel):
     status: str # APPROVED, SUSPENDED, REVOKED, PENDING_REVIEW
 
 class PartyResponse(PartyBase):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     total_inspections: int = 0
     total_violations: int = 0
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True

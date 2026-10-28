@@ -163,7 +163,8 @@ class LegalMetrologyRuleEngine:
         declarations: List[Dict[str, Any]],
         pdp_area_sqcm: float = 100.0,
         is_single_panel: bool = True,
-        active_rules_config: Optional[List[Dict[str, Any]]] = None
+        active_rules_config: Optional[List[Dict[str, Any]]] = None,
+        require_all_mandatory: bool = True
     ) -> Tuple[List[Dict[str, Any]], float, str, int, int]:
         """
         Runs calibrated compliance verification with zero-false-positive heuristics.
@@ -418,19 +419,20 @@ class LegalMetrologyRuleEngine:
                         "confidence_score": 0.95
                     })
 
-        # Step 3: Ensure all mandatory declarations exist in inspection checklist
-        existing_codes = {d.get("field_code") for d in declarations if d.get("field_code")}
-        for m_code, (m_name, m_rule, m_weight) in MANDATORY_SPECS.items():
-            if m_code not in existing_codes:
-                declarations.append({
-                    "field_code": m_code,
-                    "field_name": m_name,
-                    "statutory_rule_ref": m_rule,
-                    "is_present": False,
-                    "detected_value": None,
-                    "raw_ocr_text": None,
-                    "compliance_status": "VIOLATION"
-                })
+        # Step 3: Ensure all mandatory declarations exist in inspection checklist (when verifying full packaging)
+        if require_all_mandatory:
+            existing_codes = {d.get("field_code") for d in declarations if d.get("field_code")}
+            for m_code, (m_name, m_rule, m_weight) in MANDATORY_SPECS.items():
+                if m_code not in existing_codes:
+                    declarations.append({
+                        "field_code": m_code,
+                        "field_name": m_name,
+                        "statutory_rule_ref": m_rule,
+                        "is_present": False,
+                        "detected_value": None,
+                        "raw_ocr_text": None,
+                        "compliance_status": "VIOLATION"
+                    })
 
         # Determine package quantity scale and manufacturer location
         net_qty_text = ""
@@ -603,11 +605,25 @@ class LegalMetrologyRuleEngine:
                     has_web = bool(re.search(r'www\.[\w\.-]+\.\w+', detected_value))
 
                     if not has_email and not has_phone and not has_web:
+                        status = "VIOLATION"
+                        violation_code = "ERR_CONSUMER_CARE_INCOMPLETE"
+                        violation_title = "Incomplete Consumer Redressal Channel"
+                        violation_desc = "Consumer Care must provide an active telephone helpline and email address under Rule 6(1)(f)."
+                        remedy = "Provide toll-free helpline number and email ID."
+                        violations_count += 1
+                    elif not has_email:
+                        status = "VIOLATION"
+                        violation_code = "ERR_CONSUMER_CARE_INCOMPLETE"
+                        violation_title = "Missing Mandatory Consumer Email Address"
+                        violation_desc = "Rule 6(1)(f) (as amended) explicitly mandates the declaration of an official consumer redressal e-mail address."
+                        remedy = "Declare official consumer care email address (e.g. care@brand.com)."
+                        violations_count += 1
+                    elif not has_phone and not has_web:
                         status = "WARNING"
                         violation_code = "WARN_CONSUMER_CARE_PARTIAL"
                         violation_title = "Incomplete Consumer Redressal Channel"
-                        violation_desc = "Consumer Care must provide an active telephone helpline or email address."
-                        remedy = "Provide toll-free helpline number and email ID."
+                        violation_desc = "Consumer Care must provide an active telephone helpline or website."
+                        remedy = "Provide toll-free helpline number."
                         warnings_count += 1
 
             # Score computation
