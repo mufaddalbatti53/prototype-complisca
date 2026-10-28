@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend.app.core.config import settings
 from backend.app.core.database import engine, Base, SessionLocal
-from backend.app.api.v1 import scan, inspections, reports, rules, analytics, parties
+from backend.app.api.v1 import scan, inspections, reports, rules, analytics, parties, aicte
 from backend.app.api.v1.rules import seed_default_rules
 from backend.app.api.v1.parties import seed_default_parties
 
@@ -133,15 +133,17 @@ app.include_router(reports.router, prefix=settings.API_V1_STR)
 app.include_router(rules.router, prefix=settings.API_V1_STR)
 app.include_router(analytics.router, prefix=settings.API_V1_STR)
 app.include_router(parties.router, prefix=settings.API_V1_STR)
+app.include_router(aicte.router, prefix=settings.API_V1_STR)
 
 @app.api_route("/", methods=["GET", "HEAD", "POST"])
 def root():
     return {
-        "system": "CompliScan Legal Metrology Compliance Engine",
+        "system": "CompliScan — AICTE Approval Workflow & Statutory Compliance Engine",
+        "problem_statement": "PS 26262 (AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System)",
+        "team": "TECH SETU",
         "version": settings.VERSION,
-        "build": "2026.10.28.05-ist-fix",
+        "build": "2026.10.28-aicte-v1",
         "status": "OPERATIONAL",
-        "jurisdiction": "Legal Metrology Act, 2009 & LMPC Rules, 2011 (India)",
         "docs": "/docs"
     }
 

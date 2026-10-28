@@ -1,98 +1,127 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   color-scheme: light;
+
+  /* "Bharat Civic" Design System (AICTE Gazette Palette in OKLCH) */
+  --background: oklch(0.985 0.005 90);        /* warm paper white */
+  --foreground: oklch(0.22 0.04 260);         /* ink navy text */
+  --primary: oklch(0.35 0.09 255);            /* deep civic navy */
+  --primary-foreground: oklch(0.98 0.005 90); /* paper white on navy */
+  --accent: oklch(0.78 0.13 80);              /* gazette gold */
+  --accent-foreground: oklch(0.3 0.06 80);    /* dark gold text */
+  --success: oklch(0.6 0.13 155);             /* compliant / verified green */
+  --warning: oklch(0.75 0.14 75);             /* due-soon / open amber */
+  --destructive: oklch(0.58 0.2 25);          /* overdue / expired / escalated crimson */
+  --muted: oklch(0.96 0.005 90);              /* soft table zebra tint */
+  --muted-foreground: oklch(0.52 0.03 260);   /* institutional secondary slate */
+  --border: oklch(0.9 0.01 90);               /* hairline 1px border */
+  --card: #ffffff;                            /* crisp document card */
+  --info: oklch(0.65 0.15 235);               /* in-queue sky blue */
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #F8FAFC;
-  color: #0F172A;
+  font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
   background-image: 
-    radial-gradient(at 0% 0%, rgba(2, 132, 199, 0.04) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(26, 44, 98, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(197, 160, 40, 0.02) 0px, transparent 50%);
   background-attachment: fixed;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Crisp Clean Card System */
-.glass-panel {
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+/* Institutional Headings with Authority */
+h1, h2, h3, .font-serif-authority {
+  font-family: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
 }
 
-.glass-panel-subtle {
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
+.font-mono-code {
+  font-family: 'IBM Plex Mono', Consolas, monospace;
 }
 
-.glass-panel-hover {
+/* Civic Document Cards (Hairline borders, no heavy shadows) */
+.civic-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+}
+
+.civic-card-subtle {
+  background: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.civic-card-hover {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.glass-panel-hover:hover {
-  border-color: #38BDF8;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+.civic-card-hover:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06);
 }
 
-/* Custom Input Styling */
-.glass-input {
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  color: #0F172A;
+/* Civic Input Field */
+.civic-input {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--foreground);
   transition: all 0.15s ease;
 }
 
-.glass-input:focus {
-  border-color: #0284C7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+.civic-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12);
   outline: none;
 }
 
-/* Custom Sleek Scrollbar */
+/* Gazette Gold Left Border on Selected Row */
+.row-selected {
+  border-left: 3px solid var(--accent) !important;
+  background-color: oklch(0.975 0.015 85) !important;
+}
+
+/* Stamp Badge (Uppercase, letter-spaced, 11px) */
+.stamp-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+/* Golden Kicker Line (like official gazettes) */
+.kicker-line {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #926c05; /* Deep gazette gold */
+}
+
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: var(--muted);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 9999px;
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
-}
-
-/* Radar pulse animation */
-@keyframes radar-pulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.6);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 8px rgba(2, 132, 199, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(2, 132, 199, 0);
-  }
-}
-
-.radar-badge {
-  animation: radar-pulse 2s infinite;
+  background: #94a3b8;
 }

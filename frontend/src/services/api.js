@@ -101,6 +101,26 @@ export const api = {
     return res.data;
   },
 
+  // 7. AICTE Approval Workflow & Multimodal OCR (PS 26262)
+  scanAicteDocument: async (formData) => {
+    const res = await client.post('/aicte/scan-document', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
+  scanUndertakingEvidence: async (formData) => {
+    const res = await client.post('/aicte/scan-evidence', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
+  getAicteCaseSummary: async (appData) => {
+    const res = await client.post('/aicte/case-summary', appData);
+    return res.data;
+  },
+
   // Health check
   checkHealth: async () => {
     const res = await axios.get(`${BACKEND_URL}/api/health`);

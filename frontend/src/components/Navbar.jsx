@@ -1,175 +1,294 @@
 import React, { useState } from 'react';
 import {
-  Scale,
-  Scan,
+  FileText,
   BarChart3,
-  History,
-  Shield,
-  Clock,
+  CalendarDays,
+  ShieldAlert,
+  FileCheck2,
   Building2,
+  Sliders,
+  History,
   ChevronDown,
   UserCheck,
+  Bell,
+  Clock,
+  FastForward,
+  RotateCcw,
+  Sparkles,
   Menu,
-  X
+  X,
+  AlertTriangle,
+  AlertOctagon,
+  Info,
+  CheckCircle2
 } from 'lucide-react';
 import { useRole } from '../context/RoleContext';
+import { useAicte } from '../context/AicteContext';
 
 export default function Navbar({ activeTab, setActiveTab }) {
   const { role, roleConfig, changeRole, allRoles } = useRole();
+  const {
+    simulatedDate,
+    advanceDays,
+    resetClock,
+    notifications,
+    acknowledgeNotification,
+    runOneClickDemo
+  } = useAicte();
+
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifDrawerOpen, setNotifDrawerOpen] = useState(false);
 
+  // 8 AICTE Navigation Tabs
   const masterNavItems = [
-    { id: 'scanner', label: 'Inspector', icon: Scan },
-    { id: 'dashboard', label: 'Enforcement', icon: BarChart3 },
-    { id: 'history', label: 'Audit history', icon: History },
-    { id: 'aging', label: 'Notices', icon: Clock },
-    { id: 'parties', label: 'Entities', icon: Building2 },
-    { id: 'rules', label: 'Rules', icon: Shield },
+    { id: 'applications', label: 'Applications', icon: FileText, tag: 'Workflow' },
+    { id: 'pendency', label: 'Pendency', icon: BarChart3, tag: 'Dashboard' },
+    { id: 'evc', label: 'EVC', icon: CalendarDays, tag: 'Visits' },
+    { id: 'compliance', label: 'Compliance', icon: ShieldAlert, tag: 'Undertakings' },
+    { id: 'documents', label: 'Documents', icon: FileCheck2, tag: 'Lease & NOC' },
+    { id: 'institutions', label: 'Institutions', icon: Building2, tag: 'Registry' },
+    { id: 'timelines', label: 'Timelines', icon: Sliders, tag: 'APH Rules' },
+    { id: 'audit', label: 'Audit Trail', icon: History, tag: 'Logs' },
   ];
 
-  // Filter navigation items based on current role's allowed tabs
+  // Filter based on allowed tabs for current role
   const navItems = masterNavItems.filter((item) =>
     roleConfig.allowedTabs.includes(item.id)
   );
 
+  const unreadNotifs = notifications.filter((n) => !n.acknowledged);
+
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-18">
-          {/* Brand Logo & Authority Label */}
-          <div
-            className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer group select-none shrink-0"
-            onClick={() => {
-              setActiveTab(roleConfig.allowedTabs[0] || 'scanner');
-              setMobileMenuOpen(false);
-            }}
-          >
-            <div className="relative shrink-0">
-              <img
-                src="/logo-icon.png"
-                alt="CompliScan Logo"
-                className="w-8 h-8 sm:w-9 sm:h-9 object-contain group-hover:scale-105 transition-transform"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-              <div className="hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 items-center justify-center text-white shadow-md">
-                <Scale className="w-4 h-4 sm:w-5 sm:h-5" />
-              </div>
-            </div>
-
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-1.5 sm:space-x-2">
-                <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 font-sans">
-                  Compli<span className="text-[#0284c7]">Scan</span>
-                </span>
-                <span className="hidden sm:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200/80">
-                  Tech Setu
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium tracking-tight hidden sm:block">
-                Legal Metrology (Packaged Commodities) Rules, 2011
-              </p>
-            </div>
+    <>
+      <header className="sticky top-0 z-50 bg-[#ffffff] border-b border-[oklch(0.9_0.01_90)] shadow-xs">
+        {/* Top Gazette Bar: Authority Identification & Simulated Clock */}
+        <div className="bg-[#1e293b] text-white px-4 sm:px-6 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2 border-b border-slate-700">
+          <div className="flex items-center space-x-2 font-mono text-[11px] text-slate-300">
+            <span className="text-amber-400 font-bold tracking-wider">AICTE REGULATION BUREAU</span>
+            <span>·</span>
+            <span>PS 26262</span>
+            <span>·</span>
+            <span className="text-slate-300 hidden sm:inline">APPROVAL PROCESS HANDBOOK (APH) AUTOMATION</span>
           </div>
 
-          {/* Navigation Links (Desktop - centered pills) */}
-          <nav className="hidden lg:flex items-center space-x-1">
-            {navItems.map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 ${
-                    isActive
-                      ? 'bg-sky-100 text-sky-800 font-bold border border-sky-200/60 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
+          {/* Time-Machine Clock Simulation Widget (Evaluator Demo Feature) */}
+          <div className="flex items-center space-x-2 ml-auto">
+            <div className="flex items-center space-x-1.5 bg-slate-800/90 border border-slate-600 px-2.5 py-0.5 rounded text-[11px] font-mono text-amber-300">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Simulated Date: <strong>{simulatedDate}</strong></span>
+            </div>
 
-          {/* Officer Telemetry & Persona Switcher (Desktop) */}
-          <div className="hidden lg:flex items-center space-x-3">
-            <div className="relative">
+            <div className="flex items-center space-x-1">
               <button
-                onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-                className="text-right hover:bg-slate-50 p-1.5 rounded-xl border border-transparent hover:border-slate-200 transition"
-                title="Switch Officer Persona (Prototype Testing)"
+                onClick={() => advanceDays(1)}
+                className="bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 hover:text-white px-2 py-0.5 rounded text-[10.5px] font-mono font-medium transition"
+                title="Advance clock by 1 day"
               >
-                <div className="text-xs font-extrabold text-slate-900 leading-tight">
-                  {roleConfig.title}
-                </div>
-                <div className="flex items-center space-x-1 justify-end text-[10px] text-slate-500 font-mono mt-0.5">
-                  <span>{role === 'SUPERADMIN' ? 'DIRECTOR-GEN-DL-01' : 'OFFICER-DL-2026-084'}</span>
-                  <span>•</span>
-                  <span className="text-sky-600 font-semibold">{roleConfig.name}</span>
-                  <ChevronDown className="w-2.5 h-2.5 text-slate-400 inline ml-0.5" />
-                </div>
+                +1d
               </button>
-
-              {roleMenuOpen && (
-                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-slate-200 shadow-xl p-2 z-50 space-y-1">
-                  <div className="px-3 py-2 border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                    Switch Active Persona (Prototype Testing)
-                  </div>
-                  {Object.values(allRoles).map((r) => (
-                    <button
-                      key={r.id}
-                      onClick={() => {
-                        changeRole(r.id);
-                        setRoleMenuOpen(false);
-                        if (!r.allowedTabs.includes(activeTab)) {
-                          setActiveTab(r.allowedTabs[0]);
-                        }
-                      }}
-                      className={`w-full text-left p-2.5 rounded-xl text-xs transition flex flex-col space-y-0.5 ${
-                        role === r.id
-                          ? 'bg-sky-50 border border-sky-200 text-sky-800'
-                          : 'hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold">{r.name}</span>
-                        {role === r.id && (
-                          <span className="text-[10px] text-sky-600 font-mono font-bold">ACTIVE</span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-slate-500">{r.title}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <button
+                onClick={() => advanceDays(7)}
+                className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded text-[10.5px] font-mono font-medium transition flex items-center space-x-1"
+                title="Advance clock by 7 days to trigger SLA warnings"
+              >
+                <FastForward className="w-3 h-3" />
+                <span>+7d</span>
+              </button>
+              <button
+                onClick={() => advanceDays(15)}
+                className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded text-[10.5px] font-mono font-medium transition"
+                title="Advance clock by 15 days to trigger critical escalations"
+              >
+                +15d
+              </button>
+              <button
+                onClick={resetClock}
+                className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white p-1 rounded transition"
+                title="Reset clock to 28 Oct 2026"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
             </div>
-          </div>
 
-          {/* Hamburger Menu Button (Mobile & Tablet - below 1024px) */}
-          <div className="flex lg:hidden items-center space-x-2">
+            {/* One-Click Evaluator Demo Runner */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-10 h-10 rounded-2xl border border-slate-200 bg-white flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-95 shadow-xs transition"
-              aria-label="Toggle navigation menu"
+              onClick={() => {
+                runOneClickDemo();
+                setActiveTab('applications');
+              }}
+              className="hidden lg:flex items-center space-x-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-2.5 py-0.5 rounded text-[11px] shadow-xs transition"
+              title="Runs an automated live demo application through Scrutiny → Revert → Auto-routing"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <Sparkles className="w-3 h-3" />
+              <span>1-Click Demo App</span>
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile & Tablet Slide-Down Drawer */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-200 bg-white/98 backdrop-blur-md px-4 py-4 space-y-4 shadow-xl animate-in slide-in-from-top-2 duration-150">
-          {/* Navigation Links */}
-          <div className="space-y-1">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pb-1">
-              Navigation
+        {/* Main Header Bar */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-20">
+            {/* Brand Logo & Authority Label */}
+            <div
+              className="flex items-center space-x-3 cursor-pointer group select-none shrink-0"
+              onClick={() => {
+                setActiveTab('applications');
+                setMobileMenuOpen(false);
+              }}
+            >
+              {/* Civic Seal Emblem */}
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-[#1e3a8a] to-[#0f172a] border border-[#c5a028]/60 flex items-center justify-center text-amber-400 shadow-md group-hover:scale-105 transition-transform">
+                <span className="font-serif font-bold text-xl sm:text-2xl tracking-tighter">CS</span>
+              </div>
+
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h1 className="font-serif font-bold text-lg sm:text-xl text-[#1e293b] tracking-tight group-hover:text-[#1e3a8a] transition-colors">
+                    CompliScan
+                  </h1>
+                  <span className="hidden sm:inline font-mono text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300 font-bold">
+                    AICTE Regulation
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-tight hidden sm:block">
+                  Integrated Approval Workflow, Compliance Monitoring & Alert Management System
+                </p>
+              </div>
             </div>
+
+            {/* Right Controls: Notification Bell + Persona Switcher */}
+            <div className="flex items-center space-x-2.5 sm:space-x-4">
+              {/* Notification Center Bell */}
+              <button
+                onClick={() => setNotifDrawerOpen(true)}
+                className="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition"
+                title="Notifications & Escalation Inbox"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadNotifs.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-rose-600 text-white font-mono text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                    {unreadNotifs.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Role Switcher Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setRoleMenuOpen(!roleMenuOpen)}
+                  className={`flex items-center space-x-2.5 px-3 py-1.5 rounded-xl border text-left transition-all ${roleConfig.badgeColor} hover:shadow-xs`}
+                >
+                  <UserCheck className="w-4 h-4 shrink-0 text-slate-700" />
+                  <div className="hidden md:block">
+                    <span className="block text-[10.5px] uppercase font-mono font-bold tracking-wider leading-none opacity-80">
+                      {roleConfig.name}
+                    </span>
+                    <span className="block text-xs font-semibold leading-tight mt-0.5 truncate max-w-[170px]">
+                      {roleConfig.title}
+                    </span>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 opacity-60 ml-0.5" />
+                </button>
+
+                {roleMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setRoleMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white border border-slate-200 shadow-xl z-50 p-2 overflow-hidden animate-fadeIn">
+                      <div className="px-3 py-2 border-b border-slate-100 mb-1">
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700">
+                          SWITCH EVALUATOR PERSONA (5 ROLES)
+                        </span>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Experience the system from any statutory stakeholder's perspective.
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        {Object.values(allRoles).map((r) => (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() => {
+                              changeRole(r.id);
+                              setRoleMenuOpen(false);
+                            }}
+                            className={`w-full text-left p-2.5 rounded-xl text-xs transition-all flex items-start space-x-2.5 ${
+                              role === r.id
+                                ? 'bg-slate-100 border border-slate-300 font-bold'
+                                : 'hover:bg-slate-50 border border-transparent'
+                            }`}
+                          >
+                            <span className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-[#1e3a8a]" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-900">{r.name}</span>
+                                <span className="font-mono text-[10px] text-slate-400">{r.officerId}</span>
+                              </div>
+                              <span className="block text-[11px] text-slate-600 truncate">{r.title}</span>
+                              <p className="text-[10px] text-slate-500 mt-0.5 leading-snug line-clamp-2">
+                                {r.description}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Mobile Menu Toggle */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="xl:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop 8-Tab Navigation Bar */}
+        <div className="hidden xl:block border-t border-slate-100 bg-[#f8fafc]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="flex space-x-1 py-1.5 overflow-x-auto">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all relative ${
+                      isActive
+                        ? 'bg-[#1e3a8a] text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-300' : 'text-slate-500'}`} />
+                    <span>{item.label}</span>
+                    {isActive && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 ml-0.5" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="xl:hidden border-t border-slate-200 bg-white p-4 space-y-1 animate-fadeIn">
+            <span className="text-[10px] font-mono uppercase font-bold text-slate-400 block px-3 py-1">
+              NAVIGATION MODULES
+            </span>
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -180,55 +299,101 @@ export default function Navbar({ activeTab, setActiveTab }) {
                     setActiveTab(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition ${
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                     isActive
-                      ? 'bg-sky-50 text-sky-800 font-bold border border-sky-200'
-                      : 'text-slate-700 hover:bg-slate-50'
+                      ? 'bg-[#1e3a8a] text-white'
+                      : 'text-slate-700 hover:bg-slate-100'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-sky-600' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
+                  <div className="flex items-center space-x-2.5">
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </div>
+                  <span className="text-[10px] opacity-70 font-mono">{item.tag}</span>
                 </button>
               );
             })}
           </div>
+        )}
+      </header>
 
-          {/* Role / Persona Selector in Mobile Drawer */}
-          <div className="pt-3 border-t border-slate-100">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-2 flex items-center justify-between">
-              <span>Active Officer Persona</span>
-              <span className="text-sky-600 font-mono">{roleConfig.name}</span>
+      {/* Notifications Drawer (Slide-Over) */}
+      {notifDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end animate-fadeIn">
+          <div
+            className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs"
+            onClick={() => setNotifDrawerOpen(false)}
+          />
+
+          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col z-10 border-l border-slate-200">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center space-x-2">
+                <Bell className="w-5 h-5 text-[#1e3a8a]" />
+                <h3 className="font-serif font-bold text-base text-slate-900">
+                  Notification & Escalation Center
+                </h3>
+              </div>
+              <button
+                onClick={() => setNotifDrawerOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="space-y-1">
-              {Object.values(allRoles).map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => {
-                    changeRole(r.id);
-                    setMobileMenuOpen(false);
-                    if (!r.allowedTabs.includes(activeTab)) {
-                      setActiveTab(r.allowedTabs[0]);
-                    }
-                  }}
-                  className={`w-full text-left p-2.5 rounded-xl text-xs transition flex flex-col space-y-0.5 ${
-                    role === r.id
-                      ? 'bg-sky-50 border border-sky-200 text-sky-800'
-                      : 'hover:bg-slate-50 text-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold">{r.name}</span>
-                    {role === r.id && (
-                      <span className="text-[10px] text-sky-600 font-mono font-bold">ACTIVE</span>
-                    )}
+
+            <div className="p-3 bg-amber-50 border-b border-amber-200 text-xs text-amber-900 flex items-start space-x-2">
+              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                Real-time regulatory alerts generated by the APH Due-Date Sweeper and Escalation Ladder.
+              </span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {notifications.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">
+                  <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-500 mb-2 opacity-60" />
+                  <p className="text-sm font-semibold">No active notifications</p>
+                  <p className="text-xs">All application stages and undertakings are within SLA limits.</p>
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      n.acknowledged
+                        ? 'bg-slate-50 border-slate-200 opacity-60'
+                        : n.severity === 'critical'
+                        ? 'bg-rose-50 border-rose-300 text-rose-950'
+                        : n.severity === 'warning'
+                        ? 'bg-amber-50 border-amber-300 text-amber-950'
+                        : 'bg-blue-50 border-blue-300 text-blue-950'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/80 border border-current">
+                        {n.type}
+                      </span>
+                      <span className="font-mono text-[10px] text-slate-500">{n.createdAt}</span>
+                    </div>
+                    <p className="text-xs leading-relaxed font-medium">{n.message}</p>
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                      <span className="font-mono text-slate-500">Ref: {n.refId}</span>
+                      {!n.acknowledged && (
+                        <button
+                          onClick={() => acknowledgeNotification(n.id)}
+                          className="font-semibold text-[#1e3a8a] hover:underline"
+                        >
+                          Mark Acknowledged
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-[11px] text-slate-500">{r.title}</span>
-                </button>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }

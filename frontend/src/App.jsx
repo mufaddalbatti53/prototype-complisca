@@ -1,16 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
-import Scanner from './pages/Scanner';
-import Dashboard from './pages/Dashboard';
-import History from './pages/History';
-import RuleConfig from './pages/RuleConfig';
-import InspectionDetail from './pages/InspectionDetail';
-import Parties from './pages/Parties';
-import AgingBuckets from './pages/AgingBuckets';
+import Applications from './pages/Applications';
+import Pendency from './pages/Pendency';
+import EvcModule from './pages/EvcModule';
+import Compliance from './pages/Compliance';
+import Documents from './pages/Documents';
+import Institutions from './pages/Institutions';
+import Timelines from './pages/Timelines';
+import AuditTrail from './pages/AuditTrail';
 import { RoleProvider } from './context/RoleContext';
+import { AicteProvider, useAicte } from './context/AicteContext';
 import { api } from './services/api';
+import { Sparkles, CheckCircle2, AlertTriangle, Info, Bell } from 'lucide-react';
 
-const VALID_TABS = ['scanner', 'dashboard', 'history', 'aging', 'parties', 'rules'];
+const VALID_TABS = [
+  'applications',
+  'pendency',
+  'evc',
+  'compliance',
+  'documents',
+  'institutions',
+  'timelines',
+  'audit'
+];
 
 const getInitialTab = () => {
   if (typeof window !== 'undefined') {
@@ -19,17 +31,17 @@ const getInitialTab = () => {
       return hash;
     }
   }
-  return 'scanner';
+  return 'applications';
 };
 
-export default function App() {
+function AppContent() {
   const [activeTab, setActiveTabState] = useState(getInitialTab);
-  const [selectedInspectionId, setSelectedInspectionId] = useState(null);
   const [serverStatus, setServerStatus] = useState('checking'); // checking, waking, ready
+  const { activeToast } = useAicte();
 
   const setActiveTab = (tab) => {
     setActiveTabState(tab);
-    if (typeof window !== 'undefined' && tab !== 'detail') {
+    if (typeof window !== 'undefined') {
       window.location.hash = tab;
     }
   };
@@ -39,7 +51,6 @@ export default function App() {
       const hash = window.location.hash.replace('#', '').toLowerCase();
       if (VALID_TABS.includes(hash)) {
         setActiveTabState(hash);
-        setSelectedInspectionId(null);
       }
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -47,7 +58,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // If health check takes > 2.5s, server is cold-starting on Render free tier
+    // Check backend health
     const wakeTimer = setTimeout(() => {
       setServerStatus((prev) => (prev === 'checking' ? 'waking' : prev));
     }, 2500);
@@ -64,64 +75,90 @@ export default function App() {
     return () => clearTimeout(wakeTimer);
   }, []);
 
-  const handleSelectInspection = (id) => {
-    setSelectedInspectionId(id);
-    setActiveTab('detail');
-  };
+  return (
+    <div className="min-h-screen bg-[oklch(0.985_0.005_90)] text-[oklch(0.22_0.04_260)] flex flex-col font-sans selection:bg-[#1e3a8a] selection:text-white">
+      {/* Toast Banner notification */}
+      {activeToast && (
+        <div
+          className={`fixed bottom-5 right-5 z-50 max-w-md p-4 rounded-2xl shadow-2xl border text-xs font-semibold flex items-start space-x-3 transition-all animate-bounceIn ${
+            activeToast.type === 'critical' || activeToast.type === 'error'
+              ? 'bg-rose-900 text-white border-rose-700'
+              : activeToast.type === 'warning'
+              ? 'bg-amber-900 text-amber-100 border-amber-700'
+              : 'bg-slate-900 text-slate-100 border-slate-700'
+          }`}
+        >
+          {activeToast.type === 'critical' ? (
+            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          ) : activeToast.type === 'warning' ? (
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+          ) : (
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1">
+            <span className="font-bold block uppercase text-[10px] tracking-wider opacity-70">
+              {activeToast.type === 'critical' ? 'STATUTORY BREACH ALERT' : 'WORKFLOW NOTIFICATION'}
+            </span>
+            <p className="mt-0.5 text-xs leading-relaxed">{activeToast.message}</p>
+          </div>
+        </div>
+      )}
 
-  const handleBackToHistory = () => {
-    setActiveTab('history');
-  };
+      {/* Navigation Header */}
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
+      {/* Render Server Standby Banner */}
+      {serverStatus === 'waking' && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-xs text-amber-900 font-medium flex items-center justify-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+          <span>
+            Connecting to FastAPI AICTE backend engine (Render Free Tier) — cold start may take ~15s on first load...
+          </span>
+        </div>
+      )}
+
+      {/* Main Tab Routing */}
+      <main className="flex-1 pb-16">
+        {activeTab === 'applications' && <Applications />}
+        {activeTab === 'pendency' && <Pendency />}
+        {activeTab === 'evc' && <EvcModule />}
+        {activeTab === 'compliance' && <Compliance />}
+        {activeTab === 'documents' && <Documents />}
+        {activeTab === 'institutions' && <Institutions />}
+        {activeTab === 'timelines' && <Timelines />}
+        {activeTab === 'audit' && <AuditTrail />}
+      </main>
+
+      {/* Bharat Civic Footer */}
+      <footer className="bg-white border-t border-[oklch(0.9_0.01_90)] py-6 px-4 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+            <span className="font-serif font-bold text-slate-900 text-sm">CompliScan</span>
+            <span>·</span>
+            <span className="text-[#1e3a8a] font-semibold">Team TECH SETU</span>
+            <span>·</span>
+            <span className="font-medium text-slate-700">Smart India Hackathon 2026</span>
+            <span>·</span>
+            <span className="font-mono text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+              Problem Statement ID: 26262
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-500 max-w-xl">
+            Integrated AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System.
+            Engineered under the Approval Process Handbook (APH) Regulations.
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default function App() {
   return (
     <RoleProvider>
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-brand-500 selection:text-white">
-        <Navbar
-          activeTab={activeTab === 'detail' ? 'history' : activeTab}
-          setActiveTab={(tab) => {
-            setSelectedInspectionId(null);
-            setActiveTab(tab);
-          }}
-        />
-
-        {serverStatus === 'waking' && (
-          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-center text-xs text-amber-800 font-medium flex items-center justify-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-            <span>Waking up cloud server from standby (Render Free Tier) — please allow ~20-30s for the first response...</span>
-          </div>
-        )}
-
-        <main className="flex-1 pb-12">
-          {activeTab === 'scanner' && <Scanner />}
-          {activeTab === 'dashboard' && <Dashboard onSelectInspection={handleSelectInspection} />}
-          {activeTab === 'history' && <History onSelectInspection={handleSelectInspection} />}
-          {activeTab === 'aging' && <AgingBuckets onSelectInspection={handleSelectInspection} />}
-          {activeTab === 'parties' && <Parties />}
-          {activeTab === 'rules' && <RuleConfig />}
-          {activeTab === 'detail' && (
-            <InspectionDetail
-              inspectionId={selectedInspectionId}
-              onBack={handleBackToHistory}
-            />
-          )}
-        </main>
-
-        {/* GovTech Footer */}
-        <footer className="bg-white border-t border-slate-200 py-6 px-4 text-center text-xs text-slate-500">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="flex items-center space-x-2">
-              <span className="font-semibold text-slate-800">CompliScan</span>
-              <span>•</span>
-              <span className="text-brand-600 font-semibold">Tech Setu</span>
-              <span>•</span>
-              <span>Smart India Hackathon 2026</span>
-            </div>
-            <p className="text-[11px] text-slate-500">
-              National Enforcement System for Legal Metrology Act, 2009 & LMPC Rules, 2011.
-            </p>
-          </div>
-        </footer>
-      </div>
+      <AicteProvider>
+        <AppContent />
+      </AicteProvider>
     </RoleProvider>
   );
 }
