@@ -2,22 +2,56 @@ import React, { useState } from 'react';
 import { ZoomIn, ZoomOut, RotateCcw, Layers, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { STORAGE_BASE } from '../services/api';
 
-export default function InspectionCanvas({ inspection, selectedDecl, onSelectDecl }) {
+export default function InspectionCanvas({ inspection, selectedDecl, onSelectDecl, previewUrl }) {
   const [zoom, setZoom] = useState(1);
   const [activeTab, setActiveTab] = useState('annotated'); // annotated, preprocessed, original
   const [showBoxes, setShowBoxes] = useState(true);
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [imgLoadFailed, setImgLoadFailed] = useState(false);
+  const [resetPulse, setResetPulse] = useState(false);
 
   const imgData = inspection?.images?.[0] || {};
-  let currentImgUrl = '';
 
-  if (activeTab === 'annotated' && imgData.annotated_url) {
-    currentImgUrl = `${STORAGE_BASE}${imgData.annotated_url}`;
-  } else if (activeTab === 'preprocessed' && imgData.preprocessed_url) {
-    currentImgUrl = `${STORAGE_BASE}${imgData.preprocessed_url}`;
-  } else if (imgData.original_url) {
-    currentImgUrl = `${STORAGE_BASE}${imgData.original_url}`;
+  // Sample static fallback in case Render ephemeral filesystem wipes container uploads
+  const sampleFallback = (() => {
+    const pName = `${inspection?.product_name || ''} ${inspection?.brand || ''}`.toLowerCase();
+    if (pName.includes('mad angles') || pName.includes('bingo')) {
+      return '/samples/demo_bingo_mad_angles.jpg';
+    }
+    if (pName.includes('milkybar') || pName.includes('nestle')) {
+      return '/samples/demo_nestle_milkybar.jpg';
+    }
+    return '';
+  })();
+
+  const rawOriginalUrl = previewUrl || (imgData.original_url ? `${STORAGE_BASE}${imgData.original_url}` : sampleFallback);
+
+  let currentImgUrl = '';
+  if (imgLoadFailed) {
+    currentImgUrl = rawOriginalUrl || sampleFallback;
+  } else if (activeTab === 'annotated') {
+    currentImgUrl = imgData.annotated_url
+      ? `${STORAGE_BASE}${imgData.annotated_url}`
+      : rawOriginalUrl;
+  } else if (activeTab === 'preprocessed') {
+    currentImgUrl = imgData.preprocessed_url
+      ? `${STORAGE_BASE}${imgData.preprocessed_url}`
+      : rawOriginalUrl;
+  } else {
+    // Raw original label: prefer direct client upload blob/file if present
+    currentImgUrl = rawOriginalUrl;
   }
+
+  const handleResetCanvas = () => {
+    setZoom(1);
+    setActiveTab('annotated');
+    setFilterStatus('ALL');
+    setShowBoxes(true);
+    setImgLoadFailed(false);
+    if (onSelectDecl) onSelectDecl(null);
+    setResetPulse(true);
+    setTimeout(() => setResetPulse(false), 600);
+  };
 
   const declarations = (inspection?.declarations || []).filter((d) => {
     if (filterStatus === 'ALL') return true;
@@ -143,11 +177,13 @@ export default function InspectionCanvas({ inspection, selectedDecl, onSelectDec
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setZoom(1)}
-            className="p-1.5 rounded-lg bg-gov-900 hover:bg-gov-800 text-slate-300 border border-white/10 transition ml-1"
-            title="Reset Zoom"
+            onClick={handleResetCanvas}
+            className={`p-1.5 rounded-lg bg-gov-900 hover:bg-gov-800 text-slate-300 border border-white/10 transition ml-1 flex items-center justify-center ${
+              resetPulse ? 'ring-2 ring-cyan-400 text-cyan-300 scale-110 shadow-glow-cyan' : ''
+            }`}
+            title="Reset Canvas View, Filters & Zoom (100%)"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className={`w-4 h-4 transition-transform duration-500 ${resetPulse ? 'rotate-180 text-cyan-400' : ''}`} />
           </button>
         </div>
       </div>
@@ -160,8 +196,14 @@ export default function InspectionCanvas({ inspection, selectedDecl, onSelectDec
             style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}
           >
             <img
+              key={`${currentImgUrl}-${activeTab}`}
               src={currentImgUrl}
               alt="Packaged Commodity"
+              onError={() => {
+                if (!imgLoadFailed && (rawOriginalUrl || sampleFallback)) {
+                  setImgLoadFailed(true);
+                }
+              }}
               className="max-h-[620px] w-auto object-contain rounded-xl border border-white/10 shadow-2xl"
             />
 

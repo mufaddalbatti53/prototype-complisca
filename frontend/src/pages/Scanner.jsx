@@ -785,6 +785,7 @@ export default function Scanner() {
                 inspection={inspectionResult}
                 selectedDecl={selectedDecl}
                 onSelectDecl={setSelectedDecl}
+                previewUrl={previewUrl}
               />
             </div>
 

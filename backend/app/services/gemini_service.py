@@ -28,6 +28,16 @@ CRITICAL EXTRACTION DIRECTIVES:
 4. If a field has printed or stamped text (e.g., '# MRP RS. 10/- (INCL. OF ALL TAXES)', '50 g', 'PEPSICO INDIA...'), set is_present to true and extract the verbatim string into detected_value.
 5. Provide the bounding box coordinates [ymin, xmin, ymax, xmax] normalized to 0-1000 scale for each detected declaration.
 
+FIELD DISAMBIGUATION RULES (CRITICAL):
+- NET_QUANTITY vs GENERIC_NAME:
+  * Any number with a metric unit (such as '14g', '14 g', '21 g', '50 g', '100 ml', '1 kg') MUST ALWAYS be extracted into NET_QUANTITY.
+  * NEVER put a quantity or metric weight (like '14g') into GENERIC_NAME.
+  * GENERIC_NAME is the descriptive name or commodity category of the product (e.g., 'NAMKEEN', 'PROPRIETARY FOOD - NAMKEEN', 'Confectionery', 'Potato Chips', 'Biscuits').
+- CONSUMER_CARE vs MANUFACTURER_ADDRESS:
+  * On Indian packaging (e.g., ITC Limited / Bingo Mad Angles, Parle, etc.), contact details often read 'CONSUMER CARE OFFICE, ITC LIMITED, 37, J.L. NEHRU ROAD, KOLKATA-700 071' or include helpline numbers, emails, or consumer address.
+  * Whenever consumer redressal/complaint contact or office details are present, you MUST set is_present=true for CONSUMER_CARE and extract the complete consumer care details into CONSUMER_CARE.
+  * Extract the manufacturing/packer/brand owner entity into MANUFACTURER_ADDRESS. Do NOT leave CONSUMER_CARE blank when contact details are present!
+
 {ocr_context}
 
 Extract all text for the following standard packaging fields:
