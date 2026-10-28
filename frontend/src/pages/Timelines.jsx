@@ -55,11 +55,11 @@ export default function Timelines() {
         <div>
           <div className="kicker-line mb-1">MODULE F · APPROVAL PROCESS HANDBOOK (APH) CONFIGURATION</div>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
-            Statutory Timelines & Escalation Rules
+            Approval Rules & Timeline Limits
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Dynamic regulatory parameter configurator. Controls statutory SLA windows for Scrutiny, EVC, and SAC review,
-            advance document expiry warning intervals (T-90, T-60, T-30), undertaking duration (90 days), and the 4-tier escalation ladder.
+            Customize time limits for document checks, inspection committee visits, and committee reviews.
+            Also controls document expiration warning dates (90, 60, and 30 days ahead) and automatic escalation rules.
           </p>
         </div>
 
@@ -69,7 +69,7 @@ export default function Timelines() {
             className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition"
           >
             <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-            <span>Reset Statutory APH Defaults</span>
+            <span>Reset to Standard AICTE Rules</span>
           </button>
         </div>
       </div>

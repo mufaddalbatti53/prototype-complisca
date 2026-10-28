@@ -61,11 +61,11 @@ export default function AuditTrail() {
         <div>
           <div className="kicker-line mb-1">MODULE F · AUDIT INTEGRITY & STATUTORY TRACEABILITY</div>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
-            Event-Sourced Regulatory Audit Trail
+            Official System Activity & Audit Trail
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Immutable, time-stamped log of every regulatory action, stage transition, deficiency memo, EVC scheduling,
-            compliance verification, and SLA deadline breach. Demonstrates full statutory transparency under SIH 2026.
+            Time-stamped record of every official action, step change, document check, inspection booking,
+            and deadline reminder. Provides complete transparency and traceability for every application.
           </p>
         </div>
 
@@ -75,7 +75,7 @@ export default function AuditTrail() {
             className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[#1e3a8a] hover:bg-[#172554] text-white text-xs font-bold transition shadow-xs"
           >
             <Download className="w-3.5 h-3.5 text-amber-300" />
-            <span>Export Audit Trail (JSON)</span>
+            <span>Download Audit Log (JSON)</span>
           </button>
         </div>
       </div>

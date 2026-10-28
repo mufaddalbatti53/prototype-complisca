@@ -411,6 +411,24 @@ export const initialEvcVisits = [
 
 export const initialUndertakings = [
   {
+    id: 'UT-2026-085',
+    applicationId: 'app_101',
+    refNo: 'APH-2026-1041',
+    institutionId: 'inst_sunrise',
+    institutionName: 'Sunrise Institute of Technology',
+    conditionText: 'Recruitment of 3 Ph.D. Faculty Members in AI & Data Science and setup of GPU AI Computing Lab (30 Workstations) within 90 days.',
+    evidenceRequired: 'Faculty appointment letters, joining reports, and hardware tax invoices with geo-tagged lab photos.',
+    imposedAt: '2026-10-18',
+    dueDate: '2026-12-18',
+    daysRemaining: 51,
+    status: 'OPEN',
+    escalationLevel: 1, // L1 (Reminder active)
+    evidenceUrl: null,
+    evidenceNote: null,
+    verifiedAt: null,
+    verifiedBy: null
+  },
+  {
     id: 'UT-2026-081',
     applicationId: 'app_108',
     refNo: 'APH-2026-1048',
@@ -528,6 +546,19 @@ export const initialDocuments = [
     daysToExpiry: -18,
     status: 'EXPIRED',
     fileUrl: '/docs/Awadh_Land_Title_Certificate.pdf'
+  },
+  {
+    id: 'DOC-906',
+    institutionId: 'inst_sunrise',
+    institutionName: 'Sunrise Institute of Technology',
+    docType: 'Building Safety Certificate & Fire NOC',
+    issuingAuthority: 'Chief Fire Officer & PWD Pune Division',
+    issuedOn: '2023-11-15',
+    expiryDate: '2026-11-14',
+    renewalLeadDays: 45,
+    daysToExpiry: 17, // Expiring soon (<30d)
+    status: 'EXPIRING_SOON',
+    fileUrl: '/docs/Sunrise_Tech_Fire_NOC_2023.pdf'
   }
 ];
 

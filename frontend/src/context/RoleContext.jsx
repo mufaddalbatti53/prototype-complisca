@@ -30,20 +30,22 @@ export const AICTE_ROLES = {
   },
   COMMITTEE: {
     id: 'COMMITTEE',
-    name: 'Committee (EVC / SAC)',
-    title: 'Prof. K. Ramanathan, EVC Convener',
+    name: 'Inspection Committee (EVC / SAC)',
+    title: 'Prof. K. Ramanathan, Committee Head',
     officerId: 'EVC-CONV-2026-88',
     badgeColor: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-    description: 'Visit queue, schedule inspection visits, record physical/hybrid observations, and submit signed EVC reports.',
+    description: 'Schedule college visits, record on-site lab/building checks, and upload signed inspection reports.',
     allowedTabs: ['evc', 'applications', 'documents']
   },
   INSTITUTION: {
     id: 'INSTITUTION',
-    name: 'Institution (Applicant)',
+    name: 'College / Institute',
     title: 'Registrar, Sunrise Institute of Technology',
     officerId: 'INST-W-MH-1042',
+    institutionId: 'inst_sunrise',
+    institutionName: 'Sunrise Institute of Technology',
     badgeColor: 'bg-amber-50 text-amber-900 border-amber-200',
-    description: 'Submit APH applications, track stage movement, upload compliance evidence against undertakings, and monitor lease/NOC validity.',
+    description: 'Track your college applications, view AI status briefs, upload proof for conditional approvals, and check lease/NOC expiry dates.',
     allowedTabs: ['applications', 'compliance', 'documents']
   }
 };

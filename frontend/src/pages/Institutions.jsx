@@ -30,8 +30,18 @@ export default function Institutions() {
   // Selected Institution Dossier Drawer
   const [selectedInst, setSelectedInst] = useState(null);
 
+  // Institution Role Isolation: If user is logged in as an Institution, they ONLY see their own college
+  const isInstitutionRole = role === 'INSTITUTION';
+  const accessibleInsts = isInstitutionRole
+    ? institutions.filter(
+        (inst) =>
+          inst.id === 'inst_sunrise' ||
+          inst.name.toLowerCase().includes('sunrise')
+      )
+    : institutions;
+
   // Filtered institutions
-  const filteredInsts = institutions.filter((inst) => {
+  const filteredInsts = accessibleInsts.filter((inst) => {
     const matchesSearch =
       inst.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       inst.aisheCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -45,10 +55,10 @@ export default function Institutions() {
     return matchesSearch && matchesRegion && matchesRisk && matchesStatus;
   });
 
-  const totalInsts = institutions.length;
-  const activeCount = institutions.filter((i) => i.status === 'ACTIVE').length;
-  const reviewCount = institutions.filter((i) => i.status === 'UNDER_REVIEW').length;
-  const suspendedCount = institutions.filter((i) => i.status === 'SUSPENDED').length;
+  const totalInsts = accessibleInsts.length;
+  const activeCount = accessibleInsts.filter((i) => i.status === 'ACTIVE').length;
+  const reviewCount = accessibleInsts.filter((i) => i.status === 'UNDER_REVIEW').length;
+  const suspendedCount = accessibleInsts.filter((i) => i.status === 'SUSPENDED').length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
@@ -57,47 +67,69 @@ export default function Institutions() {
         <div>
           <div className="kicker-line mb-1">MODULE G · JURISDICTIONAL REGISTRY & INSTITUTIONAL DOSSIERS</div>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
-            Regulated Institutions Directory
+            Colleges & Institutions Directory
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Centralized registry of technical and higher educational institutions across all 8 AICTE Regional Offices.
-            Tracks statutory AISHE codes, active approval dockets, compliance rating scores, and automated institutional risk flags.
+            Centralized directory of technical and higher educational institutions across all 8 AICTE Regional Offices.
+            Tracks AISHE codes, active approval applications, compliance rating scores, and risk flags.
           </p>
         </div>
       </div>
+
+      {/* College Portal Banner (Shown ONLY for Institution role) */}
+      {isInstitutionRole && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-bold text-slate-900 block text-sm">
+                College Profile: Sunrise Institute of Technology
+              </span>
+              <span className="text-slate-700">
+                AISHE Code: <strong>C-41208</strong> · Western Regional Office (Pune, Maharashtra). Viewing your institution's profile and active statutory record.
+              </span>
+            </div>
+          </div>
+          <span className="shrink-0 font-mono text-[11px] font-bold px-3 py-1 rounded-md bg-amber-200/80 text-amber-950 border border-amber-400">
+            College Registrar Account
+          </span>
+        </div>
+      )}
 
       {/* KPI Tiles */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="civic-card p-4 rounded-2xl bg-white border border-slate-200">
           <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider block">
-            REGULATED INSTITUTIONS
+            REGISTERED COLLEGES
           </span>
           <span className="text-2xl font-serif font-bold text-slate-900 mt-1 block">{totalInsts}</span>
-          <span className="text-[11px] text-slate-500 mt-0.5 block">8 Regional Jurisdictions</span>
+          <span className="text-[11px] text-slate-500 mt-0.5 block">{isInstitutionRole ? 'Your institution' : '8 Regional Offices'}</span>
         </div>
 
         <div className="civic-card p-4 rounded-2xl bg-white border border-slate-200">
           <span className="text-[10px] font-mono font-bold text-emerald-700 uppercase tracking-wider block">
-            ACTIVE & COMPLIANT
+            ACTIVE & APPROVED
           </span>
           <span className="text-2xl font-serif font-bold text-emerald-600 mt-1 block">{activeCount}</span>
-          <span className="text-[11px] text-emerald-700 mt-0.5 block">Unencumbered approvals</span>
+          <span className="text-[11px] text-emerald-700 mt-0.5 block">Full approvals</span>
         </div>
 
         <div className="civic-card p-4 rounded-2xl bg-white border border-amber-200 bg-amber-50/20">
           <span className="text-[10px] font-mono font-bold text-amber-700 uppercase tracking-wider block">
-            UNDER SCRUTINY REVIEW
+            UNDER REVIEW
           </span>
           <span className="text-2xl font-serif font-bold text-amber-600 mt-1 block">{reviewCount}</span>
-          <span className="text-[11px] text-amber-700 mt-0.5 block">Active dockets or EVC</span>
+          <span className="text-[11px] text-amber-700 mt-0.5 block">Active review or visit</span>
         </div>
 
         <div className="civic-card p-4 rounded-2xl bg-white border border-rose-200 bg-rose-50/30">
           <span className="text-[10px] font-mono font-bold text-rose-700 uppercase tracking-wider block">
-            SUSPENDED / FLAGGED
+            SUSPENDED / ON HOLD
           </span>
           <span className="text-2xl font-serif font-bold text-rose-600 mt-1 block">{suspendedCount}</span>
-          <span className="text-[11px] text-rose-700 mt-0.5 block">Statutory notice active</span>
+          <span className="text-[11px] text-rose-700 mt-0.5 block">Notice active</span>
         </div>
       </div>
 

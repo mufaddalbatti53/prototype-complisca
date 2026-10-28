@@ -54,8 +54,18 @@ export default function Compliance() {
   // Inspector Modal
   const [activeInspectorUt, setActiveInspectorUt] = useState(null);
 
+  // Institution Role Isolation: If user is logged in as an Institution, they ONLY see their own college
+  const isInstitutionRole = role === 'INSTITUTION';
+  const accessibleUts = isInstitutionRole
+    ? undertakings.filter(
+        (ut) =>
+          ut.institutionId === 'inst_sunrise' ||
+          ut.institutionName.toLowerCase().includes('sunrise')
+      )
+    : undertakings;
+
   // Filtered undertakings
-  const filteredUts = undertakings.filter((ut) => {
+  const filteredUts = accessibleUts.filter((ut) => {
     const matchesSearch =
       ut.institutionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ut.refNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -70,11 +80,11 @@ export default function Compliance() {
   });
 
   // Metric counts
-  const totalCount = undertakings.length;
-  const openCount = undertakings.filter((u) => u.status === 'OPEN').length;
-  const overdueCount = undertakings.filter((u) => u.status === 'OVERDUE').length;
-  const escalatedCount = undertakings.filter((u) => u.status === 'ESCALATED').length;
-  const verifiedCount = undertakings.filter((u) => u.status === 'VERIFIED').length;
+  const totalCount = accessibleUts.length;
+  const openCount = accessibleUts.filter((u) => u.status === 'OPEN').length;
+  const overdueCount = accessibleUts.filter((u) => u.status === 'OVERDUE').length;
+  const escalatedCount = accessibleUts.filter((u) => u.status === 'ESCALATED').length;
+  const verifiedCount = accessibleUts.filter((u) => u.status === 'VERIFIED').length;
 
   const handleOpenEvidenceModal = (ut) => {
     setSelectedUtForEvidence(ut);
@@ -162,11 +172,11 @@ export default function Compliance() {
         <div>
           <div className="kicker-line mb-1">MODULE D · POST-APPROVAL MONITORING & COMPLIANCE ENFORCEMENT</div>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
-            Time-Bound Undertakings Registry
+            Time-Bound Compliance Conditions & Undertakings
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Statutory registry of conditions imposed during conditional approvals (e.g. Ph.D. faculty recruitment, laboratory CAD setups,
-            STP plant clearances). Tracks strict 90-day deadlines, automated L1–L4 escalation ladder, and online evidence verification.
+            Statutory registry of conditions given during conditional approvals (e.g. hiring Ph.D. faculty, setting up CAD/computer labs,
+            or pollution clearances). Tracks strict 90-day deadlines, automatic 4-level reminder notices, and AI proof verification.
           </p>
         </div>
 
@@ -184,11 +194,33 @@ export default function Compliance() {
         </div>
       </div>
 
+      {/* College Portal Banner (Shown ONLY for Institution role) */}
+      {isInstitutionRole && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-bold text-slate-900 block text-sm">
+                College Compliance Portal: Sunrise Institute of Technology
+              </span>
+              <span className="text-slate-700">
+                AISHE Code: <strong>C-41208</strong> · Viewing your college's conditional undertakings, due dates, and proof submission status.
+              </span>
+            </div>
+          </div>
+          <span className="shrink-0 font-mono text-[11px] font-bold px-3 py-1 rounded-md bg-amber-200/80 text-amber-950 border border-amber-400">
+            College Registrar Account
+          </span>
+        </div>
+      )}
+
       {/* KPI Tiles */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="civic-card p-4 rounded-2xl bg-white border border-slate-200">
           <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider block">
-            TOTAL UNDERTAKINGS
+            TOTAL CONDITIONS
           </span>
           <span className="text-2xl font-serif font-bold text-slate-900 mt-1 block">{totalCount}</span>
           <span className="text-[11px] text-slate-500 mt-0.5 block">Conditional approvals</span>
@@ -204,15 +236,15 @@ export default function Compliance() {
 
         <div className="civic-card p-4 rounded-2xl bg-white border border-amber-200 bg-amber-50/20">
           <span className="text-[10px] font-mono font-bold text-amber-700 uppercase tracking-wider block">
-            OVERDUE (L2 ESCALATED)
+            OVERDUE (L2 NOTICE)
           </span>
           <span className="text-2xl font-serif font-bold text-amber-600 mt-1 block">{overdueCount}</span>
-          <span className="text-[11px] text-amber-700 mt-0.5 block">Regional notice issued</span>
+          <span className="text-[11px] text-amber-700 mt-0.5 block">Officer notice issued</span>
         </div>
 
         <div className="civic-card p-4 rounded-2xl bg-white border border-rose-200 bg-rose-50/30">
           <span className="text-[10px] font-mono font-bold text-rose-700 uppercase tracking-wider block">
-            CRITICAL (L3/L4 ESCALATED)
+            CRITICAL (L3/L4 WARNING)
           </span>
           <span className="text-2xl font-serif font-bold text-rose-600 mt-1 block">{escalatedCount}</span>
           <span className="text-[11px] text-rose-700 mt-0.5 block">HQ Show-cause notice</span>
@@ -223,60 +255,73 @@ export default function Compliance() {
             COMPLIANCE VERIFIED
           </span>
           <span className="text-2xl font-serif font-bold text-emerald-600 mt-1 block">{verifiedCount}</span>
-          <span className="text-[11px] text-emerald-700 mt-0.5 block">Clean statutory record</span>
+          <span className="text-[11px] text-emerald-700 mt-0.5 block">Proof approved & clear</span>
         </div>
       </div>
 
-      {/* 4-Level Statutory Escalation Ladder Strip */}
-      <div className="civic-card p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2">
-          <div className="flex items-center space-x-2">
-            <ShieldAlert className="w-4 h-4 text-amber-400" />
-            <span className="font-serif font-bold text-sm text-white">APH Automated 4-Tier Escalation Ladder</span>
+      {/* 4-Level Statutory Escalation Ladder Strip (High-Contrast & Crystal-Clear Dark Text) */}
+      <div className="rounded-2xl bg-white border-2 border-slate-300 p-5 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-900 text-white flex items-center justify-center font-bold shrink-0">
+              <ShieldAlert className="w-4 h-4 text-amber-300" />
+            </div>
+            <div>
+              <span className="font-bold text-sm text-slate-900 block">
+                Automatic 4-Level Reminder & Escalation Rules
+              </span>
+              <span className="text-xs text-slate-600">
+                How the system automatically reminds and takes action when compliance deadlines approach or pass
+              </span>
+            </div>
           </div>
-          <span className="text-[10px] font-mono text-slate-400">
-            Simulated System Date: <strong className="text-amber-300">{simulatedDate}</strong>
+          <span className="text-xs font-mono text-slate-700 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200 font-semibold">
+            System Date: <strong className="text-slate-950">{simulatedDate}</strong>
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
-            <div className="flex items-center justify-between font-bold text-slate-300">
-              <span>LEVEL 1: REMINDER</span>
-              <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[9px] font-mono">T-7 DAYS</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          {/* Level 1 */}
+          <div className="p-3.5 rounded-xl bg-blue-50 border-2 border-blue-200 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-blue-950 uppercase tracking-wide">Level 1: Reminder</span>
+              <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-mono font-bold">T-7 DAYS</span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Automated institutional SMS & Email alert dispatched to Registrar 7 days prior to 90-day deadline.
+            <p className="text-xs text-slate-800 leading-relaxed font-medium">
+              Automated SMS & Email alert sent to the College Registrar 7 days before the 90-day deadline.
             </p>
           </div>
 
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
-            <div className="flex items-center justify-between font-bold text-amber-300">
-              <span>LEVEL 2: RO NOTICE</span>
-              <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono">DAY 0 (DUE)</span>
+          {/* Level 2 */}
+          <div className="p-3.5 rounded-xl bg-amber-50 border-2 border-amber-300 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-amber-950 uppercase tracking-wide">Level 2: Officer Notice</span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-mono font-bold">DUE DATE</span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Compliance flag raised on Regional Officer pendency dashboard; notice dispatched for response in 7 days.
+            <p className="text-xs text-slate-800 leading-relaxed font-medium">
+              Regional Officer flags the delay and issues a reminder letter giving 7 more days to submit proof.
             </p>
           </div>
 
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1">
-            <div className="flex items-center justify-between font-bold text-rose-300">
-              <span>LEVEL 3: HQ ESCALATION</span>
-              <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[9px] font-mono">DAY +7 OVERDUE</span>
+          {/* Level 3 */}
+          <div className="p-3.5 rounded-xl bg-orange-50 border-2 border-orange-300 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-orange-950 uppercase tracking-wide">Level 3: Head Office Warning</span>
+              <span className="px-2 py-0.5 rounded-full bg-orange-600 text-white text-[10px] font-mono font-bold">+7 DAYS LATE</span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Formal Show-Cause memo generated for Approval Bureau Director; institution flagged across AICTE systems.
+            <p className="text-xs text-slate-800 leading-relaxed font-medium">
+              Formal Show-Cause warning letter issued by Approval Bureau Director to college management.
             </p>
           </div>
 
-          <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 space-y-1">
-            <div className="flex items-center justify-between font-bold text-rose-300">
-              <span>LEVEL 4: DG ACTION</span>
-              <span className="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-mono font-bold">DAY +15 CRITICAL</span>
+          {/* Level 4 */}
+          <div className="p-3.5 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-rose-950 uppercase tracking-wide">Level 4: Strict Action</span>
+              <span className="px-2 py-0.5 rounded-full bg-rose-700 text-white text-[10px] font-mono font-bold">+15 DAYS LATE</span>
             </div>
-            <p className="text-[11px] text-rose-200/80 leading-relaxed">
-              Critical agenda docket dispatched to Member Secretary for withdrawal of conditional approval.
+            <p className="text-xs text-rose-950 leading-relaxed font-medium">
+              Directly reported to Member Secretary / DG to initiate withdrawal of conditional approval.
             </p>
           </div>
         </div>
@@ -341,7 +386,14 @@ export default function Compliance() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-sans">
-              {filteredUts.map((ut) => {
+              {filteredUts.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                    No compliance undertakings found matching your filters.
+                  </td>
+                </tr>
+              ) : (
+                filteredUts.map((ut) => {
                 const isOverdue = ut.daysRemaining < 0;
                 const isEscalated = ut.status === 'ESCALATED';
                 const isSubmitted = ut.status === 'SUBMITTED';
@@ -470,7 +522,7 @@ export default function Compliance() {
                     </td>
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>

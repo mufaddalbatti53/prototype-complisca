@@ -78,7 +78,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
             <span>·</span>
             <span>PS 26262</span>
             <span>·</span>
-            <span className="text-slate-300 hidden sm:inline">C.O.M.P.L.I.S.C.A.N. — STATUTORY OVERSIGHT & ALERT NETWORK</span>
+            <span className="text-slate-300 hidden sm:inline">C.O.M.P.L.I.S.C.A.N. — Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network</span>
           </div>
 
           {/* Time-Machine Clock Simulation Widget (Evaluator Demo Feature) */}
@@ -127,10 +127,10 @@ export default function Navbar({ activeTab, setActiveTab }) {
                 setActiveTab('applications');
               }}
               className="hidden lg:flex items-center space-x-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-2.5 py-0.5 rounded text-[11px] shadow-xs transition"
-              title="Runs an automated live demo application through Scrutiny → Revert → Auto-routing"
+              title="Test a complete live college application flow with 1 click"
             >
               <Sparkles className="w-3 h-3" />
-              <span>1-Click Demo App</span>
+              <span>Try 1-Click Demo</span>
             </button>
           </div>
         </div>
@@ -214,10 +214,10 @@ export default function Navbar({ activeTab, setActiveTab }) {
                     <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white border border-slate-200 shadow-xl z-50 p-2 overflow-hidden animate-fadeIn">
                       <div className="px-3 py-2 border-b border-slate-100 mb-1">
                         <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700">
-                          SWITCH EVALUATOR PERSONA (5 ROLES)
+                          SWITCH USER ROLE (TEST AS ANY PERSON)
                         </span>
                         <p className="text-[11px] text-slate-500 mt-0.5">
-                          Experience the system from any statutory stakeholder's perspective.
+                          Experience the app as AICTE Director, Regional Officer, Committee, or College.
                         </p>
                       </div>
 

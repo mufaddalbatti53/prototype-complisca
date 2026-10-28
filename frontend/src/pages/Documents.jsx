@@ -52,8 +52,18 @@ export default function Documents() {
   // Selected Doc for Full Dossier Inspector
   const [activeInspectorDoc, setActiveInspectorDoc] = useState(null);
 
+  // Institution Role Isolation: If user is logged in as an Institution, they ONLY see their own college
+  const isInstitutionRole = role === 'INSTITUTION';
+  const accessibleDocs = isInstitutionRole
+    ? documents.filter(
+        (doc) =>
+          doc.institutionId === 'inst_sunrise' ||
+          doc.institutionName.toLowerCase().includes('sunrise')
+      )
+    : documents;
+
   // Filtered documents
-  const filteredDocs = documents.filter((doc) => {
+  const filteredDocs = accessibleDocs.filter((doc) => {
     const matchesSearch =
       doc.institutionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.docType.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -67,11 +77,11 @@ export default function Documents() {
   });
 
   // Calculate high-level metrics
-  const totalCount = documents.length;
-  const expiredCount = documents.filter((d) => d.status === 'EXPIRED').length;
-  const expiringSoonCount = documents.filter((d) => d.status === 'EXPIRING_SOON').length;
-  const renewalSubmittedCount = documents.filter((d) => d.status === 'RENEWAL_SUBMITTED').length;
-  const activeCount = documents.filter((d) => d.status === 'ACTIVE' || d.status === 'RENEWED').length;
+  const totalCount = accessibleDocs.length;
+  const expiredCount = accessibleDocs.filter((d) => d.status === 'EXPIRED').length;
+  const expiringSoonCount = accessibleDocs.filter((d) => d.status === 'EXPIRING_SOON').length;
+  const renewalSubmittedCount = accessibleDocs.filter((d) => d.status === 'RENEWAL_SUBMITTED').length;
+  const activeCount = accessibleDocs.filter((d) => d.status === 'ACTIVE' || d.status === 'RENEWED').length;
 
   const handleOpenRenewalModal = (doc) => {
     setSelectedDocForRenewal(doc);
@@ -208,12 +218,11 @@ export default function Documents() {
         <div>
           <div className="kicker-line mb-1">MODULE E · STATUTORY REQUISITES & TIMELINE TRACKING</div>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
-            Lease & Document Validity Monitor
+            College Documents, Leases & Safety Certificates
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Automated compliance oversight for essential institutional legal documents: 30-Year Registered Land Lease Deeds,
-            PWD Structural Stability Certificates, Fire Safety NOCs, and Educational Trust Deeds. Tracks advance expiry thresholds (T-90, T-60, T-30)
-            and prevents unauthorized approvals with expired documentation.
+            Monitor important legal documents (such as 30-year registered land lease deeds, building safety, and fire safety NOCs).
+            The system tracks expiration dates, warns ahead of time (90, 60, and 30 days), and reads uploaded papers using AI vision.
           </p>
         </div>
 
@@ -231,22 +240,44 @@ export default function Documents() {
         </div>
       </div>
 
+      {/* College Portal Banner (Shown ONLY for Institution role) */}
+      {isInstitutionRole && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-bold text-slate-900 block text-sm">
+                College Document Vault: Sunrise Institute of Technology
+              </span>
+              <span className="text-slate-700">
+                AISHE Code: <strong>C-41208</strong> · Viewing your institution's registered land lease deed, building stability certificate, and fire safety NOCs.
+              </span>
+            </div>
+          </div>
+          <span className="shrink-0 font-mono text-[11px] font-bold px-3 py-1 rounded-md bg-amber-200/80 text-amber-950 border border-amber-400">
+            College Registrar Account
+          </span>
+        </div>
+      )}
+
       {/* KPI Overview Tiles */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="civic-card p-4 rounded-2xl bg-white border border-slate-200">
           <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider block">
-            TRACKED STATUTORY DOCS
+            TOTAL CERTIFICATES
           </span>
           <span className="text-2xl font-serif font-bold text-slate-900 mt-1 block">{totalCount}</span>
-          <span className="text-[11px] text-slate-500 mt-0.5 block">Across 8 AICTE Regions</span>
+          <span className="text-[11px] text-slate-500 mt-0.5 block">Official records</span>
         </div>
 
         <div className="civic-card p-4 rounded-2xl bg-white border border-slate-200">
           <span className="text-[10px] font-mono font-bold text-emerald-700 uppercase tracking-wider block">
-            VALID & COMPLIANT
+            VALID & ACTIVE
           </span>
           <span className="text-2xl font-serif font-bold text-emerald-600 mt-1 block">{activeCount}</span>
-          <span className="text-[11px] text-emerald-700 mt-0.5 block">Unencumbered status</span>
+          <span className="text-[11px] text-emerald-700 mt-0.5 block">Clear status</span>
         </div>
 
         <div className="civic-card p-4 rounded-2xl bg-white border border-slate-200">
@@ -254,7 +285,7 @@ export default function Documents() {
             EXPIRING SOON (&lt;30d)
           </span>
           <span className="text-2xl font-serif font-bold text-amber-600 mt-1 block">{expiringSoonCount}</span>
-          <span className="text-[11px] text-amber-700 mt-0.5 block">T-30 Urgent renewal warning</span>
+          <span className="text-[11px] text-amber-700 mt-0.5 block">Needs renewal soon</span>
         </div>
 
         <div className="civic-card p-4 rounded-2xl bg-white border border-rose-200 bg-rose-50/30">
@@ -262,60 +293,69 @@ export default function Documents() {
             EXPIRED / LAPSED
           </span>
           <span className="text-2xl font-serif font-bold text-rose-600 mt-1 block">{expiredCount}</span>
-          <span className="text-[11px] text-rose-700 mt-0.5 block">Blocking approval advancement</span>
+          <span className="text-[11px] text-rose-700 mt-0.5 block">Requires immediate renewal</span>
         </div>
       </div>
 
-      {/* Expiry Advance Alert Band (The 4-stage warning strip) */}
-      <div className="civic-card p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-2">
-          <div className="flex items-center space-x-2">
-            <Clock className="w-4 h-4 text-amber-400" />
-            <span className="font-serif font-bold text-sm text-white">Statutory Advance Warning Thresholds (APH 2026)</span>
+      {/* Expiry Advance Alert Band (High-Contrast & Crystal-Clear Dark Text) */}
+      <div className="rounded-2xl bg-white border-2 border-slate-300 p-5 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-900 text-white flex items-center justify-center font-bold shrink-0">
+              <Clock className="w-4 h-4 text-amber-300" />
+            </div>
+            <div>
+              <span className="font-bold text-sm text-slate-900 block">
+                Automatic Expiry Warning Timeline
+              </span>
+              <span className="text-xs text-slate-600">
+                How colleges receive advance notices to renew certificates before they expire
+              </span>
+            </div>
           </div>
-          <span className="text-[10px] font-mono text-slate-400">
-            Current Simulated Date: <strong className="text-amber-300">{simulatedDate}</strong>
+          <span className="text-xs font-mono text-slate-700 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200 font-semibold">
+            System Date: <strong className="text-slate-950">{simulatedDate}</strong>
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center justify-between font-bold text-slate-300 text-[11px]">
-              <span>T-90 DAYS ALERT</span>
-              <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[9px] font-mono">EARLY NOTICE</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="p-3.5 rounded-xl bg-blue-50 border-2 border-blue-200 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-blue-950 uppercase tracking-wide">T-90 Days Early Alert</span>
+              <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-mono font-bold">EARLY NOTICE</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-              Automated institutional email to Registrar initiating renewal process with state municipal / PWD authorities.
+            <p className="text-xs text-slate-800 leading-relaxed font-medium">
+              Sends an automated email to the college registrar to begin renewal paperwork with local authorities.
             </p>
           </div>
 
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center justify-between font-bold text-slate-300 text-[11px]">
-              <span>T-60 DAYS WARNING</span>
-              <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono">REGIONAL FLAG</span>
+          <div className="p-3.5 rounded-xl bg-amber-50 border-2 border-amber-300 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-amber-950 uppercase tracking-wide">T-60 Days Warning</span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-mono font-bold">REGIONAL FLAG</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-              Flagged on Regional Officer (RO) pendency screen; institution dashboard shows prominent renewal banner.
+            <p className="text-xs text-slate-800 leading-relaxed font-medium">
+              Flagged on the Regional Officer's dashboard; college portal displays a renewal reminder banner.
             </p>
           </div>
 
-          <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center justify-between font-bold text-amber-300 text-[11px]">
-              <span>T-30 DAYS URGENT</span>
-              <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 text-[9px] font-bold font-mono">URGENT CALL</span>
+          <div className="p-3.5 rounded-xl bg-orange-50 border-2 border-orange-300 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-orange-950 uppercase tracking-wide">T-30 Days Urgent</span>
+              <span className="px-2 py-0.5 rounded-full bg-orange-600 text-white text-[10px] font-mono font-bold">URGENT CALL</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-              High-priority reminder with SMS trigger. Scrutiny stage auto-holds any intake expansion requests.
+            <p className="text-xs text-slate-800 leading-relaxed font-medium">
+              High-priority reminder with SMS trigger. Document checks pause new seat increase approvals.
             </p>
           </div>
 
-          <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30">
-            <div className="flex items-center justify-between font-bold text-rose-300 text-[11px]">
-              <span>EXPIRED / LAPSED</span>
-              <span className="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-mono font-bold">CRITICAL</span>
+          <div className="p-3.5 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-rose-950 uppercase tracking-wide">Expired / Lapsed</span>
+              <span className="px-2 py-0.5 rounded-full bg-rose-700 text-white text-[10px] font-mono font-bold">EXPIRED</span>
             </div>
-            <p className="text-[11px] text-rose-200/80 mt-1 leading-relaxed">
-              Immediate statutory freeze. Regional Officer issues Deficiency Return; approval cannot be granted.
+            <p className="text-xs text-rose-950 leading-relaxed font-medium">
+              Immediate hold. Officer returns application for deficiency; approval cannot proceed until renewed.
             </p>
           </div>
         </div>

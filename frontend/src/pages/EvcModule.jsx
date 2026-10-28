@@ -112,11 +112,11 @@ export default function EvcModule() {
         <div>
           <div className="kicker-line mb-1">MODULE C · EXPERT VISITING COMMITTEE (EVC)</div>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
-            EVC Visit Queue, Scheduling & Committee Portal
+            Campus Inspections & Committee Visits (EVC)
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Automates the lifecycle of physical and hybrid on-site institutional inspections. Tracks waiting queues,
-            enforces 21/30-day scheduling windows, manages committee rosters, and logs signed inspection dossiers.
+            Manage physical and hybrid on-site campus inspections. Track colleges waiting for inspection,
+            schedule expert committee visits within 21/30-day deadlines, and upload signed inspection reports.
           </p>
         </div>
       </div>
@@ -130,12 +130,12 @@ export default function EvcModule() {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="font-mono text-xs font-bold text-blue-900">EVC VISIT QUEUE</span>
+            <span className="font-mono text-xs font-bold text-blue-900">WAITING FOR INSPECTION</span>
             <Clock className="w-5 h-5 text-blue-700" />
           </div>
           <h3 className="text-3xl font-serif font-bold text-blue-950 mt-2">{queuedCount}</h3>
           <span className="text-[11px] text-blue-700 font-mono mt-1 block">
-            Awaiting Committee Scheduling ({queuedCount > 0 ? 'Urgent' : 'Clear'})
+            Colleges waiting for committee date ({queuedCount > 0 ? 'Urgent' : 'Clear'})
           </span>
         </div>
 

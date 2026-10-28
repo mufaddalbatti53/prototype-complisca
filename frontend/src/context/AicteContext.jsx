@@ -27,12 +27,36 @@ export function AicteProvider({ children }) {
 
   const [undertakings, setUndertakings] = useState(() => {
     const saved = localStorage.getItem('compliscan_undertakings');
-    return saved ? JSON.parse(saved) : initialUndertakings;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (!parsed.some(u => u.institutionId === 'inst_sunrise' || u.id === 'UT-2026-085')) {
+          const sunriseUts = initialUndertakings.filter(u => u.id === 'UT-2026-085');
+          return [...sunriseUts, ...parsed];
+        }
+        return parsed;
+      } catch (e) {
+        return initialUndertakings;
+      }
+    }
+    return initialUndertakings;
   });
 
   const [documents, setDocuments] = useState(() => {
     const saved = localStorage.getItem('compliscan_documents');
-    return saved ? JSON.parse(saved) : initialDocuments;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (!parsed.some(d => d.id === 'DOC-906')) {
+          const doc906 = initialDocuments.filter(d => d.id === 'DOC-906');
+          return [...parsed, ...doc906];
+        }
+        return parsed;
+      } catch (e) {
+        return initialDocuments;
+      }
+    }
+    return initialDocuments;
   });
 
   const [config, setConfig] = useState(() => {

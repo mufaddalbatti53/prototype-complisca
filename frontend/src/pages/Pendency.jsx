@@ -81,10 +81,11 @@ export default function Pendency() {
         <div>
           <div className="kicker-line mb-1">MODULE B · REGULATORY OVERSIGHT & WORKLOAD INTELLIGENCE</div>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
-            Consolidated AICTE Pendency Dashboard
+            Workload & Pendency Overview
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Real-time multi-dimensional tracking across 8 AICTE Regional Offices, lifecycle stages, 4-stage statutory ageing buckets, officer workload distribution, and bottleneck dwell times.
+            Real-time tracking across all 8 AICTE Regional Offices. Shows how many cases are at each step,
+            how long they have been waiting (0-15 days, 16-30 days, 31-60 days, 60+ days), and where delays are happening.
           </p>
         </div>
 
@@ -114,50 +115,50 @@ export default function Pendency() {
             WORKFLOW BOTTLENECK DETECTED:
           </span>
           <span className="text-xs font-bold text-slate-900">
-            {bottleneck.stage} (Avg. Dwell: {bottleneck.avg} Days across {bottleneck.count} cases)
+            {bottleneck.stage} (Avg. Wait: {bottleneck.avg} Days across {bottleneck.count} cases)
           </span>
         </div>
         <span className="text-[11px] text-amber-800 font-medium">
-          Recommendation: Increase EVC Committee empanelment in Western & South-Western jurisdictions.
+          Recommendation: Add more committee members in Western & South-Western regions to clear the inspection backlog.
         </span>
       </div>
 
       {/* Top 6 KPI Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <div className="civic-card rounded-2xl p-4 bg-white">
-          <span className="text-[10.5px] font-mono font-bold uppercase text-slate-500 block">Total Dockets</span>
+          <span className="text-[10.5px] font-mono font-bold uppercase text-slate-500 block">Total Cases</span>
           <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 mt-1">{totalCount}</h3>
           <span className="text-[10px] text-slate-400 font-mono mt-1 block">Active Applications</span>
         </div>
 
         <div className="civic-card rounded-2xl p-4 bg-white">
-          <span className="text-[10.5px] font-mono font-bold uppercase text-blue-700 block">In Scrutiny</span>
+          <span className="text-[10.5px] font-mono font-bold uppercase text-blue-700 block">Checking Docs</span>
           <h3 className="text-2xl sm:text-3xl font-serif font-bold text-blue-900 mt-1">{inScrutinyCount}</h3>
-          <span className="text-[10px] text-slate-400 font-mono mt-1 block">Document Checks</span>
+          <span className="text-[10px] text-slate-400 font-mono mt-1 block">In Scrutiny</span>
         </div>
 
         <div className="civic-card rounded-2xl p-4 bg-white">
-          <span className="text-[10.5px] font-mono font-bold uppercase text-purple-700 block">Pending EVC</span>
+          <span className="text-[10.5px] font-mono font-bold uppercase text-purple-700 block">Inspection Needed</span>
           <h3 className="text-2xl sm:text-3xl font-serif font-bold text-purple-900 mt-1">{inEvcCount}</h3>
           <span className="text-[10px] text-slate-400 font-mono mt-1 block">Queue + Scheduled</span>
         </div>
 
         <div className="civic-card rounded-2xl p-4 bg-white">
-          <span className="text-[10.5px] font-mono font-bold uppercase text-indigo-700 block">Awaiting SAC</span>
+          <span className="text-[10.5px] font-mono font-bold uppercase text-indigo-700 block">Committee Review</span>
           <h3 className="text-2xl sm:text-3xl font-serif font-bold text-indigo-900 mt-1">{inSacCount}</h3>
-          <span className="text-[10px] text-slate-400 font-mono mt-1 block">Appellate Committee</span>
+          <span className="text-[10px] text-slate-400 font-mono mt-1 block">SAC Review</span>
         </div>
 
         <div className="civic-card rounded-2xl p-4 bg-rose-50 border-rose-200">
-          <span className="text-[10.5px] font-mono font-bold uppercase text-rose-700 block">SLA Breached</span>
+          <span className="text-[10.5px] font-mono font-bold uppercase text-rose-700 block">Overdue Cases</span>
           <h3 className="text-2xl sm:text-3xl font-serif font-bold text-rose-700 mt-1">{overdueCount}</h3>
-          <span className="text-[10px] text-rose-600 font-mono mt-1 block">Immediate Escalation</span>
+          <span className="text-[10px] text-rose-600 font-mono mt-1 block">SLA Exceeded</span>
         </div>
 
         <div className="civic-card rounded-2xl p-4 bg-white">
-          <span className="text-[10.5px] font-mono font-bold uppercase text-slate-500 block">Avg Dwell Time</span>
+          <span className="text-[10.5px] font-mono font-bold uppercase text-slate-500 block">Avg Wait Time</span>
           <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 mt-1">{avgDwellDays}d</h3>
-          <span className="text-[10px] text-slate-400 font-mono mt-1 block">Across All Stages</span>
+          <span className="text-[10px] text-slate-400 font-mono mt-1 block">Across All Steps</span>
         </div>
       </div>
 
