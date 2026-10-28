@@ -23,6 +23,37 @@ import FontAnalysisCard from '../components/FontAnalysisCard';
 import ViolationSummary from '../components/ViolationSummary';
 import CameraModal from '../components/CameraModal';
 
+const DEMO_PACKETS = [
+  {
+    id: 'bingo_mad_angles',
+    title: 'Bingo! Mad Angles',
+    subtitle: 'ITC Limited • Namkeen (15.1) • ₹5.00 MRP',
+    filename: 'demo_bingo_mad_angles.jpg',
+    thumbnail: '/samples/demo_bingo_mad_angles.jpg',
+    pdpArea: 160.0,
+    pdpShape: 'RECTANGULAR',
+    category: 'Packaged Food & Beverage',
+    storeName: 'Metro Cash & Carry, Rohini',
+    location: 'New Delhi, India',
+    badge: 'Snack Pouch',
+    description: 'ITC Bingo! Mad Angles pouch back panel: Verifies Consumer Care, FSSAI QR, MRP ₹5.00, Dot-Matrix MFD/EXP & Unit Sale Price.'
+  },
+  {
+    id: 'nestle_milkybar',
+    title: 'Nestlé Milkybar',
+    subtitle: 'Nestlé India • Confectionery • ₹20.00 MRP',
+    filename: 'demo_nestle_milkybar.jpg',
+    thumbnail: '/samples/demo_nestle_milkybar.jpg',
+    pdpArea: 120.0,
+    pdpShape: 'RECTANGULAR',
+    category: 'Packaged Food & Beverage',
+    storeName: 'Reliance Smart Bazaar',
+    location: 'New Delhi, India',
+    badge: 'Confectionery Carton',
+    description: 'Nestlé Milkybar retail packaging carton: Verifies Net Qty 21g, Unit Sale Price ₹0.95/g, Barcode, FSSAI, and Nutritional Table.'
+  }
+];
+
 export default function Scanner() {
   const [mode, setMode] = useState('upload'); // upload, camera, url
   const [file, setFile] = useState(null);
@@ -72,34 +103,31 @@ export default function Scanner() {
     setErrorMsg(null);
   };
 
-  // 1-Click Sample Preloader
-  const loadSamplePreset = async (sampleType) => {
+  // 1-Click Demo Packet Loader
+  const loadDemoPacket = async (packetId) => {
     setErrorMsg(null);
+    const packet = DEMO_PACKETS.find((p) => p.id === packetId) || DEMO_PACKETS[0];
     try {
-      const filename = sampleType === 'non_compliant' ? 'sample_wheat_biscuits.jpg' : 'sample_mustard_oil.jpg';
-      const sampleUrl = `${STORAGE_BASE}/storage/samples/${filename}`;
-      const response = await fetch(sampleUrl);
+      let response;
+      try {
+        response = await fetch(packet.thumbnail);
+        if (!response.ok) throw new Error('Local sample not found');
+      } catch (e) {
+        response = await fetch(`${STORAGE_BASE}/storage/samples/${packet.filename}`);
+      }
       const blob = await response.blob();
-      const loadedFile = new File([blob], filename, { type: 'image/jpeg' });
+      const loadedFile = new File([blob], packet.filename, { type: 'image/jpeg' });
       setFile(loadedFile);
       setPreviewUrl(URL.createObjectURL(loadedFile));
+      setPdpArea(packet.pdpArea);
+      setPdpShape(packet.pdpShape);
+      setCategory(packet.category);
+      setStoreName(packet.storeName);
+      setLocation(packet.location);
       setMode('upload');
-
-      if (sampleType === 'non_compliant') {
-        setPdpArea(150.0);
-        setPdpShape('RECTANGULAR');
-        setCategory('Packaged Food & Beverage');
-        setStoreName('Metro Superstore, Rohini');
-        setLocation('New Delhi, India');
-      } else {
-        setPdpArea(180.0);
-        setPdpShape('CYLINDRICAL');
-        setCategory('Packaged Food & Beverage');
-        setStoreName('Reliance Smart Bazaar');
-        setLocation('Ghaziabad, UP');
-      }
     } catch (err) {
-      setErrorMsg('Failed to load sample image. Please upload a file.');
+      console.error('Failed to load demo packet', err);
+      setErrorMsg('Failed to load demo packet image. Please upload a file.');
     }
   };
 
@@ -228,28 +256,41 @@ export default function Scanner() {
 
       {/* 1-Click Quick Demo Presets */}
       {!inspectionResult && (
-        <div className="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-cyan-500/20 bg-gradient-to-r from-gov-900/90 via-gov-850/80 to-gov-900/90">
-          <div className="flex items-center space-x-2.5">
-            <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-            <span className="text-xs font-semibold text-slate-200">
-              Quick Test Presets (Instant Label Audit):
-            </span>
+        <div className="glass-panel p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-cyan-500/25 bg-gradient-to-r from-gov-900/90 via-gov-850/80 to-gov-900/90 shadow-lg">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-white block">
+                No physical packaging packet or photo on hand?
+              </span>
+              <span className="text-[11px] text-slate-300">
+                Select one of our 2 pre-loaded official demo packaging labels to test the pipeline:
+              </span>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => loadSamplePreset('non_compliant')}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-950/60 hover:bg-red-900/60 text-red-300 border border-red-700/60 flex items-center space-x-1.5 transition"
-            >
-              <AlertOctagon className="w-3 h-3 text-red-400" />
-              <span>Sample 1: Delinquent Package (Violations)</span>
-            </button>
-            <button
-              onClick={() => loadSamplePreset('compliant')}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-700/60 flex items-center space-x-1.5 transition"
-            >
-              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-              <span>Sample 2: Compliant Label (Full Metric USP)</span>
-            </button>
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            {DEMO_PACKETS.map((packet) => (
+              <button
+                key={packet.id}
+                type="button"
+                onClick={() => loadDemoPacket(packet.id)}
+                className="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gov-800/80 hover:bg-gov-700/90 text-white border border-cyan-500/30 hover:border-cyan-400 transition-all shadow-md group"
+              >
+                <img
+                  src={packet.thumbnail}
+                  alt={packet.title}
+                  className="w-8 h-8 object-cover rounded-lg border border-white/20 group-hover:scale-105 transition-transform"
+                />
+                <div className="text-left">
+                  <div className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                    {packet.title}
+                  </div>
+                  <div className="text-[10px] text-slate-400">{packet.badge} • 1-Click Test</div>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -311,6 +352,17 @@ export default function Scanner() {
                   <LinkIcon className="w-3.5 h-3.5" />
                   <span>E-Commerce URL</span>
                 </button>
+                <button
+                  onClick={() => setMode('demo')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    mode === 'demo'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Demo Images</span>
+                </button>
               </div>
             </div>
 
@@ -330,7 +382,7 @@ export default function Scanner() {
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className="group border-2 border-dashed border-slate-700 hover:border-cyan-400/80 rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 bg-gov-950/40 hover:bg-gov-950/80 flex flex-col items-center justify-center min-h-[280px]"
+                    className="group border-2 border-dashed border-slate-700 hover:border-cyan-400/80 rounded-2xl p-8 sm:p-10 text-center cursor-pointer transition-all duration-300 bg-gov-950/40 hover:bg-gov-950/80 flex flex-col items-center justify-center min-h-[280px]"
                   >
                     <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-4 border border-cyan-500/20 group-hover:scale-110 transition-transform shadow-glow-cyan">
                       <UploadCloud className="w-8 h-8" />
@@ -341,6 +393,29 @@ export default function Scanner() {
                     <span className="text-xs text-slate-400 mt-1 max-w-sm">
                       High-resolution photo of Front Principal Display Panel (PDP) or Information Panel (JPG, PNG, WEBP)
                     </span>
+
+                    {/* Quick Demo Shortcuts in Dropzone */}
+                    <div className="mt-5 pt-4 border-t border-white/[0.08] w-full max-w-md flex flex-col items-center space-y-2">
+                      <span className="text-[11px] text-slate-400 font-semibold">
+                        Don't have a packaging photo on your device? Select a demo packet:
+                      </span>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {DEMO_PACKETS.map((packet) => (
+                          <button
+                            key={packet.id}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              loadDemoPacket(packet.id);
+                            }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gov-850 hover:bg-gov-800 text-cyan-300 border border-cyan-500/30 flex items-center space-x-2 transition hover:scale-105 shadow-sm"
+                          >
+                            <img src={packet.thumbnail} alt="" className="w-5 h-5 rounded object-cover border border-white/20" />
+                            <span>Select {packet.title}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-gov-950 p-4 flex flex-col items-center shadow-inner">
@@ -418,6 +493,69 @@ export default function Scanner() {
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   CompliScan extracts high-resolution packaging images and audits mandatory digital commerce declarations under the Legal Metrology (Packaged Commodities) Amendment Rules, 2021.
                 </p>
+              </div>
+            )}
+
+            {/* Mode 4: Dedicated Demo Image Picker */}
+            {mode === 'demo' && (
+              <div className="space-y-4 bg-gov-950/60 p-5 rounded-2xl border border-white/[0.08]">
+                <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400" />
+                    <span className="text-xs font-bold text-white">
+                      Official Preloaded Demo Packaging Labels
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    2 SAMPLES AVAILABLE
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  Select either demo packet below to instantly load the high-resolution photo into the scanner workstation:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {DEMO_PACKETS.map((packet) => (
+                    <div
+                      key={packet.id}
+                      onClick={() => loadDemoPacket(packet.id)}
+                      className="glass-panel p-4 rounded-xl border border-white/10 hover:border-cyan-400/60 cursor-pointer transition-all duration-200 hover:scale-[1.02] flex flex-col justify-between group space-y-3 bg-gov-900/60"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="h-44 rounded-lg overflow-hidden bg-gov-950/80 border border-white/10 flex items-center justify-center p-2">
+                          <img
+                            src={packet.thumbnail}
+                            alt={packet.title}
+                            className="max-h-full max-w-full object-contain rounded group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                            {packet.title}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                            {packet.badge}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                          {packet.description}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          loadDemoPacket(packet.id);
+                        }}
+                        className="w-full py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-md"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                        <span>Select & Inspect This Packet</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
