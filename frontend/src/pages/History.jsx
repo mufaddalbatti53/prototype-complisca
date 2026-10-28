@@ -55,16 +55,41 @@ export default function History({ onSelectInspection }) {
     }
   };
 
+  const handlePurgeAll = async () => {
+    if (window.confirm('Are you sure you want to clear all previous product reports and scan data? Statutory rules, registered entities, and demo images will remain intact.')) {
+      try {
+        await api.purgeAllInspections();
+        setInspections([]);
+        broadcastSync('INSPECTION_DELETED');
+      } catch (err) {
+        alert('Failed to clear previous inspections.');
+      }
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}
-      <div className="border-b border-slate-200 pb-5">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Inspection History & Evidence Repository
-        </h1>
-        <p className="text-sm text-slate-600 mt-1.5">
-          Archived statutory records, digital evidence lockers, and issued Form 1 non-compliance notices under LMPC Rules 2011.
-        </p>
+      <div className="border-b border-slate-200 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Inspection History & Evidence Repository
+          </h1>
+          <p className="text-sm text-slate-600 mt-1.5">
+            Archived statutory records, digital evidence lockers, and issued Form 1 non-compliance notices under LMPC Rules 2011.
+          </p>
+        </div>
+
+        {inspections.length > 0 && (
+          <button
+            onClick={handlePurgeAll}
+            className="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition shadow-sm flex items-center space-x-1.5 self-start sm:self-auto"
+            title="Purge all previous product scans & generated reports"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear All Reports</span>
+          </button>
+        )}
       </div>
 
       {/* Search & Filter Toolbar */}

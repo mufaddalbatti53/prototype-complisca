@@ -39,6 +39,11 @@ export const api = {
     return res.data;
   },
 
+  purgeAllInspections: async () => {
+    const res = await client.post('/inspections/purge/all');
+    return res.data;
+  },
+
   getAgingBuckets: async () => {
     const res = await client.get('/inspections/aging-buckets');
     return res.data;

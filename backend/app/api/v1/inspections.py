@@ -8,6 +8,8 @@ from sqlalchemy import desc, or_
 from backend.app.core.database import get_db
 from backend.app.core.config import settings
 from backend.app.models.inspection import Inspection
+from backend.app.models.declaration import ExtractedDeclaration
+from backend.app.models.party import Party
 from backend.app.schemas.inspection import (
     InspectionResponse,
     PartyReplyRequest,
@@ -112,6 +114,52 @@ def get_notice_aging_buckets(db: Session = Depends(get_db)):
         "total_penalty_exposure_inr": total_penalty_exposure,
         "buckets": buckets
     }
+
+
+@router.post("/purge/all")
+@router.delete("/purge/all")
+def purge_all_inspections(db: Session = Depends(get_db)):
+    """
+    Purge all previous product scans, extracted declarations, and notice PDF reports.
+    Preserves statutory rules, enterprise registered parties, and demo packaging images.
+    """
+    try:
+        # 1. Delete all declaration records
+        deleted_declarations = db.query(ExtractedDeclaration).delete()
+
+        # 2. Delete all inspection records
+        deleted_inspections = db.query(Inspection).delete()
+
+        # 3. Reset party inspection counters to 0 if party table exists
+        try:
+            db.query(Party).update({Party.total_inspections: 0, Party.total_violations: 0})
+        except Exception:
+            pass
+
+        db.commit()
+
+        # 4. Clean physical files from uploads, processed, and reports directories (DO NOT touch samples)
+        cleaned_files_count = 0
+        for target_dir in [settings.UPLOAD_DIR, settings.PROCESSED_DIR, settings.REPORT_DIR]:
+            if target_dir.exists():
+                for item in target_dir.iterdir():
+                    if item.is_file() and item.name != ".gitkeep":
+                        try:
+                            item.unlink()
+                            cleaned_files_count += 1
+                        except Exception:
+                            pass
+
+        return {
+            "status": "success",
+            "message": "All product reports, previous scans, and evidence records purged successfully.",
+            "deleted_inspections": deleted_inspections,
+            "deleted_declarations": deleted_declarations,
+            "cleaned_files_count": cleaned_files_count
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to purge inspection records: {str(e)}")
 
 
 @router.get("/{inspection_id}", response_model=InspectionResponse)
