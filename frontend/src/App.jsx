@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Scanner from './pages/Scanner';
 import Dashboard from './pages/Dashboard';
@@ -8,10 +8,30 @@ import InspectionDetail from './pages/InspectionDetail';
 import Parties from './pages/Parties';
 import AgingBuckets from './pages/AgingBuckets';
 import { RoleProvider } from './context/RoleContext';
+import { api } from './services/api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('scanner'); // scanner, dashboard, history, aging, parties, rules, detail
   const [selectedInspectionId, setSelectedInspectionId] = useState(null);
+  const [serverStatus, setServerStatus] = useState('checking'); // checking, waking, ready
+
+  useEffect(() => {
+    // If health check takes > 2.5s, server is cold-starting on Render free tier
+    const wakeTimer = setTimeout(() => {
+      setServerStatus((prev) => (prev === 'checking' ? 'waking' : prev));
+    }, 2500);
+
+    api.checkHealth()
+      .then(() => {
+        clearTimeout(wakeTimer);
+        setServerStatus('ready');
+      })
+      .catch(() => {
+        setServerStatus('waking');
+      });
+
+    return () => clearTimeout(wakeTimer);
+  }, []);
 
   const handleSelectInspection = (id) => {
     setSelectedInspectionId(id);
@@ -32,6 +52,13 @@ export default function App() {
             setActiveTab(tab);
           }}
         />
+
+        {serverStatus === 'waking' && (
+          <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-center text-xs text-amber-300 font-semibold flex items-center justify-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+            <span>Waking up cloud server from standby (Render Free Tier) — please allow ~20-30s for the first response...</span>
+          </div>
+        )}
 
         <main className="flex-1 pb-20">
           {activeTab === 'scanner' && <Scanner />}
