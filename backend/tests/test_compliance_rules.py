@@ -1,127 +1,120 @@
 import pytest
-from backend.app.services.compliance_engine import LegalMetrologyRuleEngine
+from backend.app.services.compliance_engine import AICTEWorkflowRuleEngine, APH_DEFAULT_CONFIG
 
-def test_font_height_prescribed_table():
-    # Area <= 50 cm2 -> 1.0mm
-    assert LegalMetrologyRuleEngine.get_prescribed_font_height(40.0) == 1.0
-    # Area 50 to 100 cm2 -> 1.5mm
-    assert LegalMetrologyRuleEngine.get_prescribed_font_height(85.0) == 1.5
-    # Area 100 to 500 cm2 -> 2.5mm
-    assert LegalMetrologyRuleEngine.get_prescribed_font_height(250.0) == 2.5
-    # Area 500 to 2500 cm2 -> 4.0mm
-    assert LegalMetrologyRuleEngine.get_prescribed_font_height(1200.0) == 4.0
+def test_engine_init_and_defaults():
+    engine = AICTEWorkflowRuleEngine()
+    assert engine.config["rule_version"] == "APH-2024-2027-v1.0"
+    assert "ONLY_SCRUTINY" in engine.config["routes"]
+    assert "SCRUTINY_EVC" in engine.config["routes"]
+    assert engine.config["stage_sla_days"]["SCRUTINY"] == 15
 
-def test_mrp_tax_inclusivity_compliant():
-    declarations = [
-        {
-            "field_code": "MRP",
-            "field_name": "Maximum Retail Price",
-            "statutory_rule_ref": "Rule 6(1)(e)",
-            "is_present": True,
-            "detected_value": "MRP Rs. 45.00 (inclusive of all taxes)",
-            "measured_font_height_mm": 3.0
-        }
-    ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
-    assert verified[0]["compliance_status"] == "COMPLIANT"
-    assert viols == 0
+def test_determine_route_new_institution():
+    engine = AICTEWorkflowRuleEngine()
+    routed = engine.determine_route("NEW_INSTITUTION")
+    assert routed["route"] == "SCRUTINY_EVC"
+    assert routed["current_stage"] == "SCRUTINY"
+    assert routed["status"] == "IN_PROGRESS"
+    assert routed["assigned_officer_role"] == "REGIONAL_OFFICER"
+    assert routed["sla_days_allocated"] == 15
+    assert routed["audit_event"]["action"] == "AUTO_ROUTED"
 
-def test_mrp_missing_tax_clause_violation():
-    declarations = [
-        {
-            "field_code": "MRP",
-            "field_name": "Maximum Retail Price",
-            "statutory_rule_ref": "Rule 6(1)(e)",
-            "is_present": True,
-            "detected_value": "MRP Rs. 99.00",
-            "measured_font_height_mm": 2.5
-        }
-    ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
-    assert verified[0]["compliance_status"] == "VIOLATION"
-    assert verified[0]["violation_code"] == "ERR_MRP_TAX_INCLUSION_MISSING"
-    assert viols == 1
+def test_determine_route_eoa():
+    engine = AICTEWorkflowRuleEngine()
+    routed = engine.determine_route("EXTENSION_OF_APPROVAL")
+    assert routed["route"] == "ONLY_SCRUTINY"
+    assert routed["current_stage"] == "SCRUTINY"
 
-def test_mrp_illegal_taxes_extra_violation():
-    declarations = [
-        {
-            "field_code": "MRP",
-            "field_name": "Maximum Retail Price",
-            "statutory_rule_ref": "Rule 6(1)(e)",
-            "is_present": True,
-            "detected_value": "MRP Rs. 150.00 + Local Taxes Extra",
-            "measured_font_height_mm": 2.5
-        }
-    ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
-    assert verified[0]["compliance_status"] == "VIOLATION"
-    assert verified[0]["violation_code"] == "ERR_ILLEGAL_TAXES_EXTRA"
-    assert viols == 1
+def test_advance_stage_scrutiny_to_evc():
+    engine = AICTEWorkflowRuleEngine()
+    app = {
+        "route": "SCRUTINY_EVC",
+        "current_stage": "SCRUTINY",
+        "app_type": "NEW_INSTITUTION",
+        "resubmission_count": 0
+    }
+    result = engine.advance_stage(app, actor_role="REGIONAL_OFFICER", actor_id="RO-WEST-01")
+    assert result["current_stage"] == "EVC_QUEUE"
+    assert result["evc_auto_queued"] is True
+    assert result["assigned_officer_role"] == "COMMITTEE_EVC"
+    assert result["audit_event"]["action"] == "STAGE_ADVANCED"
 
-def test_net_quantity_non_standard_unit():
-    declarations = [
-        {
-            "field_code": "NET_QUANTITY",
-            "field_name": "Net Quantity",
-            "statutory_rule_ref": "Rule 6(1)(c)",
-            "is_present": True,
-            "detected_value": "Net Wt. 500 gms",
-            "measured_font_height_mm": 2.5
-        }
-    ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
-    assert verified[0]["compliance_status"] == "VIOLATION"
-    assert verified[0]["violation_code"] == "ERR_NON_STANDARD_UNIT_SYMBOL"
-    assert viols == 1
-
-def test_net_quantity_prohibited_approx():
-    declarations = [
-        {
-            "field_code": "NET_QUANTITY",
-            "field_name": "Net Quantity",
-            "statutory_rule_ref": "Rule 6(1)(c)",
-            "is_present": True,
-            "detected_value": "Net Qty: approx 1 kg",
-            "measured_font_height_mm": 3.0
-        }
-    ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
-    assert verified[0]["compliance_status"] == "VIOLATION"
-    assert verified[0]["violation_code"] == "ERR_PROHIBITED_QUANTITY_TERM"
-
-def test_consumer_care_incomplete_missing_email():
-    declarations = [
-        {
-            "field_code": "CONSUMER_CARE",
-            "field_name": "Consumer Care Details",
-            "statutory_rule_ref": "Rule 6(1)(f)",
-            "is_present": True,
-            "detected_value": "For complaints, contact Manager at 1800-123-4567, Phase 2, Okhla, New Delhi",
-            "measured_font_height_mm": 2.0
-        }
-    ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(declarations, pdp_area_sqcm=80.0, require_all_mandatory=False)
-    assert verified[0]["compliance_status"] == "VIOLATION"
-    assert verified[0]["violation_code"] == "ERR_CONSUMER_CARE_INCOMPLETE"
-
-def test_full_package_requires_all_mandatory_fields():
-    # When require_all_mandatory=True, missing mandatory declarations on the package must be flagged
-    single_decl = [
-        {
-            "field_code": "MRP",
-            "field_name": "Maximum Retail Price",
-            "statutory_rule_ref": "Rule 6(1)(e)",
-            "is_present": True,
-            "detected_value": "MRP Rs. 45.00 (inclusive of all taxes)",
-            "measured_font_height_mm": 3.0
-        }
-    ]
-    verified, score, verdict, viols, warns = LegalMetrologyRuleEngine.verify_all_declarations(
-        single_decl, pdp_area_sqcm=80.0, require_all_mandatory=True
+def test_revert_for_deficiency():
+    engine = AICTEWorkflowRuleEngine()
+    app = {
+        "ref_no": "APH-2026-1041",
+        "current_stage": "SCRUTINY",
+        "route": "SCRUTINY_EVC"
+    }
+    revert_result = engine.revert_for_deficiency(
+        app,
+        actor_role="REGIONAL_OFFICER",
+        actor_id="RO-WEST-01",
+        reason_code="DEFICIENT_DOCUMENTS",
+        deficiency_note="Land lease deed lacks municipal endorsement stamp."
     )
-    # The single MRP is compliant, but the other 6-7 mandatory package declarations are missing
-    assert viols > 0
-    assert verdict == "NON_COMPLIANT"
-    missing_codes = [d["field_code"] for d in verified if d.get("compliance_status") == "VIOLATION"]
-    assert "MANUFACTURER_ADDRESS" in missing_codes
-    assert "NET_QUANTITY" in missing_codes
+    assert revert_result["current_stage"] == "REVERTED"
+    assert revert_result["status"] == "DEFICIENCY_REVERTED"
+    assert revert_result["assigned_officer_role"] == "INSTITUTION"
+    assert "DEFICIENT_DOCUMENTS" in revert_result["notification"]["message"]
+
+def test_resubmit_after_revert():
+    engine = AICTEWorkflowRuleEngine()
+    app = {
+        "current_stage": "REVERTED",
+        "resubmission_count": 0
+    }
+    resubmit_result = engine.resubmit_after_revert(app, actor_id="INST-01", note="Uploaded registered MIDC lease.")
+    assert resubmit_result["current_stage"] == "SCRUTINY"
+    assert resubmit_result["resubmission_count"] == 1
+    assert resubmit_result["assigned_officer_role"] == "REGIONAL_OFFICER"
+
+def test_evaluate_document_validity():
+    engine = AICTEWorkflowRuleEngine()
+    doc_active = {
+        "id": "DOC-101",
+        "doc_type": "LEASE_DEED",
+        "expiry_date": "2038-04-11"
+    }
+    eval_active = engine.evaluate_document_validity(doc_active)
+    assert eval_active["status"] == "ACTIVE"
+    assert eval_active["days_remaining"] > 3000
+
+    doc_expiring_soon = {
+        "id": "DOC-102",
+        "doc_type": "FIRE_NOC",
+        "expiry_date": "2026-11-15"
+    }
+    eval_expiring = engine.evaluate_document_validity(doc_expiring_soon)
+    assert eval_expiring["status"] in ("EXPIRING_SOON", "ACTIVE")
+
+def test_evaluate_undertaking_and_escalation():
+    engine = AICTEWorkflowRuleEngine()
+    ut = {
+        "id": "UT-8801",
+        "status": "OPEN",
+        "due_date": "2026-12-18",
+        "imposed_at": "2026-10-18"
+    }
+    ut_eval = engine.evaluate_undertaking(ut)
+    assert ut_eval["status"] == "OPEN"
+    assert ut_eval["aging_bucket"] in ("0-15_DAYS", "16-30_DAYS", "31-60_DAYS")
+
+def test_run_daily_sweep_and_clock_advance():
+    engine = AICTEWorkflowRuleEngine()
+    apps = [
+        {
+            "ref_no": "APH-2026-9999",
+            "current_stage": "SCRUTINY",
+            "stage_entered_at": "2026-09-01",
+            "sla_due_at": "2026-09-16"
+        }
+    ]
+    uts = []
+    docs = []
+    sweep = engine.run_daily_sweep(apps, uts, docs)
+    assert len(sweep["applications_evaluated"]) == 1
+    assert sweep["applications_evaluated"][0]["sla_breached"] is True
+
+    # Advance clock
+    adv = engine.advance_simulated_clock(15)
+    assert adv["simulated_day_offset"] == 15
