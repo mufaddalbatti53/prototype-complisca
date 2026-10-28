@@ -139,7 +139,7 @@ def root():
     return {
         "system": "CompliScan Legal Metrology Compliance Engine",
         "version": settings.VERSION,
-        "build": "2026.10.28.03-autoheal-fix",
+        "build": "2026.10.28.04-cc-fix",
         "status": "OPERATIONAL",
         "jurisdiction": "Legal Metrology Act, 2009 & LMPC Rules, 2011 (India)",
         "docs": "/docs"
