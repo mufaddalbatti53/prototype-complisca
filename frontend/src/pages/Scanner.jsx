@@ -63,6 +63,7 @@ export default function Scanner() {
 
   // Parameters
   const [pdpArea, setPdpArea] = useState(160.0);
+  const [autoFilledName, setAutoFilledName] = useState(null);
   const [pdpShape, setPdpShape] = useState('RECTANGULAR');
   const [category, setCategory] = useState('Packaged Food & Beverage');
   const [storeName, setStoreName] = useState('Metro Cash & Carry, Rohini');
@@ -121,6 +122,7 @@ export default function Scanner() {
       setFile(loadedFile);
       setPreviewUrl(URL.createObjectURL(loadedFile));
       setPdpArea(packet.pdpArea);
+      setAutoFilledName(packet.title);
       setPdpShape(packet.pdpShape);
       setCategory(packet.category);
       setStoreName(packet.storeName);
@@ -153,9 +155,19 @@ export default function Scanner() {
       pipelineTimers.push(setTimeout(() => setPipelineStep(5), 5500));
 
       if (mode === 'link') {
-        if (!urlInput.trim()) {
-          throw new Error('Please enter a valid product listing URL.');
+        const rawUrl = urlInput.trim();
+        if (!rawUrl) {
+          throw new Error('Please enter a product listing URL.');
         }
+        try {
+          const parsed = new URL(rawUrl);
+          if (!['http:', 'https:'].includes(parsed.protocol)) {
+            throw new Error('URL must start with http:// or https://');
+          }
+        } catch (e) {
+          throw new Error('Please enter a valid product listing URL (e.g., https://www.amazon.in/dp/...)');
+        }
+
         let localRulesParsed = null;
         try {
           if (savedLocalRules) {
@@ -505,13 +517,23 @@ export default function Scanner() {
             {/* Front Area & District */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">
-                  Front area (cm²)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-slate-600 block">
+                    Front area (cm²)
+                  </label>
+                  {autoFilledName && (
+                    <span className="text-[10px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded">
+                      Auto-filled
+                    </span>
+                  )}
+                </div>
                 <input
                   type="number"
                   value={pdpArea}
-                  onChange={(e) => setPdpArea(e.target.value)}
+                  onChange={(e) => {
+                    setPdpArea(e.target.value);
+                    setAutoFilledName(null);
+                  }}
                   className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 font-mono"
                 />
               </div>

@@ -19,9 +19,21 @@ class EcommerceScraperService:
             "Accept-Language": "en-US,en;q=0.9"
         }
 
-        resp = requests.get(url, headers=headers, timeout=15)
+        try:
+            resp = requests.get(url, headers=headers, timeout=12)
+        except requests.exceptions.MissingSchema:
+            raise Exception("No URL scheme supplied. Please enter a complete URL starting with https://")
+        except requests.exceptions.InvalidURL:
+            raise Exception("The URL provided is malformed or invalid.")
+        except requests.exceptions.ConnectionError:
+            raise Exception("Unable to connect to the provided website. Please verify the link is publicly accessible.")
+        except requests.exceptions.Timeout:
+            raise Exception("Connection timed out while trying to reach the product URL.")
+        except Exception as e:
+            raise Exception(f"Network error accessing URL: {str(e)}")
+
         if resp.status_code != 200:
-            raise Exception(f"Failed to fetch product URL (Status {resp.status_code})")
+            raise Exception(f"E-commerce server responded with status code {resp.status_code}")
 
         soup = BeautifulSoup(resp.text, "html.parser")
         

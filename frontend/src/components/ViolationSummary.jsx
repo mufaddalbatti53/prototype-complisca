@@ -4,6 +4,7 @@ import { api } from '../services/api';
 
 export default function ViolationSummary({ inspection }) {
   const [downloading, setDownloading] = useState(false);
+  const [downloadNotice, setDownloadNotice] = useState(null);
 
   if (!inspection) return null;
 
@@ -19,11 +20,41 @@ export default function ViolationSummary({ inspection }) {
   const violations = declarations.filter((d) => d.compliance_status === 'VIOLATION');
   const warnings = declarations.filter((d) => d.compliance_status === 'WARNING');
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     setDownloading(true);
+    setDownloadNotice(null);
+
     const url = api.getPdfReportUrl(id);
-    window.open(url, '_blank');
-    setTimeout(() => setDownloading(false), 1500);
+
+    try {
+      // Direct fetch to guarantee download trigger and catch cold-starts cleanly
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout for cold start
+
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Server returned HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `Form1_Seizure_Notice_${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.warn('Direct PDF fetch failed or timed out:', err);
+      // Fallback: open in new tab in case of pop-up / CORS quirks
+      window.open(url, '_blank');
+      setDownloadNotice('The cloud server is warming up from standby. If your download did not start automatically, please retry in a few seconds.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const handleExportJson = () => {
@@ -130,8 +161,8 @@ export default function ViolationSummary({ inspection }) {
           disabled={downloading}
           className="flex-1 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white px-5 py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-sm transition disabled:opacity-50"
         >
-          <FileDown className="w-4 h-4" />
-          <span>{downloading ? 'Generating Notice...' : 'Download Form 1 Notice (PDF)'}</span>
+          <FileDown className={`w-4 h-4 ${downloading ? 'animate-bounce' : ''}`} />
+          <span>{downloading ? 'Fetching PDF from Server...' : 'Download Form 1 Notice (PDF)'}</span>
         </button>
 
         <button
@@ -143,6 +174,13 @@ export default function ViolationSummary({ inspection }) {
           <span>Export JSON</span>
         </button>
       </div>
+
+      {downloadNotice && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 flex items-start space-x-2 leading-relaxed">
+          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <span>{downloadNotice}</span>
+        </div>
+      )}
     </div>
   );
 }

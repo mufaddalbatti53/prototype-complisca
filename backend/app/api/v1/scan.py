@@ -70,11 +70,15 @@ async def upload_and_analyze_packaging(
     
     try:
         prep_meta = ImagePreprocessor.deskew_and_enhance(orig_path, prep_path)
-        calc_pdp_area = prep_meta.get("estimated_pdp_area_sqcm", pdp_area_sqcm)
     except Exception as e:
         logger.warning(f"Preprocessing fallback for {orig_path}: {e}")
         prep_path = orig_path # fallback to original if preprocessing hits unusual raw format
-        calc_pdp_area = pdp_area_sqcm
+
+    # Prioritize user-provided / auto-filled PDP area; fallback to OpenCV estimate only if none given
+    if pdp_area_sqcm and float(pdp_area_sqcm) > 0:
+        calc_pdp_area = float(pdp_area_sqcm)
+    else:
+        calc_pdp_area = prep_meta.get("estimated_pdp_area_sqcm", 100.0)
 
     # 3. Local Deep-Learning OCR Extraction
     try:
@@ -289,12 +293,27 @@ async def scan_ecommerce_url(
     """
     Extracts product image from e-commerce URL and performs automated compliance audit.
     """
-    try:
-        scraped = EcommerceScraperService.extract_product_from_url(req.url)
-    except Exception as e:
+    clean_url = (req.url or "").strip()
+    if not clean_url:
         raise HTTPException(
             status_code=400,
-            detail=f"Failed to scrape packaging from URL: {str(e)}"
+            detail="Please provide a valid product listing URL."
+        )
+    if not (clean_url.startswith("http://") or clean_url.startswith("https://")):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid URL scheme. Please provide a complete URL starting with http:// or https://"
+        )
+
+    try:
+        scraped = EcommerceScraperService.extract_product_from_url(clean_url)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Ecommerce scraping failed for {clean_url}: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Could not load product image from URL: {str(e)}"
         )
 
     file_id = f"insp_{uuid.uuid4().hex[:10]}"
@@ -308,11 +327,15 @@ async def scan_ecommerce_url(
     prep_meta = {"image_sha256": "raw_url_fallback", "estimated_pdp_area_sqcm": req.pdp_area_sqcm or 100.0}
     try:
         prep_meta = ImagePreprocessor.deskew_and_enhance(orig_path, prep_path)
-        calc_pdp_area = prep_meta.get("estimated_pdp_area_sqcm", req.pdp_area_sqcm or 100.0)
     except Exception as e:
-        logger.warning(f"Preprocessing fallback for URL {req.url}: {e}")
+        logger.warning(f"Preprocessing fallback for URL {clean_url}: {e}")
         prep_path = orig_path
-        calc_pdp_area = req.pdp_area_sqcm or 100.0
+
+    # Prioritize user-provided / auto-filled PDP area; fallback to OpenCV estimate only if none given
+    if req.pdp_area_sqcm and float(req.pdp_area_sqcm) > 0:
+        calc_pdp_area = float(req.pdp_area_sqcm)
+    else:
+        calc_pdp_area = prep_meta.get("estimated_pdp_area_sqcm", 100.0)
 
     # 3. Local Deep-Learning OCR Extraction
     try:

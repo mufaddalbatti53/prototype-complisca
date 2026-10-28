@@ -10,10 +10,41 @@ import AgingBuckets from './pages/AgingBuckets';
 import { RoleProvider } from './context/RoleContext';
 import { api } from './services/api';
 
+const VALID_TABS = ['scanner', 'dashboard', 'history', 'aging', 'parties', 'rules'];
+
+const getInitialTab = () => {
+  if (typeof window !== 'undefined') {
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    if (VALID_TABS.includes(hash)) {
+      return hash;
+    }
+  }
+  return 'scanner';
+};
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState('scanner'); // scanner, dashboard, history, aging, parties, rules, detail
+  const [activeTab, setActiveTabState] = useState(getInitialTab);
   const [selectedInspectionId, setSelectedInspectionId] = useState(null);
   const [serverStatus, setServerStatus] = useState('checking'); // checking, waking, ready
+
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab);
+    if (typeof window !== 'undefined' && tab !== 'detail') {
+      window.location.hash = tab;
+    }
+  };
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      if (VALID_TABS.includes(hash)) {
+        setActiveTabState(hash);
+        setSelectedInspectionId(null);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   useEffect(() => {
     // If health check takes > 2.5s, server is cold-starting on Render free tier

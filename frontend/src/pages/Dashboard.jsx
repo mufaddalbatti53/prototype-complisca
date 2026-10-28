@@ -123,9 +123,18 @@ export default function Dashboard({ onSelectInspection }) {
               <ShieldAlert className="w-6 h-6" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-xs text-rose-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5 animate-pulse"></span>
-            <span>Section 18 Notice Required</span>
+          <div className="mt-4 flex items-center text-xs">
+            {stats?.non_compliant_count > 0 ? (
+              <span className="flex items-center text-rose-700 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5 animate-pulse"></span>
+                <span>Section 18 Notice Required ({stats.non_compliant_count})</span>
+              </span>
+            ) : (
+              <span className="flex items-center text-emerald-700 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+                <span>All Inspected Products Compliant</span>
+              </span>
+            )}
           </div>
         </div>
 
