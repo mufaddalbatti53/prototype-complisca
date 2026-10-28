@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useRole } from '../context/RoleContext';
+import { subscribeSync, broadcastSync } from '../services/sync';
 import InspectionCanvas from '../components/InspectionCanvas';
 import DeclarationTable from '../components/DeclarationTable';
 import FontAnalysisCard from '../components/FontAnalysisCard';
@@ -29,28 +30,39 @@ export default function InspectionDetail({ inspectionId, onBack }) {
   const [replying, setReplying] = useState(false);
   const [replySuccess, setReplySuccess] = useState(false);
 
-  const fetchDetail = async () => {
-    setLoading(true);
+  const fetchDetail = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const data = await api.getInspectionDetail(inspectionId);
       setInspection(data);
       if (data?.party_reply) {
         setReplyText(data.party_reply);
       }
-      if (data?.declarations?.length > 0) {
+      if (data?.declarations?.length > 0 && !selectedDecl) {
         setSelectedDecl(data.declarations[0]);
       }
     } catch (err) {
       console.error('Failed to fetch inspection detail', err);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
   useEffect(() => {
     if (inspectionId) {
-      fetchDetail();
+      fetchDetail(true);
     }
+  }, [inspectionId]);
+
+  // Real-time synchronization across all browser tabs and focus events
+  useEffect(() => {
+    const unsubscribe = subscribeSync((event) => {
+      // If this inspection or any notice was modified, refresh data
+      if (inspectionId) {
+        fetchDetail(false);
+      }
+    });
+    return unsubscribe;
   }, [inspectionId]);
 
   const handleSubmitReply = async (e) => {
@@ -62,6 +74,7 @@ export default function InspectionDetail({ inspectionId, onBack }) {
       setInspection(updated);
       setReplySuccess(true);
       setTimeout(() => setReplySuccess(false), 4000);
+      broadcastSync('REPLY_SUBMITTED', { inspectionId });
     } catch (err) {
       alert('Failed to submit show-cause reply.');
     } finally {
@@ -231,6 +244,7 @@ export default function InspectionDetail({ inspectionId, onBack }) {
                     try {
                       const updated = await api.escalateNotice(inspection.id, { action: 'FINAL_WARNING' });
                       setInspection(updated);
+                      broadcastSync('NOTICE_ESCALATED', { inspectionId: inspection.id, action: 'FINAL_WARNING' });
                     } catch (e) {
                       alert('Failed to escalate notice');
                     }
@@ -246,6 +260,7 @@ export default function InspectionDetail({ inspectionId, onBack }) {
                       try {
                         const updated = await api.escalateNotice(inspection.id, { action: 'PROSECUTION_INITIATED' });
                         setInspection(updated);
+                        broadcastSync('NOTICE_ESCALATED', { inspectionId: inspection.id, action: 'PROSECUTION_INITIATED' });
                       } catch (e) {
                         alert('Failed to initiate prosecution');
                       }
@@ -261,6 +276,7 @@ export default function InspectionDetail({ inspectionId, onBack }) {
                     try {
                       const updated = await api.escalateNotice(inspection.id, { action: 'CLOSED' });
                       setInspection(updated);
+                      broadcastSync('NOTICE_ESCALATED', { inspectionId: inspection.id, action: 'CLOSED' });
                     } catch (e) {
                       alert('Failed to close notice');
                     }

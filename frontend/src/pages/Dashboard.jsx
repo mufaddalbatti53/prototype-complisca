@@ -11,25 +11,34 @@ import {
   Eye
 } from 'lucide-react';
 import { api, STORAGE_BASE } from '../services/api';
+import { subscribeSync } from '../services/sync';
 
 export default function Dashboard({ onSelectInspection }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchStats = async () => {
-    setLoading(true);
+  const fetchStats = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const data = await api.getDashboardAnalytics();
       setStats(data);
     } catch (err) {
       console.error('Failed to load dashboard stats', err);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStats();
+    fetchStats(true);
+  }, []);
+
+  // Real-time synchronization across all browser tabs and focus events
+  useEffect(() => {
+    const unsubscribe = subscribeSync(() => {
+      fetchStats(false);
+    });
+    return unsubscribe;
   }, []);
 
   return (

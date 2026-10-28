@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, FileDown, Trash2, Calendar, Store, MapPin, Eye, ExternalLink } from 'lucide-react';
 import { api, STORAGE_BASE } from '../services/api';
+import { subscribeSync, broadcastSync } from '../services/sync';
 
 export default function History({ onSelectInspection }) {
   const [inspections, setInspections] = useState([]);
@@ -8,8 +9,8 @@ export default function History({ onSelectInspection }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [verdictFilter, setVerdictFilter] = useState('');
 
-  const loadInspections = async () => {
-    setLoading(true);
+  const loadInspections = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const params = {};
       if (searchTerm) params.search = searchTerm;
@@ -20,17 +21,26 @@ export default function History({ onSelectInspection }) {
     } catch (err) {
       console.error('Failed to load inspections', err);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
-  };
+  }, [searchTerm, verdictFilter]);
 
   useEffect(() => {
-    loadInspections();
-  }, [verdictFilter]);
+    loadInspections(true);
+  }, [loadInspections]);
+
+  // Real-time synchronization across all browser tabs and focus events
+  useEffect(() => {
+    const unsubscribe = subscribeSync((event) => {
+      // Refresh without destroying view when another tab creates/modifies an inspection or on tab focus
+      loadInspections(false);
+    });
+    return unsubscribe;
+  }, [loadInspections]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    loadInspections();
+    loadInspections(true);
   };
 
   const handleDelete = async (id) => {
@@ -38,6 +48,7 @@ export default function History({ onSelectInspection }) {
       try {
         await api.deleteInspection(id);
         setInspections((prev) => prev.filter((item) => item.id !== id));
+        broadcastSync('INSPECTION_DELETED', { id });
       } catch (err) {
         alert('Failed to delete inspection record');
       }

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { api, STORAGE_BASE } from '../services/api';
 import { useRole } from '../context/RoleContext';
+import { subscribeSync, broadcastSync } from '../services/sync';
 
 export default function AgingBuckets({ onSelectInspection }) {
   const { role } = useRole();
@@ -24,20 +25,28 @@ export default function AgingBuckets({ onSelectInspection }) {
   const [actionNoticeId, setActionNoticeId] = useState(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState(null);
 
-  const loadBuckets = async () => {
-    setLoading(true);
+  const loadBuckets = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const res = await api.getAgingBuckets();
       setData(res);
     } catch (err) {
       console.error('Failed to load aging buckets', err);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadBuckets();
+    loadBuckets(true);
+  }, []);
+
+  // Real-time synchronization across all browser tabs and focus events
+  useEffect(() => {
+    const unsubscribe = subscribeSync(() => {
+      loadBuckets(false);
+    });
+    return unsubscribe;
   }, []);
 
   const handleEscalate = async (noticeId, action) => {
@@ -45,7 +54,8 @@ export default function AgingBuckets({ onSelectInspection }) {
       await api.escalateNotice(noticeId, { action });
       setActionSuccessMsg(`Notice escalated: ${action}`);
       setTimeout(() => setActionSuccessMsg(null), 3500);
-      loadBuckets();
+      loadBuckets(false);
+      broadcastSync('NOTICE_ESCALATED', { noticeId, action });
     } catch (err) {
       alert('Failed to escalate notice status.');
     }

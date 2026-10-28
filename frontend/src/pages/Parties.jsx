@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useRole } from '../context/RoleContext';
+import { subscribeSync, broadcastSync } from '../services/sync';
 
 export default function Parties() {
   const { role } = useRole();
@@ -34,8 +35,8 @@ export default function Parties() {
   const [district, setDistrict] = useState('North West Delhi');
   const [state, setState] = useState('Delhi');
 
-  const loadParties = async () => {
-    setLoading(true);
+  const loadParties = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const params = {};
       if (search) params.search = search;
@@ -45,17 +46,25 @@ export default function Parties() {
     } catch (err) {
       console.error('Failed to load parties', err);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadParties();
+    loadParties(true);
   }, [statusFilter]);
+
+  // Real-time synchronization across all browser tabs and focus events
+  useEffect(() => {
+    const unsubscribe = subscribeSync(() => {
+      loadParties(false);
+    });
+    return unsubscribe;
+  }, []);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    loadParties();
+    loadParties(true);
   };
 
   const handleStatusChange = async (partyId, newStatus) => {
@@ -64,6 +73,7 @@ export default function Parties() {
       setParties((prev) =>
         prev.map((p) => (p.id === partyId ? { ...p, status: newStatus } : p))
       );
+      broadcastSync('PARTY_STATUS_UPDATED', { partyId, newStatus });
     } catch (err) {
       alert('Failed to update entity status.');
     }
@@ -88,7 +98,8 @@ export default function Parties() {
       setName('');
       setGstin('');
       setTradeLicense('');
-      loadParties();
+      loadParties(false);
+      broadcastSync('PARTY_CREATED');
     } catch (err) {
       alert('Failed to register new party entity.');
     } finally {

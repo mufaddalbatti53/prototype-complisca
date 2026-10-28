@@ -1,5 +1,7 @@
 import os
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend.app.core.config import settings
@@ -7,6 +9,18 @@ from backend.app.core.database import engine, Base, SessionLocal
 from backend.app.api.v1 import scan, inspections, reports, rules, analytics, parties
 from backend.app.api.v1.rules import seed_default_rules
 from backend.app.api.v1.parties import seed_default_parties
+
+logger = logging.getLogger("compliscan")
+
+# Ensure required storage directories exist immediately on server startup
+for directory in [
+    settings.STORAGE_DIR,
+    settings.UPLOAD_DIR,
+    settings.PROCESSED_DIR,
+    settings.REPORT_DIR,
+    settings.SAMPLES_DIR,
+]:
+    directory.mkdir(parents=True, exist_ok=True)
 
 # Create Database tables
 Base.metadata.create_all(bind=engine)
@@ -34,6 +48,38 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Global CORS-enforced Exception Handlers:
+# Guarantees that any 4xx or 500 error response returns full Access-Control headers,
+# preventing browsers from masking internal server errors as CORS failures.
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    origin = request.headers.get("origin") or "*"
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled server exception on %s %s: %s", request.method, request.url, exc)
+    origin = request.headers.get("origin") or "*"
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal Server Error: {str(exc)}"},
+        headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 # Mount static file storage for images and reports
 app.mount("/storage", StaticFiles(directory=str(settings.STORAGE_DIR)), name="storage")

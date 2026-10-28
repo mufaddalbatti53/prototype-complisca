@@ -51,6 +51,10 @@ async def upload_and_analyze_packaging(
     7. Save to Database
     """
     # 1. Save original file
+    settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    settings.PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    settings.REPORT_DIR.mkdir(parents=True, exist_ok=True)
+
     file_id = f"insp_{uuid.uuid4().hex[:10]}"
     ext = Path(file.filename).suffix or ".jpg"
     orig_filename = f"{file_id}_original{ext}"
@@ -62,11 +66,13 @@ async def upload_and_analyze_packaging(
     # 2. OpenCV Pre-processing
     prep_filename = f"{file_id}_preprocessed.jpg"
     prep_path = str(settings.PROCESSED_DIR / prep_filename)
+    prep_meta = {"image_sha256": "raw_upload_fallback", "estimated_pdp_area_sqcm": pdp_area_sqcm}
     
     try:
         prep_meta = ImagePreprocessor.deskew_and_enhance(orig_path, prep_path)
         calc_pdp_area = prep_meta.get("estimated_pdp_area_sqcm", pdp_area_sqcm)
     except Exception as e:
+        logger.warning(f"Preprocessing fallback for {orig_path}: {e}")
         prep_path = orig_path # fallback to original if preprocessing hits unusual raw format
         calc_pdp_area = pdp_area_sqcm
 
@@ -195,74 +201,84 @@ async def upload_and_analyze_packaging(
         report_pdf_path = None
 
     # 7. Persist to Database and link to Regulated Commercial Entity
-    party_filters = []
-    if det_brand:
-        party_filters.append(Party.name.ilike(f"%{det_brand}%"))
-    if store_name:
-        party_filters.append(Party.name.ilike(f"%{store_name}%"))
-    
-    matched_party = db.query(Party).filter(or_(*party_filters)).first() if party_filters else None
-    party_id = matched_party.id if matched_party else None
+    party_id = None
+    try:
+        party_filters = []
+        if det_brand and det_brand not in ("Generic", "Packaged Commodity"):
+            party_filters.append(Party.name.ilike(f"%{det_brand}%"))
+        if store_name and store_name not in ("Retail Inspection Point", ""):
+            party_filters.append(Party.name.ilike(f"%{store_name}%"))
+        
+        matched_party = db.query(Party).filter(or_(*party_filters)).first() if party_filters else None
+        if matched_party:
+            party_id = matched_party.id
+            matched_party.total_inspections = (matched_party.total_inspections or 0) + 1
+            if violations_cnt > 0:
+                matched_party.total_violations = (matched_party.total_violations or 0) + 1
+    except Exception as e:
+        logger.warning(f"Party association warning: {e}")
 
-    if matched_party:
-        matched_party.total_inspections = (matched_party.total_inspections or 0) + 1
-        if violations_cnt > 0:
-            matched_party.total_violations = (matched_party.total_violations or 0) + 1
-
-    inspection = Inspection(
-        id=file_id,
-        product_name=det_product,
-        brand=det_brand,
-        category=det_category,
-        inspector_id=inspector_id,
-        inspector_name=inspector_name,
-        store_name=store_name,
-        location=location,
-        status="COMPLETED",
-        compliance_verdict=verdict,
-        overall_compliance_score=overall_score,
-        violations_count=violations_cnt,
-        warnings_count=warnings_cnt,
-        pdp_area_sqcm=calc_pdp_area,
-        pdp_shape=pdp_shape,
-        images=images_meta,
-        source_type="IMAGE_UPLOAD",
-        summary=executive_summary,
-        notice_number=notice_no,
-        report_pdf_path=report_pdf_path,
-        party_id=party_id,
-        notice_due_date=datetime.datetime.utcnow() + datetime.timedelta(days=15),
-        notice_status="SHOW_CAUSE_ISSUED" if violations_cnt > 0 else "CLOSED"
-    )
-    db.add(inspection)
-    db.flush()
-
-    for decl_data in verified_decls:
-        decl_model = ExtractedDeclaration(
-            inspection_id=file_id,
-            field_code=decl_data["field_code"],
-            field_name=decl_data["field_name"],
-            statutory_rule_ref=decl_data["statutory_rule_ref"],
-            is_present=decl_data["is_present"],
-            detected_value=decl_data["detected_value"],
-            raw_ocr_text=decl_data.get("raw_ocr_text"),
-            confidence_score=decl_data.get("confidence_score", 0.95),
-            bounding_box=decl_data.get("bounding_box") or [],
-            panel_side=decl_data.get("panel_side", "PDP"),
-            measured_font_height_mm=decl_data.get("measured_font_height_mm"),
-            minimum_prescribed_height_mm=decl_data.get("minimum_prescribed_height_mm"),
-            compliance_status=decl_data.get("compliance_status", "COMPLIANT"),
-            violation_code=decl_data.get("violation_code"),
-            violation_title=decl_data.get("violation_title"),
-            violation_description=decl_data.get("violation_description"),
-            legal_remedy_recommendation=decl_data.get("legal_remedy_recommendation")
+    try:
+        inspection = Inspection(
+            id=file_id,
+            product_name=det_product,
+            brand=det_brand,
+            category=det_category,
+            inspector_id=inspector_id,
+            inspector_name=inspector_name,
+            store_name=store_name,
+            location=location,
+            status="COMPLETED",
+            compliance_verdict=verdict,
+            overall_compliance_score=overall_score,
+            violations_count=violations_cnt,
+            warnings_count=warnings_cnt,
+            pdp_area_sqcm=calc_pdp_area,
+            pdp_shape=pdp_shape,
+            images=images_meta,
+            source_type="IMAGE_UPLOAD",
+            summary=executive_summary,
+            notice_number=notice_no,
+            report_pdf_path=report_pdf_path,
+            party_id=party_id,
+            notice_due_date=datetime.datetime.utcnow() + datetime.timedelta(days=15),
+            notice_status="SHOW_CAUSE_ISSUED" if violations_cnt > 0 else "CLOSED"
         )
-        db.add(decl_model)
+        db.add(inspection)
+        db.flush()
 
-    db.commit()
-    db.refresh(inspection)
+        for decl_data in verified_decls:
+            decl_model = ExtractedDeclaration(
+                inspection_id=file_id,
+                field_code=decl_data["field_code"],
+                field_name=decl_data["field_name"],
+                statutory_rule_ref=decl_data["statutory_rule_ref"],
+                is_present=decl_data["is_present"],
+                detected_value=decl_data["detected_value"],
+                raw_ocr_text=decl_data.get("raw_ocr_text"),
+                confidence_score=decl_data.get("confidence_score", 0.95),
+                bounding_box=decl_data.get("bounding_box") or [],
+                panel_side=decl_data.get("panel_side", "PDP"),
+                measured_font_height_mm=decl_data.get("measured_font_height_mm"),
+                minimum_prescribed_height_mm=decl_data.get("minimum_prescribed_height_mm"),
+                compliance_status=decl_data.get("compliance_status", "COMPLIANT"),
+                violation_code=decl_data.get("violation_code"),
+                violation_title=decl_data.get("violation_title"),
+                violation_description=decl_data.get("violation_description"),
+                legal_remedy_recommendation=decl_data.get("legal_remedy_recommendation")
+            )
+            db.add(decl_model)
 
-    return inspection
+        db.commit()
+        db.refresh(inspection)
+        return inspection
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"Database persist error for scan {file_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to record inspection in database: {str(e)}"
+        )
 
 
 @router.post("/url", response_model=InspectionResponse)
@@ -285,12 +301,16 @@ async def scan_ecommerce_url(
     orig_path = scraped["local_image_path"]
 
     # Preprocess
+    settings.PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    settings.REPORT_DIR.mkdir(parents=True, exist_ok=True)
     prep_filename = f"{file_id}_preprocessed.jpg"
     prep_path = str(settings.PROCESSED_DIR / prep_filename)
+    prep_meta = {"image_sha256": "raw_url_fallback", "estimated_pdp_area_sqcm": req.pdp_area_sqcm or 100.0}
     try:
         prep_meta = ImagePreprocessor.deskew_and_enhance(orig_path, prep_path)
         calc_pdp_area = prep_meta.get("estimated_pdp_area_sqcm", req.pdp_area_sqcm or 100.0)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Preprocessing fallback for URL {req.url}: {e}")
         prep_path = orig_path
         calc_pdp_area = req.pdp_area_sqcm or 100.0
 
@@ -405,71 +425,81 @@ async def scan_ecommerce_url(
         report_pdf_path = None
 
     # Auto-link to matching regulated party entity if exists
-    party_filters = []
-    if det_brand:
-        party_filters.append(Party.name.ilike(f"%{det_brand}%"))
-    if req.store_name:
-        party_filters.append(Party.name.ilike(f"%{req.store_name}%"))
-    
-    matched_party = db.query(Party).filter(or_(*party_filters)).first() if party_filters else None
-    party_id = matched_party.id if matched_party else None
+    party_id = None
+    try:
+        party_filters = []
+        if det_brand and det_brand not in ("Generic", "Packaged Commodity"):
+            party_filters.append(Party.name.ilike(f"%{det_brand}%"))
+        if req.store_name and req.store_name not in ("Marketplace Listing", ""):
+            party_filters.append(Party.name.ilike(f"%{req.store_name}%"))
+        
+        matched_party = db.query(Party).filter(or_(*party_filters)).first() if party_filters else None
+        if matched_party:
+            party_id = matched_party.id
+            matched_party.total_inspections = (matched_party.total_inspections or 0) + 1
+            if violations_cnt > 0:
+                matched_party.total_violations = (matched_party.total_violations or 0) + 1
+    except Exception as e:
+        logger.warning(f"Party matching warning: {e}")
 
-    if matched_party:
-        matched_party.total_inspections = (matched_party.total_inspections or 0) + 1
-        if violations_cnt > 0:
-            matched_party.total_violations = (matched_party.total_violations or 0) + 1
-
-    inspection = Inspection(
-        id=file_id,
-        product_name=det_product,
-        brand=det_brand,
-        category=det_category,
-        inspector_id="OFFICER-ECOM-AUDIT",
-        inspector_name=req.inspector_name or "E-Commerce Legal Cell",
-        store_name=req.store_name or "Marketplace Listing",
-        location=req.location or "Digital Commerce Portal",
-        status="COMPLETED",
-        compliance_verdict=verdict,
-        overall_compliance_score=overall_score,
-        violations_count=violations_cnt,
-        warnings_count=warnings_cnt,
-        pdp_area_sqcm=calc_pdp_area,
-        images=images_meta,
-        source_type="ECOMMERCE_URL",
-        source_url=req.url,
-        summary=executive_summary,
-        notice_number=notice_no,
-        report_pdf_path=report_pdf_path,
-        party_id=party_id,
-        notice_due_date=datetime.datetime.utcnow() + datetime.timedelta(days=15),
-        notice_status="SHOW_CAUSE_ISSUED" if violations_cnt > 0 else "CLOSED"
-    )
-    db.add(inspection)
-    db.flush()
-
-    for decl_data in verified_decls:
-        decl_model = ExtractedDeclaration(
-            inspection_id=file_id,
-            field_code=decl_data["field_code"],
-            field_name=decl_data["field_name"],
-            statutory_rule_ref=decl_data["statutory_rule_ref"],
-            is_present=decl_data["is_present"],
-            detected_value=decl_data["detected_value"],
-            raw_ocr_text=decl_data.get("raw_ocr_text"),
-            confidence_score=decl_data.get("confidence_score", 0.95),
-            bounding_box=decl_data.get("bounding_box") or [],
-            panel_side=decl_data.get("panel_side", "PDP"),
-            measured_font_height_mm=decl_data.get("measured_font_height_mm"),
-            minimum_prescribed_height_mm=decl_data.get("minimum_prescribed_height_mm"),
-            compliance_status=decl_data.get("compliance_status", "COMPLIANT"),
-            violation_code=decl_data.get("violation_code"),
-            violation_title=decl_data.get("violation_title"),
-            violation_description=decl_data.get("violation_description"),
-            legal_remedy_recommendation=decl_data.get("legal_remedy_recommendation")
+    try:
+        inspection = Inspection(
+            id=file_id,
+            product_name=det_product,
+            brand=det_brand,
+            category=det_category,
+            inspector_id="OFFICER-ECOM-AUDIT",
+            inspector_name=req.inspector_name or "E-Commerce Legal Cell",
+            store_name=req.store_name or "Marketplace Listing",
+            location=req.location or "Digital Commerce Portal",
+            status="COMPLETED",
+            compliance_verdict=verdict,
+            overall_compliance_score=overall_score,
+            violations_count=violations_cnt,
+            warnings_count=warnings_cnt,
+            pdp_area_sqcm=calc_pdp_area,
+            images=images_meta,
+            source_type="ECOMMERCE_URL",
+            source_url=req.url,
+            summary=executive_summary,
+            notice_number=notice_no,
+            report_pdf_path=report_pdf_path,
+            party_id=party_id,
+            notice_due_date=datetime.datetime.utcnow() + datetime.timedelta(days=15),
+            notice_status="SHOW_CAUSE_ISSUED" if violations_cnt > 0 else "CLOSED"
         )
-        db.add(decl_model)
+        db.add(inspection)
+        db.flush()
 
-    db.commit()
-    db.refresh(inspection)
+        for decl_data in verified_decls:
+            decl_model = ExtractedDeclaration(
+                inspection_id=file_id,
+                field_code=decl_data["field_code"],
+                field_name=decl_data["field_name"],
+                statutory_rule_ref=decl_data["statutory_rule_ref"],
+                is_present=decl_data["is_present"],
+                detected_value=decl_data["detected_value"],
+                raw_ocr_text=decl_data.get("raw_ocr_text"),
+                confidence_score=decl_data.get("confidence_score", 0.95),
+                bounding_box=decl_data.get("bounding_box") or [],
+                panel_side=decl_data.get("panel_side", "PDP"),
+                measured_font_height_mm=decl_data.get("measured_font_height_mm"),
+                minimum_prescribed_height_mm=decl_data.get("minimum_prescribed_height_mm"),
+                compliance_status=decl_data.get("compliance_status", "COMPLIANT"),
+                violation_code=decl_data.get("violation_code"),
+                violation_title=decl_data.get("violation_title"),
+                violation_description=decl_data.get("violation_description"),
+                legal_remedy_recommendation=decl_data.get("legal_remedy_recommendation")
+            )
+            db.add(decl_model)
 
-    return inspection
+        db.commit()
+        db.refresh(inspection)
+        return inspection
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"Database persist error for scan {file_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to record URL inspection in database: {str(e)}"
+        )

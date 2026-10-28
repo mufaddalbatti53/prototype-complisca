@@ -16,6 +16,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { api, STORAGE_BASE } from '../services/api';
+import { broadcastSync } from '../services/sync';
 import InspectionCanvas from '../components/InspectionCanvas';
 import DeclarationTable from '../components/DeclarationTable';
 import FontAnalysisCard from '../components/FontAnalysisCard';
@@ -173,6 +174,7 @@ export default function Scanner() {
       }
 
       setInspectionResult(result);
+      broadcastSync('INSPECTION_CREATED', result);
       if (result?.declarations?.length > 0) {
         setSelectedDecl(result.declarations[0]);
       }

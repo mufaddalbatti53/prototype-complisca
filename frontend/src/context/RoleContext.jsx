@@ -39,12 +39,18 @@ const RoleContext = createContext(null);
 
 export function RoleProvider({ children }) {
   const [role, setRole] = useState(() => {
-    return localStorage.getItem('compliscan_role') || 'SUPERADMIN';
+    // Check sessionStorage first to allow distinct personas in different tabs simultaneously
+    return (
+      sessionStorage.getItem('compliscan_role') ||
+      localStorage.getItem('compliscan_role') ||
+      'SUPERADMIN'
+    );
   });
 
   const changeRole = (newRole) => {
     if (ROLES[newRole]) {
       setRole(newRole);
+      sessionStorage.setItem('compliscan_role', newRole);
       localStorage.setItem('compliscan_role', newRole);
     }
   };
