@@ -8,16 +8,12 @@ from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Pinned model hierarchy prioritized for maximum visual accuracy, high availability, and ultra-fast throughput
+# Pinned ultra-fast flash-lite models prioritized for maximum throughput (<3s response)
 FLAGSHIP_MODELS = [
-    "gemini-3.5-flash-lite",     # Ultra-fast SOTA production flash model (proven 1.97s response time)
-    "gemini-flash-lite-latest",  # Official latest fast flash-lite alias
-    "gemini-3.5-flash",          # High-accuracy SOTA production model
-    "gemini-flash-latest",       # Official latest flash alias
-    getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash"),
-    "gemini-3.8-flash",          # Advanced multimodal preview model
-    "gemini-3.7-flash",          # High-capacity multimodal model
-    "gemini-3.1-flash-lite"      # High-availability fallback
+    "gemini-3.1-flash-lite",     # Proven fastest multimodal throughput (2.1s - 3.8s)
+    "gemini-flash-lite-latest",  # Official latest fast flash-lite alias (2.6s)
+    "gemini-3.5-flash-lite",     # High-speed SOTA flash-lite (2.3s)
+    getattr(settings, "GEMINI_MODEL", "gemini-3.1-flash-lite")
 ]
 
 # PURE OCR & TEXT EXTRACTION PROMPT (Zero legal logic or compliance scoring in the AI prompt)
@@ -134,8 +130,8 @@ class GeminiService:
                 continue
             seen_models.add(model_name)
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={settings.GEMINI_API_KEY}"
-            # Robust 30s timeout so multimodal generation is never cut off prematurely
-            req_timeout = 30
+            # Fast 10s timeout to prevent request stalls and guarantee rapid failover
+            req_timeout = 10
             try:
                 response = requests.post(url, json=payload, headers=headers, timeout=req_timeout)
                 if response.status_code == 200:

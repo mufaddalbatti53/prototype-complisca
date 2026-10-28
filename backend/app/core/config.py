@@ -15,7 +15,7 @@ class Settings(BaseSettings):
         "GEMINI_API_KEY", 
         "AQ.Ab8RN6LKIYapKpDDcFouJYcl_-iXuzjFMHdkR6uoQe417JJPug"
     )
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
     
     # Database
     DATABASE_URL: str = os.getenv(
