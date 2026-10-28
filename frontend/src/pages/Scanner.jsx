@@ -107,15 +107,20 @@ export default function Scanner() {
     setErrorMsg(null);
     setPipelineStep(1);
 
+    let pipelineTimers = [];
     try {
       let result = null;
       const savedLocalRules = sessionStorage.getItem('compliscan_local_rules');
+
+      pipelineTimers.push(setTimeout(() => setPipelineStep(2), 700));
+      pipelineTimers.push(setTimeout(() => setPipelineStep(3), 1600));
+      pipelineTimers.push(setTimeout(() => setPipelineStep(4), 2600));
+      pipelineTimers.push(setTimeout(() => setPipelineStep(5), 3800));
 
       if (mode === 'url') {
         if (!urlInput.trim()) {
           throw new Error('Please enter a valid product listing URL.');
         }
-        setPipelineStep(2);
         let localRulesParsed = null;
         try {
           if (savedLocalRules) {
@@ -164,11 +169,6 @@ export default function Scanner() {
           } catch (e) {}
         }
 
-        setTimeout(() => setPipelineStep(2), 800);  // OpenCV Preprocessing
-        setTimeout(() => setPipelineStep(3), 2000); // OCR & Dimensions
-        setTimeout(() => setPipelineStep(4), 3500); // Rule + Gemini Flash
-        setTimeout(() => setPipelineStep(5), 5200); // Form 1 Notice Generation
-
         result = await api.uploadAndScan(formData);
       }
 
@@ -179,6 +179,7 @@ export default function Scanner() {
     } catch (err) {
       setErrorMsg(err.response?.data?.detail || err.message || 'Inspection failed.');
     } finally {
+      pipelineTimers.forEach((t) => clearTimeout(t));
       setLoading(false);
       setPipelineStep(0);
     }

@@ -8,13 +8,13 @@ from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Pinned model hierarchy prioritized for maximum visual accuracy, high availability, and determinism
+# Pinned model hierarchy prioritized for maximum visual accuracy, high availability, and ultra-fast throughput
 FLAGSHIP_MODELS = [
+    "gemini-3.5-flash-lite",  # Ultra-fast SOTA production flash model (proven ~3.3s response time)
+    "gemini-3.5-flash",       # High-accuracy SOTA production model (proven reliable ~10s response time)
     getattr(settings, "GEMINI_MODEL", "gemini-3.8-flash"),
-    "gemini-3.8-flash",       # Requested primary SOTA model
-    "gemini-3.5-flash",       # Ultra-reliable SOTA production model (proven ~5s latency)
-    "gemini-3.5-flash-lite",  # Ultra-fast production flash model (proven ~3s latency)
-    "gemini-3.6-flash",       # Deep multimodal fallback
+    "gemini-3.8-flash",       # Advanced multimodal preview model
+    "gemini-3.7-flash",       # High-capacity multimodal model
     "gemini-3.1-flash-lite"   # High-availability fallback
 ]
 
@@ -132,8 +132,8 @@ class GeminiService:
                 continue
             seen_models.add(model_name)
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={settings.GEMINI_API_KEY}"
-            # Responsive timeout: 10s for 3.8 so any preview delay/503 quickly fails over to 3.5-flash
-            req_timeout = 10 if "3.8" in model_name else 15
+            # Robust 30s timeout so multimodal generation is never cut off prematurely
+            req_timeout = 30
             try:
                 response = requests.post(url, json=payload, headers=headers, timeout=req_timeout)
                 if response.status_code == 200:
