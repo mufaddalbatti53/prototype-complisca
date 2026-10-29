@@ -42,7 +42,6 @@ export default function AgingBuckets({ onSelectInspection }) {
     loadBuckets(true);
   }, []);
 
-  // Real-time synchronization across all browser tabs and focus events
   useEffect(() => {
     const unsubscribe = subscribeSync(() => {
       loadBuckets(false);

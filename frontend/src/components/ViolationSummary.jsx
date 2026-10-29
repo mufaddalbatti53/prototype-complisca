@@ -27,9 +27,8 @@ export default function ViolationSummary({ inspection }) {
     const url = api.getPdfReportUrl(id);
 
     try {
-      // Direct fetch to guarantee download trigger and catch cold-starts cleanly
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout for cold start
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
 
       const response = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -49,7 +48,6 @@ export default function ViolationSummary({ inspection }) {
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.warn('Direct PDF fetch failed or timed out:', err);
-      // Fallback: open in new tab in case of pop-up / CORS quirks
       window.open(url, '_blank');
       setDownloadNotice('The cloud server is warming up from standby. If your download did not start automatically, please retry in a few seconds.');
     } finally {

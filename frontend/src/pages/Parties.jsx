@@ -27,7 +27,6 @@ export default function Parties() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // New Party Form
   const [name, setName] = useState('');
   const [entityType, setEntityType] = useState('Retailer');
   const [gstin, setGstin] = useState('');
@@ -54,7 +53,6 @@ export default function Parties() {
     loadParties(true);
   }, [statusFilter]);
 
-  // Real-time synchronization across all browser tabs and focus events
   useEffect(() => {
     const unsubscribe = subscribeSync(() => {
       loadParties(false);

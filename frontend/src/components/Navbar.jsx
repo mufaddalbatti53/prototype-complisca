@@ -51,7 +51,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
     }
   };
 
-  // 8 AICTE Navigation Tabs
+  //navigation
   const masterNavItems = [
     { id: 'applications', label: 'Applications', icon: FileText, tag: 'Workflow' },
     { id: 'pendency', label: 'Pendency', icon: BarChart3, tag: 'Dashboard' },
@@ -63,12 +63,11 @@ export default function Navbar({ activeTab, setActiveTab }) {
     { id: 'audit', label: 'Audit Trail', icon: History, tag: 'Logs' },
   ];
 
-  // Filter based on allowed tabs for current role
   const navItems = masterNavItems.filter((item) =>
     roleConfig.allowedTabs.includes(item.id)
   );
 
-  // Role-filtered notifications
+  //notifications
   const roleNotifs = notifications.filter((n) => {
     if (role === 'INSTITUTION') {
       return n.audienceRole === 'INSTITUTION' || n.institutionId === 'inst_sunrise';
@@ -82,12 +81,12 @@ export default function Navbar({ activeTab, setActiveTab }) {
     if (role === 'COMMITTEE') {
       return n.audienceRole === 'COMMITTEE';
     }
-    return true; // SUPERADMIN sees all
+    return true;
   });
 
   const unreadNotifs = roleNotifs.filter((n) => !n.acknowledged);
 
-  // Dynamic mobile bottom items tailored to each role
+  //mobile navigation
   const mobileBottomItems = (() => {
     if (role === 'INSTITUTION') {
       return [

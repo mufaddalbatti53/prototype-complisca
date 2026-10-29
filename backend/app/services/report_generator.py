@@ -27,7 +27,6 @@ class InspectionReportGenerator:
 
         styles = getSampleStyleSheet()
         
-        # Custom typography styles
         title_style = ParagraphStyle(
             'GovTitle',
             parent=styles['Heading1'],
@@ -72,7 +71,6 @@ class InspectionReportGenerator:
 
         story = []
 
-        # 1. Header Banner
         story.append(Paragraph("<b>GOVERNMENT OF INDIA</b>", title_style))
         story.append(Paragraph("MINISTRY OF CONSUMER AFFAIRS, FOOD & PUBLIC DISTRIBUTION", subtitle_style))
         story.append(Paragraph("DEPARTMENT OF LEGAL METROLOGY — ENFORCEMENT DIVISION", subtitle_style))
@@ -81,7 +79,6 @@ class InspectionReportGenerator:
         story.append(Spacer(1, 10))
         story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#0B132B'), spaceBefore=2, spaceAfter=8))
 
-        # 2. Metadata Grid (Formatted in Indian Standard Time IST)
         created_dt_ist = to_ist(inspection_data.get("created_at"))
         notice_no = inspection_data.get("notice_number") or f"LMPC-INSP-{created_dt_ist.strftime('%Y%m%d%H%M')}"
         created_at_str = created_dt_ist.strftime("%d-%b-%Y %I:%M:%S %p IST")
@@ -127,7 +124,6 @@ class InspectionReportGenerator:
         story.append(meta_table)
         story.append(Spacer(1, 10))
 
-        # 3. Declarations Audit Table
         story.append(Paragraph("<b>MANDATORY DECLARATIONS AUDIT MATRIX (LMPC RULES, 2011)</b>", section_style))
         
         declarations = inspection_data.get("declarations", [])
@@ -180,7 +176,6 @@ class InspectionReportGenerator:
         story.append(decl_table)
         story.append(Spacer(1, 10))
 
-        # 4. Packaging Photographic Evidence (if image exists)
         images = inspection_data.get("images", [])
         annotated_img_path = None
         if images and len(images) > 0:
@@ -195,7 +190,6 @@ class InspectionReportGenerator:
             except Exception:
                 pass
 
-        # 5. Statutory Warnings & Legal Notice
         story.append(Paragraph("<b>STATUTORY NOTICE & LEGAL IMPLICATIONS:</b>", section_style))
         legal_text = (
             "1. <b>Contravention of Section 18:</b> Any manufacturer, packer or importer who sells or offers for sale "
@@ -209,7 +203,6 @@ class InspectionReportGenerator:
         story.append(Paragraph(legal_text, body_style))
         story.append(Spacer(1, 15))
 
-        # 6. Signatures
         sig_data = [
             [
                 Paragraph("<b>Signature of Noticee / Representative:</b><br/><br/>___________________________<br/>Date:", body_style),

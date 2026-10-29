@@ -51,38 +51,33 @@ export default function Applications() {
 
   const { role, roleConfig } = useRole();
 
-  // Filter & Search States
+  //filters
   const [searchQuery, setSearchQuery] = useState('');
   const [stageFilter, setStageFilter] = useState('ALL');
   const [regionFilter, setRegionFilter] = useState('ALL');
   const [routeFilter, setRouteFilter] = useState('ALL');
 
-  // Selected application ID for INLINE accordion expansion (directly below clicked row)
   const [selectedAppId, setSelectedAppId] = useState(null);
   const [revertAppTarget, setRevertAppTarget] = useState(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [bureauEscalationInboxOnly, setBureauEscalationInboxOnly] = useState(role === 'BUREAU_OFFICER');
 
-  // Automatically activate the Escalation Inbox for Bureau Officer persona
   useEffect(() => {
     if (role === 'BUREAU_OFFICER') {
       setBureauEscalationInboxOnly(true);
     }
   }, [role]);
 
-  // Dynamically derive selectedApp so all changes update in REAL-TIME with ZERO REFRESH
   const selectedApp = applications.find((a) => a.id === selectedAppId) || null;
 
-  // Modals
+  //modals
   const [intakeModalOpen, setIntakeModalOpen] = useState(false);
   const [revertModalOpen, setRevertModalOpen] = useState(false);
   const [decisionModalOpen, setDecisionModalOpen] = useState(false);
 
-  // Revert Form State
   const [deficiencyReason, setDeficiencyReason] = useState('Deficient Documents / Affidavits');
   const [deficiencyNotes, setDeficiencyNotes] = useState('');
 
-  // Decision Form State
   const [decisionChoice, setDecisionChoice] = useState('APPROVED');
   const [conditionalUndertakings, setConditionalUndertakings] = useState([
     'Recruit 3 Ph.D. faculty members in Computer Science within 90 days.',
@@ -90,12 +85,10 @@ export default function Applications() {
   ]);
   const [newUndertakingText, setNewUndertakingText] = useState('');
 
-  // AI Executive Case Brief (Module A Requirement)
   const [caseBriefs, setCaseBriefs] = useState({});
   const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
   const [briefCopied, setBriefCopied] = useState(false);
 
-  // New Application Intake Form State
   const [newAppForm, setNewAppForm] = useState({
     institutionId: 'inst_sunrise',
     institutionName: 'Sunrise Institute of Technology',
@@ -107,7 +100,7 @@ export default function Applications() {
     courseDetails: 'Addition of B.Tech in Artificial Intelligence & Machine Learning (60 Seats)'
   });
 
-  // Role Scoping & Isolation
+  //role scoping
   const isInstitutionRole = role === 'INSTITUTION';
   const isRegionalOfficer = role === 'REGIONAL_OFFICER';
   const isCommitteeRole = role === 'COMMITTEE';
@@ -121,11 +114,9 @@ export default function Applications() {
       );
     }
     if (isRegionalOfficer) {
-      // RO-West only sees Western Regional Office applications
       return app.region === 'Western Regional Office';
     }
     if (isCommitteeRole) {
-      // Inspection committee only sees applications at EVC inspection stages
       return (
         app.currentStage === 'EVC_QUEUE' ||
         app.currentStage === 'EVC_SCHEDULED' ||
@@ -135,7 +126,6 @@ export default function Applications() {
     return true;
   });
 
-  // Filtered List based on search, filters, and Bureau Escalation Inbox toggle
   const filteredApps = accessibleApps.filter((app) => {
     if (isBureauOfficer && bureauEscalationInboxOnly) {
       const sla = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
@@ -285,7 +275,6 @@ export default function Applications() {
       setCaseBriefs((prev) => ({ ...prev, [app.refNo]: summary }));
     } catch (err) {
       console.warn('Backend brief failed, using intelligent client brief fallback:', err);
-      // Fallback in simple, friendly English
       setCaseBriefs((prev) => ({
         ...prev,
         [app.refNo]: {
@@ -384,7 +373,6 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
               </span>
             )
           ) : (
-            // Regional Officer / Superadmin actions for Scrutiny and Advance
             (isRegionalOfficer || role === 'SUPERADMIN') &&
             app.currentStage !== 'CLOSED' &&
             app.currentStage !== 'REVERTED' && (

@@ -30,12 +30,11 @@ export default function EvcModule() {
   const [activeTab, setActiveTab] = useState(isCommitteeRole ? 'SCHEDULED' : 'QUEUE'); // 'QUEUE', 'SCHEDULED', 'COMPLETED', 'CALENDAR'
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Modals
+  //modals
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [completeModalOpen, setCompleteModalOpen] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState(null);
 
-  // Schedule Form State
   const [scheduleForm, setScheduleForm] = useState({
     scheduledDate: '2026-11-05',
     convener: 'Prof. K. Ramanathan (IIT Hyderabad)',
@@ -43,18 +42,13 @@ export default function EvcModule() {
     mode: 'PHYSICAL'
   });
 
-  // Complete Form State
   const [completeForm, setCompleteForm] = useState({
     recommendation: 'RECOMMENDED_FOR_APPROVAL',
     observations: 'Physical inspection completed. Campus land area (5.2 Acres), built-up administrative area, computer laboratories (120 terminals), and library titles satisfy APH 2026 norms. Faculty cadre ratio meets 1:15 requirement.',
     reportUrl: '/reports/EVC_Final_Report_Verified.pdf'
   });
 
-  // Role Scoping for EVC Module:
-  // - College only sees own institution visits
-  // - RO-West only sees Western Regional Office visits
-  // - Committee head only sees assigned inspections
-  // - DG / Bureau sees national visits
+  //role scoping
   const accessibleVisits = isInstitutionRole
     ? evcVisits.filter(
         (v) => v.institutionId === 'inst_sunrise' || v.institutionName.toLowerCase().includes('sunrise')
@@ -70,7 +64,6 @@ export default function EvcModule() {
       )
     : evcVisits;
 
-  // Filtered visits
   const filteredVisits = accessibleVisits.filter((v) => {
     const matchesSearch =
       v.refNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -304,7 +297,6 @@ export default function EvcModule() {
           </div>
         </div>
       ) : (
-        /* Visit Queue & Records Table */
         <div className="civic-card rounded-2xl overflow-hidden bg-white">
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">

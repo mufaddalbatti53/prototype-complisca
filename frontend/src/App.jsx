@@ -47,7 +47,6 @@ function AppContent() {
     }
   };
 
-  // When role changes, switch directly to that role's designated landing first-page
   useEffect(() => {
     if (roleConfig?.defaultTab) {
       setActiveTab(roleConfig.defaultTab);
@@ -68,7 +67,6 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    // Check backend health
     const wakeTimer = setTimeout(() => {
       setServerStatus((prev) => (prev === 'checking' ? 'waking' : prev));
     }, 2500);

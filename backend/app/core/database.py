@@ -6,7 +6,7 @@ from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Engine configuration: Normalize postgresql connection strings and support psycopg2 / psycopg
+# database engine
 raw_db_url = settings.DATABASE_URL
 db_url = raw_db_url
 
@@ -23,7 +23,6 @@ try:
         connect_args=connect_args,
         echo=False
     )
-    # Test connection
     with engine.connect() as conn:
         pass
     logger.info("Database connection established successfully")

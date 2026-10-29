@@ -7,15 +7,14 @@ class Party(Base):
 
     id = Column(String(50), primary_key=True, index=True)
     name = Column(String(255), index=True)
-    entity_type = Column(String(100), default="Retailer") # Retailer, Manufacturer, Packer, Importer, E-Commerce Platform
+    entity_type = Column(String(100), default="Retailer")
     gstin = Column(String(50), nullable=True)
     trade_license = Column(String(100), nullable=True)
     district = Column(String(100), default="North Delhi")
     state = Column(String(100), default="Delhi")
     
-    # Lifecycle & Compliance Status: APPROVED, PENDING_REVIEW, SUSPENDED, REVOKED
     status = Column(String(50), default="APPROVED", index=True)
-    risk_rating = Column(String(50), default="LOW") # LOW, MEDIUM, HIGH, CRITICAL
+    risk_rating = Column(String(50), default="LOW")
     
     total_inspections = Column(Integer, default=0)
     total_violations = Column(Integer, default=0)

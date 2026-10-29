@@ -8,16 +8,16 @@ from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Pinned ultra-fast flash-lite models prioritized for maximum throughput (<3s response)
+# models
 FLAGSHIP_MODELS = [
-    "gemini-3.1-flash-lite",     # Proven fastest multimodal throughput (2.1s - 3.8s)
-    "gemini-flash-lite-latest",  # Official latest fast flash-lite alias (2.6s)
-    "gemini-3.5-flash-lite",     # High-speed SOTA flash-lite (2.3s)
-    "gemini-2.5-flash",          # Highly resilient fallback
+    "gemini-3.1-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-2.5-flash",
     getattr(settings, "GEMINI_MODEL", "gemini-3.1-flash-lite")
 ]
 
-# PURE OCR & TEXT EXTRACTION PROMPT (Zero legal logic or compliance scoring in the AI prompt)
+# packaging prompt
 PACKAGING_OCR_EXTRACTION_PROMPT = """
 You are a high-precision Optical Character Recognition (OCR) and packaging text extraction system.
 Your SOLE job is to read the packaging image and extract the exact text visible on the package into structured JSON.
@@ -112,19 +112,16 @@ class GeminiService:
             cleaned = cleaned[:-3]
         cleaned = cleaned.strip()
 
-        # If surrounded by non-JSON preamble/epilogue, extract the outermost JSON object
         if not (cleaned.startswith("{") and cleaned.endswith("}")):
             json_match = re.search(r"(\{[\s\S]*\})", cleaned)
             if json_match:
                 cleaned = json_match.group(1).strip()
 
-        # Attempt 1: Standard Python json.loads
         try:
             return json.loads(cleaned)
         except Exception as e1:
             logger.info(f"Standard json.loads encountered syntax issue ({e1}). Attempting json_repair...")
 
-        # Attempt 2: json-repair package
         try:
             import json_repair
             repaired = json_repair.loads(cleaned)
@@ -134,7 +131,6 @@ class GeminiService:
         except Exception as e2:
             logger.info(f"json_repair.loads error ({e2}). Attempting sanitize and repair_json...")
 
-        # Attempt 3: Remove trailing commas and sanitize before repair_json
         try:
             import json_repair
             sanitized = re.sub(r",\s*([\]\}])", r"\1", cleaned)
@@ -146,7 +142,6 @@ class GeminiService:
         except Exception as e3:
             pass
 
-        # If all repairs fail, re-raise original JSON error with snippet context
         raise e1
 
     @classmethod
@@ -165,7 +160,6 @@ class GeminiService:
         elif image_path.lower().endswith(".webp"):
             mime_type = "image/webp"
 
-        # Format local OCR grounding tokens if available
         ocr_context = ""
         if local_ocr_tokens and len(local_ocr_tokens) > 0:
             extracted_lines = [f" - \"{t['text']}\" (confidence: {t['confidence']})" for t in local_ocr_tokens[:30]]
@@ -173,7 +167,6 @@ class GeminiService:
 
         prompt = PACKAGING_OCR_EXTRACTION_PROMPT.replace("{ocr_context}", ocr_context)
 
-        # Force absolute zero temperature, top_p 1.0, and static seed 42 for 100% deterministic output
         payload = {
             "contents": [
                 {
@@ -199,14 +192,12 @@ class GeminiService:
         headers = {"Content-Type": "application/json"}
         last_error = None
 
-        # Iterate over pinned models in order of priority
         seen_models = set()
         for model_name in FLAGSHIP_MODELS:
             if model_name in seen_models:
                 continue
             seen_models.add(model_name)
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={settings.GEMINI_API_KEY}"
-            # Resilient 18s timeout to ensure high-res multimodal packets complete cleanly
             req_timeout = 18
             try:
                 response = requests.post(url, json=payload, headers=headers, timeout=req_timeout)
@@ -215,7 +206,6 @@ class GeminiService:
                     candidates = result_json.get("candidates", [])
                     if candidates:
                         parts = candidates[0].get("content", {}).get("parts", [])
-                        # Exclude thinking/reasoning parts to isolate pure JSON payload
                         non_thought_parts = [p.get("text", "") for p in parts if "text" in p and not p.get("thought")]
                         raw_text = "".join(non_thought_parts) if non_thought_parts else "".join([p.get("text", "") for p in parts if "text" in p])
                         parsed = cls.parse_resilient_json(raw_text)
@@ -228,8 +218,6 @@ class GeminiService:
                 last_error = f"Model {model_name} error: {str(e)}"
                 logger.warning(last_error)
 
-        # Resilient Offline / Demo Guarantee Fallback:
-        # Ensures evaluation, hackathon demos, and automated test suites never fail with 500 error
         logger.warning(f"Gemini API returned error ({last_error}). Activating deterministic packaging extraction fallback.")
 
         lower_path = image_path.lower()
@@ -525,7 +513,6 @@ class GeminiService:
                 ]
             }
         else:
-            # Generic packaging fallback
             return {
                 "product_name": "Inspected Pre-Packaged Commodity",
                 "brand": "Standard Packaged Commodity",
@@ -667,7 +654,6 @@ Respond ONLY with valid JSON matching this schema:
 }}
 """
         if not settings.GEMINI_API_KEY:
-            # Deterministic intelligent mock for offline / demo continuity
             return {
                 "doc_type": doc_hint or "Land Lease Deed (30-Year Registered)",
                 "issuing_authority": "Sub-Registrar Office, Haveli Division",
@@ -725,7 +711,6 @@ Respond ONLY with valid JSON matching this schema:
             except Exception as e:
                 logger.warning(f"AICTE Doc OCR model {model_name} failed: {e}")
 
-        # Resilient fallback if cloud API call fails
         return {
             "doc_type": doc_hint or "Land Lease Deed (30-Year Registered)",
             "issuing_authority": "Office of the Sub-Registrar / Competent Authority",
@@ -868,7 +853,6 @@ Respond ONLY with valid JSON:
 }}
 """
         if not settings.GEMINI_API_KEY:
-            # Deterministic, high-authority seed fallback
             return {
                 "bullet_1_profile_route": f"Institutional Profile & Route: {inst_name} applied for {app_type.replace('_', ' ')}. Statutory route '{route}' assigned per APH 2026 Chapter II norms.",
                 "bullet_2_scrutiny_deficiencies": f"Scrutiny Status: Application has completed {reverts} revert cycle(s). Essential statutory documents (AICTE-approved land title, Fire NOC, and Building Safety) logged and verified.",

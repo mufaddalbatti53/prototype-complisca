@@ -1,13 +1,8 @@
-/**
- * Indian Standard Time (IST - UTC+05:30) date & time utilities.
- * Ensures all timestamps across the CompliScan UI are displayed in accurate IST.
- */
-
+//date formatting
 export function formatIST(dateStr, includeSeconds = true) {
   if (!dateStr) return '-';
   try {
     let s = String(dateStr).trim();
-    // If string has no timezone indicator (no 'Z' and no '+' or '-'), treat as UTC
     if (!s.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(s)) {
       s += 'Z';
     }

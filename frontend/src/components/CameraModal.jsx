@@ -7,9 +7,8 @@ export default function CameraModal({ isOpen, onClose, onCapture }) {
   const [stream, setStream] = useState(null);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [cameraError, setCameraError] = useState(null);
-  const [facingMode, setFacingMode] = useState('environment'); // back camera preferred
+  const [facingMode, setFacingMode] = useState('environment');
 
-  // Intelligent real-time video telemetry ("In focus", "Good light", "Move closer")
   const [lightStatus, setLightStatus] = useState({ label: 'Good light', isOk: true });
   const [focusStatus, setFocusStatus] = useState({ label: 'In focus', isOk: true });
   const [distanceStatus, setDistanceStatus] = useState({ label: 'Move closer', isOk: false });
@@ -23,7 +22,7 @@ export default function CameraModal({ isOpen, onClose, onCapture }) {
     return () => stopCamera();
   }, [isOpen, facingMode]);
 
-  // Real-time video frame analyzer (measures brightness, sharpness, edge density)
+  //video telemetry
   useEffect(() => {
     if (!stream || capturedPhoto) return;
 
@@ -61,7 +60,6 @@ export default function CameraModal({ isOpen, onClose, onCapture }) {
         const avgBrightness = totalBrightness / count;
         const avgSharpness = edgeVariance / count;
 
-        // 1. Light evaluation
         if (avgBrightness < 65) {
           setLightStatus({ label: 'Too dark', isOk: false });
         } else if (avgBrightness > 215) {
@@ -70,14 +68,12 @@ export default function CameraModal({ isOpen, onClose, onCapture }) {
           setLightStatus({ label: 'Good light', isOk: true });
         }
 
-        // 2. Focus / Sharpness evaluation
         if (avgSharpness > 14) {
           setFocusStatus({ label: 'In focus', isOk: true });
         } else {
           setFocusStatus({ label: 'Hold steady', isOk: false });
         }
 
-        // 3. Proximity / Framing evaluation
         if (avgSharpness > 20 && avgBrightness > 80 && avgBrightness < 200) {
           setDistanceStatus({ label: 'Aligned', isOk: true });
         } else {

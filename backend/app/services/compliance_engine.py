@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Optional
 import copy
 
-# Strictly enforce Indian Standard Time (IST UTC+05:30) as used in CompliScan
 IST = timezone(timedelta(hours=5, minutes=30))
 
 APH_DEFAULT_CONFIG: Dict[str, Any] = {
@@ -125,16 +124,13 @@ class AICTEWorkflowRuleEngine:
         self.config = copy.deepcopy(APH_DEFAULT_CONFIG)
         return self.config
 
-    # =========================================================================
-    # MODULE A: AUTO ROUTE DETERMINATION & STAGE STATE MACHINE
-    # =========================================================================
+    # module a
     def determine_route(self, app_type: str, override_route: Optional[str] = None) -> Dict[str, Any]:
         """Determines the prescribed APH route and initial active stage upon intake."""
         route_map = self.config["application_type_route_map"]
         route_key = override_route if override_route in self.config["routes"] else route_map.get(app_type, "SCRUTINY_EVC")
         stages = self.config["routes"][route_key]
 
-        # Move automatically from SUBMITTED (index 0) to first working stage (index 1)
         initial_stage = stages[1] if len(stages) > 1 else stages[0]
         sla_days = self._get_stage_sla_days(initial_stage, app_type, resubmission_count=0)
         now = self.now_ist()
@@ -175,7 +171,6 @@ class AICTEWorkflowRuleEngine:
         stages: List[str] = list(self.config["routes"].get(route_key, []))
         current_stage = application["current_stage"]
 
-        # Dynamic injection of SAC_REVIEW if observations require Standing Appellate/Hearing Committee
         if require_sac_appeal and "SAC_REVIEW" not in stages and "DECISION" in stages:
             decision_idx = stages.index("DECISION")
             stages.insert(decision_idx, "SAC_REVIEW")
@@ -286,9 +281,7 @@ class AICTEWorkflowRuleEngine:
             ),
         }
 
-    # =========================================================================
-    # MODULE D & E: DOCUMENT VALIDITY, OCR CROSS-CHECK & UNDERTAKING EVALUATOR
-    # =========================================================================
+    # module d and e
     def evaluate_document_validity(
         self,
         document: Dict[str, Any],
@@ -302,17 +295,15 @@ class AICTEWorkflowRuleEngine:
         expiry_raw = document.get("expiry_date") or document.get("expiryDate") or now.isoformat()
         expiry_dt = self._parse_iso(expiry_raw)
         days_remaining = (expiry_dt.date() - now.date()).days
-        alert_windows = sorted(self.config["doc_expiry_alerts_days"], reverse=True)  # [90, 60, 30, 7]
+        alert_windows = sorted(self.config["doc_expiry_alerts_days"], reverse=True)
         max_lead = alert_windows[0] if alert_windows else 90
 
-        # 1. Check OCR date vs claimed date (CompliScan Vision USP)
         ocr_mismatch = False
         if ocr_extracted_expiry:
             ocr_dt = self._parse_iso(ocr_extracted_expiry)
             if abs((ocr_dt.date() - expiry_dt.date()).days) > 1:
                 ocr_mismatch = True
 
-        # 2. Compute status ladder
         if document.get("renewal_verified") or document.get("status") == "RENEWED":
             status = "RENEWED"
         elif document.get("renewal_submitted") or document.get("status") == "RENEWAL_SUBMITTED":
@@ -326,7 +317,6 @@ class AICTEWorkflowRuleEngine:
         else:
             status = "ACTIVE"
 
-        # 3. Determine active alert milestone (T-90, T-60, T-30, T-7, or Overdue)
         triggered_window = None
         for w in sorted(alert_windows):
             if 0 <= days_remaining <= w:
@@ -367,7 +357,6 @@ class AICTEWorkflowRuleEngine:
             elif days_overdue > 0:
                 current_status = "OVERDUE"
 
-        # Calculate aging bucket based on days elapsed since imposition or days overdue
         imposed_raw = undertaking.get("imposed_at") or undertaking.get("imposedAt") or now.isoformat()
         imposed_dt = self._parse_iso(imposed_raw)
         age_days = max(0, (now.date() - imposed_dt.date()).days)
@@ -383,9 +372,7 @@ class AICTEWorkflowRuleEngine:
             "severity": escalation["severity"],
         }
 
-    # =========================================================================
-    # MODULE B & F: DAILY DUE-DATE SWEEP & 4-STAGE AGING BUCKET CLASSIFIER
-    # =========================================================================
+    # module b and f
     def get_aging_bucket(self, age_days: int) -> str:
         """Maps any pending application or undertaking into the 4 statutory aging buckets."""
         if age_days <= 15:
@@ -409,7 +396,6 @@ class AICTEWorkflowRuleEngine:
         now = self.now_ist()
         emitted_notifications: List[Dict[str, Any]] = []
 
-        # 1. Sweep Applications & EVC Queues
         app_Evaluations = []
         for app in applications:
             if app.get("current_stage") in ("CLOSED", "ACTIVE_MONITORING"):
@@ -452,7 +438,6 @@ class AICTEWorkflowRuleEngine:
                     "created_at": now.isoformat(),
                 })
 
-        # 2. Sweep Undertakings
         undertaking_evals = [self.evaluate_undertaking(u) for u in undertakings]
         for u_eval in undertaking_evals:
             if u_eval.get("escalation_level", 0) >= 1:
@@ -467,7 +452,6 @@ class AICTEWorkflowRuleEngine:
                     "created_at": now.isoformat(),
                 })
 
-        # 3. Sweep Lease Deeds & Prescribed Documents
         doc_evals = [self.evaluate_document_validity(d) for d in documents]
         for d_eval in doc_evals:
             if d_eval["triggered_alert_window"]:
@@ -491,9 +475,7 @@ class AICTEWorkflowRuleEngine:
             "notifications_emitted": emitted_notifications,
         }
 
-    # =========================================================================
-    # INTERNAL HELPERS
-    # =========================================================================
+    # helpers
     def _get_stage_sla_days(self, stage: str, app_type: str, resubmission_count: int = 0) -> int:
         slas = self.config.get("stage_sla_days", {})
         s = (stage or "").upper()
@@ -573,7 +555,7 @@ class AICTEWorkflowRuleEngine:
         return dt.astimezone(IST)
 
 
-# Compatibility Stub for any residual packaging scan fallback
+# legacy adapter
 class LegalMetrologyRuleEngine:
     """Compatibility adapter for legacy packaging OCR calls."""
     @classmethod
@@ -590,5 +572,4 @@ class LegalMetrologyRuleEngine:
 
     @classmethod
     def verify_all_declarations(cls, declarations: List[Dict[str, Any]], pdp_area_sqcm: float = 80.0, *args, **kwargs):
-        # Always return valid compliant payload with integer violation and warning counts
         return declarations, 100.0, "COMPLIANT", 0, 0

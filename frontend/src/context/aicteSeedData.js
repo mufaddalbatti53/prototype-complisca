@@ -1,4 +1,4 @@
-// AICTE Approval Process Handbook (APH) Seed Data for CompliScan (PS 26262)
+//seed data
 
 export const initialInstitutions = [
   {
@@ -598,7 +598,6 @@ export const initialConfig = {
     SAC_REVIEW: 30,
     DECISION: 7,
     SUBMITTED: 3,
-    // Lowercase compatibility aliases
     scrutiny: 15,
     re_scrutiny: 10,
     evc_queue: 30,

@@ -30,10 +30,8 @@ export default function History({ onSelectInspection }) {
     loadInspections(true);
   }, [loadInspections]);
 
-  // Real-time synchronization across all browser tabs and focus events
   useEffect(() => {
     const unsubscribe = subscribeSync((event) => {
-      // Refresh without destroying view when another tab creates/modifies an inspection or on tab focus
       loadInspections(false);
     });
     return unsubscribe;

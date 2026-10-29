@@ -6,11 +6,11 @@ export const STORAGE_BASE = BACKEND_URL;
 
 const client = axios.create({
   baseURL: API_BASE,
-  timeout: 120000, // 2 minutes for high-res Gemini analysis
+  timeout: 120000,
 });
 
 export const api = {
-  // 1. Scan & Analysis
+  //scan
   uploadAndScan: async (formData) => {
     const res = await client.post('/scan/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -23,7 +23,7 @@ export const api = {
     return res.data;
   },
 
-  // 2. Inspection Repository & Notice Actions
+  //inspections
   getInspections: async (params = {}) => {
     const res = await client.get('/inspections', { params });
     return res.data;
@@ -59,7 +59,7 @@ export const api = {
     return res.data;
   },
 
-  // 3. Enterprise Party / Entity Management
+  //parties
   getParties: async (params = {}) => {
     const res = await client.get('/parties', { params });
     return res.data;
@@ -75,11 +75,11 @@ export const api = {
     return res.data;
   },
 
-  // 4. Reports & Notices
+  //reports
   getPdfReportUrl: (inspectionId) => `${API_BASE}/reports/${inspectionId}/pdf`,
   getJsonReportUrl: (inspectionId) => `${API_BASE}/reports/${inspectionId}/json`,
 
-  // 5. Configurable Rules & APH Workflow Engine
+  //rules
   getAphConfig: async () => {
     const res = await client.get('/rules/config');
     return res.data;
@@ -115,7 +115,6 @@ export const api = {
     return res.data;
   },
 
-  // Legacy aliases
   getRules: async () => {
     const res = await client.get('/rules/config');
     return res.data;
@@ -131,13 +130,13 @@ export const api = {
     return res.data;
   },
 
-  // 6. Dashboard Analytics
+  //analytics
   getDashboardAnalytics: async () => {
     const res = await client.get('/analytics/dashboard');
     return res.data;
   },
 
-  // 7. AICTE Approval Workflow & Multimodal OCR (PS 26262)
+  //aicte
   scanAicteDocument: async (formData) => {
     const res = await client.post('/aicte/scan-document', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -157,7 +156,6 @@ export const api = {
     return res.data;
   },
 
-  // 8. AICTE Approval Entities
   getAicteInstitutions: async () => {
     const res = await client.get('/aicte/institutions');
     return res.data;
@@ -187,7 +185,7 @@ export const api = {
     return res.data;
   },
 
-  // Health check
+  //health
   checkHealth: async () => {
     const res = await axios.get(`${BACKEND_URL}/api/health`);
     return res.data;

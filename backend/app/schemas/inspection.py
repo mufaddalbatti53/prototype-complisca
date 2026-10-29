@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field, field_serializer, ConfigDict
 from backend.app.core.config import to_ist_iso
 
 class BoundingBox(BaseModel):
-    # Normalized coordinates [ymin, xmin, ymax, xmax] (0-1000) or pixel values
     box_2d: List[int] = Field(default_factory=list)
     label: Optional[str] = None
 

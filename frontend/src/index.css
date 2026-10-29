@@ -4,22 +4,20 @@
 
 :root {
   color-scheme: light;
-
-  /* "Bharat Civic" Design System (AICTE Gazette Palette in OKLCH) */
-  --background: oklch(0.985 0.005 90);        /* warm paper white */
-  --foreground: oklch(0.22 0.04 260);         /* ink navy text */
-  --primary: oklch(0.35 0.09 255);            /* deep civic navy */
-  --primary-foreground: oklch(0.98 0.005 90); /* paper white on navy */
-  --accent: oklch(0.78 0.13 80);              /* gazette gold */
-  --accent-foreground: oklch(0.3 0.06 80);    /* dark gold text */
-  --success: oklch(0.6 0.13 155);             /* compliant / verified green */
-  --warning: oklch(0.75 0.14 75);             /* due-soon / open amber */
-  --destructive: oklch(0.58 0.2 25);          /* overdue / expired / escalated crimson */
-  --muted: oklch(0.96 0.005 90);              /* soft table zebra tint */
-  --muted-foreground: oklch(0.52 0.03 260);   /* institutional secondary slate */
-  --border: oklch(0.9 0.01 90);               /* hairline 1px border */
-  --card: #ffffff;                            /* crisp document card */
-  --info: oklch(0.65 0.15 235);               /* in-queue sky blue */
+  --background: oklch(0.985 0.005 90);
+  --foreground: oklch(0.22 0.04 260);
+  --primary: oklch(0.35 0.09 255);
+  --primary-foreground: oklch(0.98 0.005 90);
+  --accent: oklch(0.78 0.13 80);
+  --accent-foreground: oklch(0.3 0.06 80);
+  --success: oklch(0.6 0.13 155);
+  --warning: oklch(0.75 0.14 75);
+  --destructive: oklch(0.58 0.2 25);
+  --muted: oklch(0.96 0.005 90);
+  --muted-foreground: oklch(0.52 0.03 260);
+  --border: oklch(0.9 0.01 90);
+  --card: #ffffff;
+  --info: oklch(0.65 0.15 235);
 }
 
 body {
@@ -45,7 +43,6 @@ html, #root {
   width: 100%;
 }
 
-/* Institutional Headings with Authority */
 h1, h2, h3, .font-serif-authority {
   font-family: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
 }
@@ -54,7 +51,6 @@ h1, h2, h3, .font-serif-authority {
   font-family: 'IBM Plex Mono', Consolas, monospace;
 }
 
-/* Civic Document Cards (Hairline borders, no heavy shadows) */
 .civic-card {
   background: #ffffff;
   border: 1px solid var(--border);
@@ -75,7 +71,6 @@ h1, h2, h3, .font-serif-authority {
   box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06);
 }
 
-/* Civic Input Field */
 .civic-input {
   background: #ffffff;
   border: 1px solid var(--border);
@@ -89,13 +84,11 @@ h1, h2, h3, .font-serif-authority {
   outline: none;
 }
 
-/* Gazette Gold Left Border on Selected Row */
 .row-selected {
   border-left: 3px solid var(--accent) !important;
   background-color: oklch(0.975 0.015 85) !important;
 }
 
-/* Stamp Badge (Uppercase, letter-spaced, 11px) */
 .stamp-badge {
   font-size: 11px;
   font-weight: 700;
@@ -106,17 +99,15 @@ h1, h2, h3, .font-serif-authority {
   border: 1px solid transparent;
 }
 
-/* Golden Kicker Line (like official gazettes) */
 .kicker-line {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #926c05; /* Deep gazette gold */
+  color: #926c05;
 }
 
-/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

@@ -30,31 +30,28 @@ export default function Compliance() {
   const { undertakings, institutions, simulatedDate, submitUndertakingEvidence, verifyUndertaking } = useAicte();
   const { role, roleConfig } = useRole();
 
-  // Filters
+  //filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [escalationFilter, setEscalationFilter] = useState('ALL');
 
-  // Evidence Submission Modal
+  //modals
   const [selectedUtForEvidence, setSelectedUtForEvidence] = useState(null);
   const [evidenceNotes, setEvidenceNotes] = useState('');
 
-  // Verification Review Modal
   const [selectedUtForVerification, setSelectedUtForVerification] = useState(null);
   const [verificationVerdict, setVerificationVerdict] = useState('VERIFIED');
   const [verificationNotes, setVerificationNotes] = useState('');
 
-  // AI Evidence Vision Verifier Modal (Directive 2 killer feature)
   const [aiVerifierOpen, setAiVerifierOpen] = useState(false);
   const [selectedSampleEvidence, setSelectedSampleEvidence] = useState('sample_cad_lab');
   const [isAnalyzingEvidence, setIsAnalyzingEvidence] = useState(false);
   const [evidenceAnalysisResult, setEvidenceAnalysisResult] = useState(null);
   const [customEvidenceFile, setCustomEvidenceFile] = useState(null);
 
-  // Inspector Modal
   const [activeInspectorUt, setActiveInspectorUt] = useState(null);
 
-  // Institution & Regional Officer Role Isolation
+  //role scoping
   const isInstitutionRole = role === 'INSTITUTION';
   const isRegionalOfficer = role === 'REGIONAL_OFFICER';
 
@@ -73,7 +70,6 @@ export default function Compliance() {
       )
     : undertakings;
 
-  // Filtered undertakings
   const filteredUts = accessibleUts.filter((ut) => {
     const matchesSearch =
       ut.institutionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -88,7 +84,6 @@ export default function Compliance() {
     return matchesSearch && matchesStatus && matchesEscalation;
   });
 
-  // Metric counts
   const totalCount = accessibleUts.length;
   const openCount = accessibleUts.filter((u) => u.status === 'OPEN').length;
   const overdueCount = accessibleUts.filter((u) => u.status === 'OVERDUE').length;
@@ -130,7 +125,7 @@ export default function Compliance() {
     setSelectedUtForVerification(null);
   };
 
-  // Run AI Vision on Undertaking Evidence
+  //ai vision
   const handleRunEvidenceVision = async () => {
     setIsAnalyzingEvidence(true);
     setEvidenceAnalysisResult(null);

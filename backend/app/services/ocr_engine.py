@@ -4,7 +4,6 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from typing import List, Dict, Any
 
-# Ensure UTF-8 IO for Windows environment
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 try:
@@ -43,14 +42,12 @@ class OCREngine:
             h, w = img.shape[:2] if img is not None else (1000, 1000)
 
             for bbox, text, conf in results:
-                # bbox is 4 corner points [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
                 pts = np.array(bbox, dtype=np.int32)
                 xmin = int(np.min(pts[:, 0]))
                 xmax = int(np.max(pts[:, 0]))
                 ymin = int(np.min(pts[:, 1]))
                 ymax = int(np.max(pts[:, 1]))
 
-                # Convert to normalized 0-1000
                 norm_box = [
                     int(ymin / max(1, h) * 1000),
                     int(xmin / max(1, w) * 1000),

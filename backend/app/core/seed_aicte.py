@@ -17,7 +17,7 @@ def seed_default_aicte_data(db: Session):
 
     now = datetime(2026, 10, 28, 10, 0, 0)
 
-    # 1. Institutions
+    # institutions
     institutions = [
         Institution(
             id="inst_sunrise",
@@ -122,7 +122,7 @@ def seed_default_aicte_data(db: Session):
         db.add(inst)
     db.commit()
 
-    # 2. Applications
+    # applications
     applications = [
         Application(
             id="app_1041",
@@ -222,7 +222,7 @@ def seed_default_aicte_data(db: Session):
         db.add(app)
     db.commit()
 
-    # 3. Undertakings
+    # undertakings
     undertakings = [
         Undertaking(
             id="UT-2026-085",
@@ -265,7 +265,7 @@ def seed_default_aicte_data(db: Session):
         db.add(ut)
     db.commit()
 
-    # 4. Documents
+    # documents
     documents = [
         Document(
             id="DOC-901",
@@ -308,7 +308,7 @@ def seed_default_aicte_data(db: Session):
         db.add(doc)
     db.commit()
 
-    # 5. Notifications
+    # notifications
     notifications = [
         Notification(
             id="NOTIF-8801",

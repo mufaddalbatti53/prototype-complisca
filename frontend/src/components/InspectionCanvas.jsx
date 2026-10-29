@@ -12,7 +12,6 @@ export default function InspectionCanvas({ inspection, selectedDecl, onSelectDec
 
   const imgData = inspection?.images?.[0] || {};
 
-  // Sample static fallback in case Render ephemeral filesystem wipes container uploads
   const sampleFallback = (() => {
     const pName = `${inspection?.product_name || ''} ${inspection?.brand || ''}`.toLowerCase();
     if (pName.includes('mad angles') || pName.includes('bingo')) {
@@ -38,7 +37,6 @@ export default function InspectionCanvas({ inspection, selectedDecl, onSelectDec
       ? `${STORAGE_BASE}${imgData.preprocessed_url}`
       : rawOriginalUrl;
   } else {
-    // Raw original label: prefer direct client upload blob/file if present
     currentImgUrl = rawOriginalUrl;
   }
 

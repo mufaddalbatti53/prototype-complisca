@@ -27,10 +27,9 @@ export default function Institutions() {
   const [riskFilter, setRiskFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  // Selected Institution Dossier Drawer
   const [selectedInst, setSelectedInst] = useState(null);
 
-  // Institution & Regional Officer Role Scoping
+  //role scoping
   const isInstitutionRole = role === 'INSTITUTION';
   const isRegionalOfficer = role === 'REGIONAL_OFFICER';
 
@@ -49,7 +48,6 @@ export default function Institutions() {
       )
     : institutions;
 
-  // Filtered institutions
   const filteredInsts = accessibleInsts.filter((inst) => {
     const matchesSearch =
       inst.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

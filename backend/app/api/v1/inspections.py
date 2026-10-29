@@ -60,7 +60,6 @@ def get_notice_aging_buckets(db: Session = Depends(get_db)):
     - 60+ Days: Prosecution lodged in Court of Judicial Magistrate
     """
     now = datetime.datetime.utcnow()
-    # Find all non-compliant notices with violations
     notices = db.query(Inspection).filter(
         Inspection.compliance_verdict == "NON_COMPLIANT"
     ).all()
@@ -124,13 +123,9 @@ def purge_all_inspections(db: Session = Depends(get_db)):
     Preserves statutory rules, enterprise registered parties, and demo packaging images.
     """
     try:
-        # 1. Delete all declaration records
         deleted_declarations = db.query(ExtractedDeclaration).delete()
-
-        # 2. Delete all inspection records
         deleted_inspections = db.query(Inspection).delete()
 
-        # 3. Reset party inspection counters to 0 if party table exists
         try:
             db.query(Party).update({Party.total_inspections: 0, Party.total_violations: 0})
         except Exception:
@@ -138,7 +133,6 @@ def purge_all_inspections(db: Session = Depends(get_db)):
 
         db.commit()
 
-        # 4. Clean physical files from uploads, processed, and reports directories (DO NOT touch samples)
         cleaned_files_count = 0
         for target_dir in [settings.UPLOAD_DIR, settings.PROCESSED_DIR, settings.REPORT_DIR]:
             if target_dir.exists():
@@ -225,7 +219,6 @@ def delete_inspection(
     if not inspection:
         raise HTTPException(status_code=404, detail="Inspection record not found")
     
-    # Clean up physical files from disk to prevent storage leaks (Audit Finding 4.2)
     images = inspection.images or []
     for img in images:
         for key in ["original_path", "preprocessed_path", "annotated_path"]:
@@ -236,7 +229,6 @@ def delete_inspection(
                 except Exception:
                     pass
 
-    # Clean up report PDF
     pdf_filename = f"{inspection.notice_number or inspection.id}_report.pdf"
     pdf_path = str(settings.REPORT_DIR / pdf_filename)
     if os.path.exists(pdf_path):

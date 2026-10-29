@@ -29,7 +29,7 @@ export default function Pendency() {
   );
   const [drilldownModal, setDrilldownModal] = useState(null);
 
-  // Role Scoping
+  //role scoping
   const accessibleApps = isInstitutionRole
     ? applications.filter(
         (a) => a.institutionId === 'inst_sunrise' || a.institutionName.toLowerCase().includes('sunrise')
@@ -38,7 +38,6 @@ export default function Pendency() {
     ? applications.filter((a) => a.region === 'Western Regional Office')
     : applications;
 
-  // Filtered applications
   const allRegionApps = accessibleApps.filter(
     (a) => selectedRegion === 'ALL' || a.region === selectedRegion
   );
@@ -46,7 +45,6 @@ export default function Pendency() {
   const activeApps = allRegionApps.filter((a) => a.currentStage !== 'CLOSED');
   const closedApps = allRegionApps.filter((a) => a.currentStage === 'CLOSED');
 
-  // Key KPI Metrics (Strictly non-contradictory: active applications do not count closed dockets)
   const totalCount = allRegionApps.length;
   const activeCount = activeApps.length;
   const closedCount = closedApps.length;
@@ -60,13 +58,12 @@ export default function Pendency() {
     activeApps.reduce((acc, a) => acc + (a.daysInStage || 0), 0) / (activeCount || 1)
   );
 
-  // 4 Ageing Buckets (Active Cases Only — exactly equals activeCount)
   const bucket0_15 = activeApps.filter((a) => a.daysInStage <= 15);
   const bucket16_30 = activeApps.filter((a) => a.daysInStage > 15 && a.daysInStage <= 30);
   const bucket31_60 = activeApps.filter((a) => a.daysInStage > 30 && a.daysInStage <= 60);
   const bucket60_plus = activeApps.filter((a) => a.daysInStage > 60);
 
-  // 8 AICTE Regional Offices
+  //constants
   const REGIONS = [
     'Northern Regional Office',
     'North-Western Regional Office',
@@ -80,7 +77,6 @@ export default function Pendency() {
 
   const STAGES = ['SUBMITTED', 'SCRUTINY', 'REVERTED', 'EVC_QUEUE', 'EVC_SCHEDULED', 'SAC_REVIEW', 'CLOSED'];
 
-  // Officer Workload Distribution: Dynamically derived from actual application registry
   const officerWorkload = [
     { id: 'RO-WEST-041', name: 'RO–West (Maharashtra/Goa)', region: 'Western Regional Office' },
     { id: 'RO-NORTH-018', name: 'RO–North (UP/Delhi/UK)', region: 'Northern Regional Office' },
@@ -99,7 +95,6 @@ export default function Pendency() {
     return { ...off, assigned, completed, breached };
   });
 
-  // Identify Bottleneck Stage with highest average dwell time
   const stageDwellStats = ['SCRUTINY', 'EVC_QUEUE', 'EVC_SCHEDULED', 'SAC_REVIEW'].map((stg) => {
     const matching = activeApps.filter((a) => a.currentStage === stg);
     const avg = matching.length > 0 ? Math.round(matching.reduce((acc, a) => acc + a.daysInStage, 0) / matching.length) : 0;
@@ -109,7 +104,6 @@ export default function Pendency() {
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
-      {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <div className="kicker-line mb-1">MODULE B · REGULATORY OVERSIGHT & WORKLOAD INTELLIGENCE · TECH SETU AI</div>

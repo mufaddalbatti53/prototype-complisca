@@ -37,27 +37,22 @@ class EcommerceScraperService:
 
         soup = BeautifulSoup(resp.text, "html.parser")
         
-        # 1. Product title
         title = "Packaged Product"
         title_tag = soup.find("span", {"id": "productTitle"}) or soup.find("h1") or soup.find("title")
         if title_tag:
             title = title_tag.get_text(strip=True)
 
-        # 2. Extract best high-res packaging image
         image_url = None
         
-        # Amazon image patterns
         landing_img = soup.find("img", {"id": "landingImage"})
         if landing_img and landing_img.get("src"):
             image_url = landing_img.get("src")
         
-        # OpenGraph image
         if not image_url:
             og_img = soup.find("meta", property="og:image")
             if og_img and og_img.get("content"):
                 image_url = og_img.get("content")
 
-        # Any large product image fallback
         if not image_url:
             for img in soup.find_all("img"):
                 src = img.get("src", "")
@@ -68,7 +63,6 @@ class EcommerceScraperService:
         if not image_url:
             raise Exception("Could not detect high-resolution product packaging image from listing.")
 
-        # 3. Download image to uploads folder
         img_resp = requests.get(image_url, headers=headers, timeout=15)
         if img_resp.status_code != 200:
             raise Exception("Failed to download packaging image from e-commerce page.")

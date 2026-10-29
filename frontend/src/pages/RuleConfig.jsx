@@ -31,7 +31,6 @@ export default function RuleConfig() {
   const [isSaving, setIsSaving] = useState(false);
   const [simResult, setSimResult] = useState(null);
 
-  // Synchronize localConfig whenever context config changes (e.g. from JSON editor or reset)
   useEffect(() => {
     if (config) {
       setLocalConfig(config);
@@ -91,7 +90,6 @@ export default function RuleConfig() {
     advanceDays(daysToAdd);
     const triggered = [];
 
-    // Dynamically evaluate breached applications
     applications.forEach((app) => {
       const sla = getStageSla(
         localConfig,
@@ -108,7 +106,6 @@ export default function RuleConfig() {
       }
     });
 
-    // Dynamically evaluate overdue undertakings
     undertakings.forEach((ut) => {
       if (ut.status !== "VERIFIED") {
         const now = new Date(simulatedDate);
@@ -124,7 +121,6 @@ export default function RuleConfig() {
       }
     });
 
-    // Dynamically evaluate expiring documents
     documents.forEach((doc) => {
       if (doc.status !== "RENEWED" && doc.status !== "RENEWAL_SUBMITTED") {
         const now = new Date(simulatedDate);
@@ -151,7 +147,7 @@ export default function RuleConfig() {
     });
   };
 
-  // Statutory Stage SLA Definitions with guaranteed defaults
+  //statutory stages
   const STATUTORY_STAGES = [
     {
       key: 'SCRUTINY',

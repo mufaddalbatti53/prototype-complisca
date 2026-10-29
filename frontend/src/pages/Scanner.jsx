@@ -61,7 +61,6 @@ export default function Scanner() {
   const [urlInput, setUrlInput] = useState('');
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
 
-  // Parameters
   const [pdpArea, setPdpArea] = useState(160.0);
   const [autoFilledName, setAutoFilledName] = useState(null);
   const [pdpShape, setPdpShape] = useState('RECTANGULAR');
@@ -70,7 +69,6 @@ export default function Scanner() {
   const [location, setLocation] = useState('New Delhi, India');
   const [inspectorName, setInspectorName] = useState('Enforcement Officer R. Sharma');
 
-  // Execution states
   const [loading, setLoading] = useState(false);
   const [pipelineStep, setPipelineStep] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState('0.0');
@@ -105,7 +103,6 @@ export default function Scanner() {
     setErrorMsg(null);
   };
 
-  // 1-Click Demo Packet Loader
   const loadDemoPacket = async (packetId) => {
     setErrorMsg(null);
     const packet = DEMO_PACKETS.find((p) => p.id === packetId) || DEMO_PACKETS[0];
@@ -219,7 +216,6 @@ export default function Scanner() {
         result = await api.uploadAndScan(formData);
       }
 
-      // Smooth completion transition: flash 100% green before displaying evidence
       setPipelineStep(6);
       await new Promise((resolve) => setTimeout(resolve, 350));
 

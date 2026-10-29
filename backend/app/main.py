@@ -14,7 +14,7 @@ from backend.app.core.seed_aicte import seed_default_aicte_data
 
 logger = logging.getLogger("compliscan")
 
-# Ensure required storage directories exist immediately on server startup
+# storage
 for directory in [
     settings.STORAGE_DIR,
     settings.UPLOAD_DIR,
@@ -24,10 +24,9 @@ for directory in [
 ]:
     directory.mkdir(parents=True, exist_ok=True)
 
-# Create Database tables
+# database
 Base.metadata.create_all(bind=engine)
 
-# Auto-migrate SQLite schema if new columns are missing in existing tables
 def auto_migrate_schema():
     needed_cols = [
         ("party_id", "VARCHAR(50)"),
@@ -36,7 +35,6 @@ def auto_migrate_schema():
         ("party_reply", "TEXT"),
         ("party_reply_date", "DATETIME"),
     ]
-    # 1. Direct SQLite connection migration
     try:
         db_path = settings.STORAGE_DIR / "compliscan.db"
         if db_path.exists():
@@ -54,7 +52,6 @@ def auto_migrate_schema():
     except Exception as e:
         logger.warning(f"Direct SQLite migration notice: {e}")
 
-    # 2. SQLAlchemy engine.begin() migration
     try:
         with engine.begin() as conn:
             result = conn.exec_driver_sql("PRAGMA table_info(inspections)")
@@ -69,12 +66,13 @@ def auto_migrate_schema():
 if engine.dialect.name == "sqlite":
     auto_migrate_schema()
 
-# Seed default rules, parties, and AICTE approval workflow data
+# seed
 with SessionLocal() as db:
     seed_default_rules(db)
     seed_default_parties(db)
     seed_default_aicte_data(db)
 
+# app
 app = FastAPI(
     title="C.O.M.P.L.I.S.C.A.N. — Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network",
     description="Integrated AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System (PS 26262) & Legal Metrology Inspection Engine.",
@@ -83,7 +81,7 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware with dynamic origin regex matching for all Vercel and local environments
+# middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -94,9 +92,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Global CORS-enforced Exception Handlers:
-# Guarantees that any 4xx or 500 error response returns full Access-Control headers,
-# preventing browsers from masking internal server errors as CORS failures.
+# exceptions
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     origin = request.headers.get("origin") or "*"
@@ -126,10 +122,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         }
     )
 
-# Mount static file storage for images and reports
+# static and routes
 app.mount("/storage", StaticFiles(directory=str(settings.STORAGE_DIR)), name="storage")
 
-# Include API v1 Routers
 app.include_router(scan.router, prefix=settings.API_V1_STR)
 app.include_router(inspections.router, prefix=settings.API_V1_STR)
 app.include_router(reports.router, prefix=settings.API_V1_STR)
@@ -138,22 +133,20 @@ app.include_router(analytics.router, prefix=settings.API_V1_STR)
 app.include_router(parties.router, prefix=settings.API_V1_STR)
 app.include_router(aicte.router, prefix=settings.API_V1_STR)
 
-@app.api_route("/", methods=["GET", "HEAD", "POST"])
-def root():
-    return {
-        "system": "CompliScan — AICTE Approval Workflow & Statutory Compliance Engine",
-        "problem_statement": "PS 26262 (AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System)",
-        "team": "TECH SETU AI",
-        "version": settings.VERSION,
-        "build": "2026.10.28-aicte-v1",
-        "status": "OPERATIONAL",
-        "docs": "/docs"
-    }
-
-@app.api_route("/api/health", methods=["GET", "HEAD", "POST"])
-def health_check():
+@app.get("/api/health", tags=["Health"])
+async def health_check():
     return {
         "status": "healthy",
-        "gemini_configured": bool(settings.GEMINI_API_KEY),
-        "database": "connected"
+        "service": "CompliScan Backend Engine",
+        "version": settings.VERSION,
+        "database": "connected",
+        "gemini_configured": bool(settings.GEMINI_API_KEY)
+    }
+
+@app.get("/", tags=["Root"])
+async def root():
+    return {
+        "message": "Welcome to CompliScan API",
+        "docs": "/docs",
+        "version": settings.VERSION
     }

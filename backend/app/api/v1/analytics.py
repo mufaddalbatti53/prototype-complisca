@@ -19,7 +19,6 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
 
     overall_rate = round((compliant / total * 100), 1) if total > 0 else 100.0
 
-    # Violations by rule breakdown
     violation_query = (
         db.query(
             ExtractedDeclaration.statutory_rule_ref,
@@ -44,7 +43,6 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
         for row in violation_query
     ]
 
-    # Category stats
     cat_query = (
         db.query(
             Inspection.category,
@@ -69,7 +67,6 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
             )
         )
 
-    # Recent inspections preview
     recent_records = (
         db.query(Inspection)
         .order_by(desc(Inspection.created_at))

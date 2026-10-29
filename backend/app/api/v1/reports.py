@@ -21,7 +21,6 @@ def download_pdf_report(
     pdf_filename = f"{inspection.notice_number or inspection.id}_report.pdf"
     pdf_path = str(settings.REPORT_DIR / pdf_filename)
 
-    # Regenerate if file missing
     if not os.path.exists(pdf_path):
         declarations_list = [
             {

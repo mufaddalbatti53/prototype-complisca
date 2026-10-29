@@ -34,10 +34,9 @@ export default function AuditTrail() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  // Selected audit entry for inspector modal
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  // Helper to determine region for an event
+  //helpers
   const getEventRegion = (evt) => {
     if (evt.region) return evt.region;
     const actor = evt.actorName || '';
@@ -74,7 +73,6 @@ export default function AuditTrail() {
       eventRegion.toLowerCase().includes(regionFilter.toLowerCase()) ||
       eventRegion.includes('Headquarters');
 
-    // Date range filtering
     const eventDate = evt.simulatedDate || (evt.timestamp ? evt.timestamp.split('T')[0] : '');
     const matchesFromDate = !fromDate || eventDate >= fromDate;
     const matchesToDate = !toDate || eventDate <= toDate;
@@ -90,7 +88,7 @@ export default function AuditTrail() {
     );
   });
 
-  // Export as Clean Excel-Compatible CSV
+  //csv export
   const handleExportCsv = () => {
     const headers = [
       'Event ID',
@@ -122,7 +120,6 @@ export default function AuditTrail() {
       `"${(evt.note || evt.reason || '').replace(/"/g, '""')}"`
     ]);
 
-    // UTF-8 BOM (\uFEFF) ensures Excel opens special characters and Indian numerals properly
     const csvContent =
       '\uFEFF' +
       [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
@@ -138,7 +135,7 @@ export default function AuditTrail() {
     URL.revokeObjectURL(url);
   };
 
-  // Download Print-Ready Official PDF Report
+  //pdf export
   const handleDownloadPdfReport = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {

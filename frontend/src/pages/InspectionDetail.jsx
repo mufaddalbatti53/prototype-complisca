@@ -26,7 +26,6 @@ export default function InspectionDetail({ inspectionId, onBack }) {
   const [loading, setLoading] = useState(true);
   const [selectedDecl, setSelectedDecl] = useState(null);
 
-  // Party reply form
   const [replyText, setReplyText] = useState('');
   const [replying, setReplying] = useState(false);
   const [replySuccess, setReplySuccess] = useState(false);
@@ -55,10 +54,8 @@ export default function InspectionDetail({ inspectionId, onBack }) {
     }
   }, [inspectionId]);
 
-  // Real-time synchronization across all browser tabs and focus events
   useEffect(() => {
     const unsubscribe = subscribeSync((event) => {
-      // If this inspection or any notice was modified, refresh data
       if (inspectionId) {
         fetchDetail(false);
       }

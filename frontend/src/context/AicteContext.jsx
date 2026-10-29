@@ -2,10 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialInstitutions, initialApplications, initialEvcVisits, initialUndertakings, initialDocuments, initialConfig, initialAuditLog, initialNotifications } from './aicteSeedData';
 import { api } from '../services/api';
 
-/**
- * Universal APH Stage SLA Lookup Helper.
- * Correctly resolves statutory timelines regardless of case, sub-route, or resubmission cycle.
- */
+//sla lookup
 export function getStageSla(cfg, stage, appType = '', resubmissionCount = 0) {
   if (!cfg || !cfg.stage_sla_days) return 21;
   const slas = cfg.stage_sla_days;
@@ -37,7 +34,6 @@ export function getStageSla(cfg, stage, appType = '', resubmissionCount = 0) {
     return slas.SUBMITTED ?? slas.submitted ?? 3;
   }
 
-  // Direct lookup with uppercase & lowercase fallback
   if (slas[s] !== undefined) return Number(slas[s]);
   if (slas[s.toLowerCase()] !== undefined) return Number(slas[s.toLowerCase()]);
   if (slas[stage] !== undefined) return Number(slas[stage]);
@@ -48,12 +44,11 @@ export function getStageSla(cfg, stage, appType = '', resubmissionCount = 0) {
 const AicteContext = createContext(null);
 
 export function AicteProvider({ children }) {
-  // 1. Simulated System Date (Time-Machine Engine)
+  //state
   const [simulatedDate, setSimulatedDate] = useState(() => {
     return localStorage.getItem('compliscan_sim_date') || '2026-10-28';
   });
 
-  // 2. Core Entities State (Persisted in localStorage with seed defaults)
   const [institutions, setInstitutions] = useState(() => {
     const saved = localStorage.getItem('compliscan_institutions');
     return saved ? JSON.parse(saved) : initialInstitutions;
@@ -118,10 +113,9 @@ export function AicteProvider({ children }) {
     return saved ? JSON.parse(saved) : initialNotifications;
   });
 
-  // Active toast / banner notification
   const [activeToast, setActiveToast] = useState(null);
 
-  // Sync to localStorage
+  //persistence
   useEffect(() => {
     localStorage.setItem('compliscan_sim_date', simulatedDate);
   }, [simulatedDate]);
@@ -158,13 +152,12 @@ export function AicteProvider({ children }) {
     localStorage.setItem('compliscan_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  // Toast trigger
+  //notifications and audit
   const showToast = (message, type = 'success') => {
     setActiveToast({ id: Date.now(), message, type });
     setTimeout(() => setActiveToast(null), 4500);
   };
 
-  // Add an audit log entry
   const logAuditEvent = ({ actorRole, actorName, action, refId, refType, fromStage, toStage, note, reason }) => {
     const newEntry = {
       id: `EVT-${Date.now().toString().slice(-6)}`,
@@ -183,13 +176,12 @@ export function AicteProvider({ children }) {
     setAuditLog((prev) => [newEntry, ...prev]);
   };
 
-  // Add notification
   const addNotification = ({ type, severity, audienceRole, refType, refId, message }) => {
     const newNotice = {
       id: `NOTIF-${Date.now().toString().slice(-6)}`,
-      type, // 'REMINDER', 'DUE_TODAY', 'OVERDUE', 'ESCALATION', 'DOC_EXPIRY', 'EVC_DUE'
-      severity, // 'info', 'warning', 'critical'
-      audienceRole, // 'INSTITUTION', 'REGIONAL_OFFICER', 'BUREAU_OFFICER', 'MEMBER_SECRETARY'
+      type,
+      severity,
+      audienceRole,
       refType,
       refId,
       message,
@@ -199,18 +191,14 @@ export function AicteProvider({ children }) {
     setNotifications((prev) => [newNotice, ...prev]);
   };
 
-  // =========================================================================
-  // SIMULATED CLOCK ACTIONS (The Core Evaluator Feature)
-  // =========================================================================
+  //clock actions
   const advanceDays = (days) => {
     const cur = new Date(simulatedDate);
     cur.setDate(cur.getDate() + days);
     const newDateStr = cur.toISOString().split('T')[0];
     setSimulatedDate(newDateStr);
 
-    // Evaluate Deadlines & Escalations under new date
     evaluateDeadlinesOnClockTick(newDateStr, days);
-
     showToast(`Clock advanced +${days} days to ${newDateStr}. Evaluated SLA timers & triggered escalations!`, 'info');
   };
 
@@ -220,11 +208,9 @@ export function AicteProvider({ children }) {
     showToast('Simulated clock reset to base date (28 Oct 2026)', 'info');
   };
 
-  // Automated evaluation loop fired on clock tick
   const evaluateDeadlinesOnClockTick = (currentSimDate, daysAdded) => {
     const now = new Date(currentSimDate);
 
-    // 1. Advance Application days in stage & check breaches
     setApplications((prev) =>
       prev.map((app) => {
         if (app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED') {
@@ -236,7 +222,6 @@ export function AicteProvider({ children }) {
         const isBreached = newDaysInStage > slaMax;
 
         if (isBreached && !app.isBreached) {
-          // Trigger notification
           addNotification({
             type: 'OVERDUE',
             severity: 'critical',
@@ -263,7 +248,6 @@ export function AicteProvider({ children }) {
       })
     );
 
-    // 2. Evaluate Undertakings and climb the escalation ladder
     setUndertakings((prev) =>
       prev.map((ut) => {
         if (ut.status === 'VERIFIED') return ut;
@@ -276,7 +260,7 @@ export function AicteProvider({ children }) {
 
         if (diffDays <= 0 && diffDays > -7 && ut.status === 'OPEN') {
           newStatus = 'OVERDUE';
-          newLevel = 2; // Regional Officer
+          newLevel = 2;
           addNotification({
             type: 'OVERDUE',
             severity: 'warning',
@@ -287,7 +271,7 @@ export function AicteProvider({ children }) {
           });
         } else if (diffDays <= -7 && diffDays > -15) {
           newStatus = 'ESCALATED';
-          newLevel = 3; // Bureau Officer
+          newLevel = 3;
           addNotification({
             type: 'ESCALATION',
             severity: 'critical',
@@ -298,7 +282,7 @@ export function AicteProvider({ children }) {
           });
         } else if (diffDays <= -15) {
           newStatus = 'ESCALATED';
-          newLevel = 4; // Member Secretary
+          newLevel = 4;
           addNotification({
             type: 'ESCALATION',
             severity: 'critical',
@@ -318,7 +302,6 @@ export function AicteProvider({ children }) {
       })
     );
 
-    // 3. Evaluate Document Expiries
     setDocuments((prev) =>
       prev.map((doc) => {
         if (doc.status === 'RENEWED') return doc;
@@ -361,13 +344,9 @@ export function AicteProvider({ children }) {
     );
   };
 
-  // Continuous Cross-Page Synchronization:
-  // Re-evaluates application SLA breach flags, undertaking days remaining & escalation levels,
-  // and document expiry windows whenever simulatedDate or config changes.
   useEffect(() => {
     const now = new Date(simulatedDate);
 
-    // 1. Synchronize Application SLA breach flags across all pages
     setApplications((prev) =>
       prev.map((app) => {
         if (app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED') {
@@ -382,7 +361,6 @@ export function AicteProvider({ children }) {
       })
     );
 
-    // 2. Synchronize Undertaking days remaining and escalation levels
     setUndertakings((prev) =>
       prev.map((ut) => {
         if (ut.status === 'VERIFIED') return ut;
@@ -407,7 +385,6 @@ export function AicteProvider({ children }) {
       })
     );
 
-    // 3. Synchronize Document days to expiry and statuses
     setDocuments((prev) =>
       prev.map((doc) => {
         if (doc.status === 'RENEWED' || doc.status === 'RENEWAL_SUBMITTED') return doc;
@@ -429,11 +406,7 @@ export function AicteProvider({ children }) {
     );
   }, [simulatedDate, config]);
 
-  // =========================================================================
-  // APPLICATION WORKFLOW STATE MACHINE (Module A)
-  // =========================================================================
-
-  // Helper to determine the statutory route
+  //workflow actions
   const determineRoute = (appType, institutionType) => {
     if (appType === 'NEW_INSTITUTION') return 'SCRUTINY_EVC_SAC';
     if (appType === 'EXTENSION_OF_APPROVAL') return 'ONLY_SCRUTINY';
@@ -443,7 +416,6 @@ export function AicteProvider({ children }) {
     return 'SCRUTINY_EVC';
   };
 
-  // Next stage transition sequence per route
   const getNextStage = (currentStage, route) => {
     const routes = config.routes || {
       ONLY_SCRUTINY: ['SUBMITTED', 'SCRUTINY', 'DECISION', 'ACTIVE_MONITORING', 'CLOSED'],
@@ -461,7 +433,6 @@ export function AicteProvider({ children }) {
     return currentStage;
   };
 
-  // Auto-Advance Application to Next Prescribed Stage
   const advanceApplication = (appId, actorRole, actorName, note = '') => {
     setApplications((prev) =>
       prev.map((app) => {
@@ -479,7 +450,6 @@ export function AicteProvider({ children }) {
           note: note || `Passed verification criteria; auto-routed to ${nextStage}`
         });
 
-        // If moved into EVC queue, ensure an EVC queue entry exists
         if (nextStage === 'EVC_QUEUE') {
           const newEvcVisit = {
             id: `EVC-${Date.now().toString().slice(-5)}`,
@@ -516,7 +486,6 @@ export function AicteProvider({ children }) {
     );
   };
 
-  // Revert Application for Deficiency (Human Regulatory Safeguard)
   const revertApplication = (appId, reason, note, actorRole, actorName) => {
     setApplications((prev) =>
       prev.map((app) => {
@@ -557,7 +526,6 @@ export function AicteProvider({ children }) {
     );
   };
 
-  // Institution Resubmits Application after Rectifying Deficiency
   const resubmitApplication = (appId, actorRole, actorName, note = '') => {
     setApplications((prev) =>
       prev.map((app) => {
@@ -599,7 +567,6 @@ export function AicteProvider({ children }) {
     );
   };
 
-  // Submit Brand New Application (Intake)
   const submitNewApplication = (appData, actorRole, actorName) => {
     const refNo = `APH-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const route = determineRoute(appData.appType, appData.institutionType);
@@ -651,13 +618,11 @@ export function AicteProvider({ children }) {
     return newApp;
   };
 
-  // Make Decision on Application (Approved / Conditional / Rejected)
   const decideApplication = (appId, decision, undertakingsList = [], actorRole, actorName, note = '') => {
     setApplications((prev) =>
       prev.map((app) => {
         if (app.id !== appId) return app;
 
-        // If conditional, add undertakings to registry
         if (decision === 'CONDITIONAL' && undertakingsList.length > 0) {
           const newUts = undertakingsList.map((text, idx) => ({
             id: `UT-${Date.now()}-${idx}`,
@@ -702,9 +667,7 @@ export function AicteProvider({ children }) {
     );
   };
 
-  // =========================================================================
-  // EVC MODULE ACTIONS (Module C)
-  // =========================================================================
+  //evc actions
   const scheduleEvcVisit = (visitId, { scheduledDate, convener, members, mode }, actorRole, actorName) => {
     setEvcVisits((prev) =>
       prev.map((v) => {
@@ -740,7 +703,6 @@ export function AicteProvider({ children }) {
       })
     );
 
-    // Also update corresponding application stage to EVC_SCHEDULED
     const targetVisit = evcVisits.find((v) => v.id === visitId);
     if (targetVisit) {
       setApplications((apps) =>
@@ -784,9 +746,7 @@ export function AicteProvider({ children }) {
     }
   };
 
-  // =========================================================================
-  // UNDERTAKINGS & COMPLIANCE ACTIONS (Module D)
-  // =========================================================================
+  //compliance actions
   const submitUndertakingEvidence = (undertakingId, fileUrl, note, actorRole, actorName) => {
     setUndertakings((prev) =>
       prev.map((ut) => {
@@ -852,9 +812,7 @@ export function AicteProvider({ children }) {
     );
   };
 
-  // =========================================================================
-  // DOCUMENT VALIDITY ACTIONS (Module E)
-  // =========================================================================
+  //document actions
   const requestDocumentRenewal = (docId, actorRole = 'REGIONAL_OFFICER', actorName = 'Regional Officer') => {
     setDocuments((prev) =>
       prev.map((doc) => {
@@ -888,6 +846,7 @@ export function AicteProvider({ children }) {
       })
     );
   };
+
   const submitDocumentRenewal = (docId, fileUrlOrObj, issuedOn, expiryDate, note, actorRole, actorName) => {
     let payload = {};
     let role = actorRole || 'INSTITUTION';
@@ -1001,14 +960,11 @@ export function AicteProvider({ children }) {
     );
   };
 
-  // =========================================================================
-  // APH TIMELINES CONFIGURATOR (Module F)
-  // =========================================================================
+  //config actions
   const updateConfigJson = async (newConfigJson, actorRole, actorName) => {
     try {
       const parsed = typeof newConfigJson === 'string' ? JSON.parse(newConfigJson) : { ...newConfigJson };
       
-      // Normalize stage_sla_days keys so uppercase and lowercase both work
       if (parsed.stage_sla_days && typeof parsed.stage_sla_days === 'object') {
         const normalized = {};
         for (const [k, v] of Object.entries(parsed.stage_sla_days)) {
@@ -1022,7 +978,6 @@ export function AicteProvider({ children }) {
 
       setConfig(parsed);
 
-      // Asynchronously push to backend rule engine
       try {
         await api.updateAphConfig(parsed);
       } catch (err) {
@@ -1047,8 +1002,6 @@ export function AicteProvider({ children }) {
 
   const resetConfigDefaults = async (actorRole, actorName) => {
     setConfig(initialConfig);
-
-    // Asynchronously push to backend rule engine
     try {
       await api.resetAphConfig();
     } catch (err) {
@@ -1065,13 +1018,10 @@ export function AicteProvider({ children }) {
     showToast('Restored statutory APH default timelines and escalation ladder.', 'info');
   };
 
-  // =========================================================================
-  // ONE-CLICK DEMO RUNNER (Evaluator Favorite)
-  // =========================================================================
+  //demo runner
   const runOneClickDemo = () => {
     const demoRef = `DEMO-APH-${Date.now().toString().slice(-4)}`;
 
-    // Create a demo app that automatically advances to show the full lifecycle
     const demoApp = {
       id: `app_demo_${Date.now()}`,
       refNo: demoRef,
@@ -1110,7 +1060,6 @@ export function AicteProvider({ children }) {
     return demoApp;
   };
 
-  // Dismiss notification
   const acknowledgeNotification = (notifId) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === notifId ? { ...n, acknowledged: true } : n))
@@ -1136,7 +1085,6 @@ export function AicteProvider({ children }) {
         logAuditEvent,
         addNotification,
         acknowledgeNotification,
-        // Workflow functions
         determineRoute,
         getNextStage,
         advanceApplication,

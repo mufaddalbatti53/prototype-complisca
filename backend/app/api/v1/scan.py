@@ -50,7 +50,6 @@ async def upload_and_analyze_packaging(
     6. Generate Statutory PDF Inspection Memo
     7. Save to Database
     """
-    # 1. Save original file
     settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     settings.PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     settings.REPORT_DIR.mkdir(parents=True, exist_ok=True)
@@ -63,7 +62,6 @@ async def upload_and_analyze_packaging(
     with open(orig_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # 2. OpenCV Pre-processing
     prep_filename = f"{file_id}_preprocessed.jpg"
     prep_path = str(settings.PROCESSED_DIR / prep_filename)
     prep_meta = {"image_sha256": "raw_upload_fallback", "estimated_pdp_area_sqcm": pdp_area_sqcm}
@@ -72,21 +70,18 @@ async def upload_and_analyze_packaging(
         prep_meta = ImagePreprocessor.deskew_and_enhance(orig_path, prep_path)
     except Exception as e:
         logger.warning(f"Preprocessing fallback for {orig_path}: {e}")
-        prep_path = orig_path # fallback to original if preprocessing hits unusual raw format
+        prep_path = orig_path
 
-    # Prioritize user-provided / auto-filled PDP area; fallback to OpenCV estimate only if none given
     if pdp_area_sqcm and float(pdp_area_sqcm) > 0:
         calc_pdp_area = float(pdp_area_sqcm)
     else:
         calc_pdp_area = prep_meta.get("estimated_pdp_area_sqcm", 100.0)
 
-    # 3. Local Deep-Learning OCR Extraction
     try:
         local_ocr_tokens = OCREngine.run_local_ocr(prep_path)
     except Exception:
         local_ocr_tokens = []
 
-    # 4. State-of-the-Art Gemini 3.7 Flash Multimodal Reasoning
     try:
         analysis_raw = GeminiService.analyze_packaging_image(prep_path, local_ocr_tokens=local_ocr_tokens)
     except Exception as e:
@@ -95,13 +90,11 @@ async def upload_and_analyze_packaging(
             detail=f"Gemini AI Analysis failed: {str(e)}"
         )
 
-    # Extract meta fields if not overridden by user
     det_product = product_name or analysis_raw.get("product_name") or "Packaged Commodity"
     det_brand = brand or analysis_raw.get("brand") or "Generic"
     det_category = category or analysis_raw.get("category") or "Packaged Commodity"
     executive_summary = analysis_raw.get("executive_summary", "")
 
-    # Calculate font heights in mm from bounding box coordinates
     raw_declarations = analysis_raw.get("declarations", [])
     for d in raw_declarations:
         bbox = d.get("bounding_box", [])
@@ -110,7 +103,6 @@ async def upload_and_analyze_packaging(
                 bbox, img_height=1000, pdp_height_cm=15.0
             )
 
-    # Fetch active configurable rules: uses tester's local sandbox rules if provided, else universal DB defaults
     active_rules_config = []
     if rules_config:
         try:
@@ -131,7 +123,6 @@ async def upload_and_analyze_packaging(
             for r in db_rules
         ]
 
-    # 4. Deterministic Rule Engine Verification (100% in code, zero AI scoring)
     verified_decls, overall_score, verdict, violations_cnt, warnings_cnt = (
         LegalMetrologyRuleEngine.verify_all_declarations(
             raw_declarations,
@@ -140,7 +131,6 @@ async def upload_and_analyze_packaging(
         )
     )
 
-    # Deterministic statutory executive summary computed directly from rule engine
     if violations_cnt == 0:
         executive_summary = "All mandatory statutory declarations required under Rule 6 of the Legal Metrology (Packaged Commodities) Rules, 2011 are verified as compliant."
     else:
@@ -152,7 +142,6 @@ async def upload_and_analyze_packaging(
 
     logger.info(f"Scan {file_id}: Payload SHA-256 = {prep_meta.get('image_sha256')}, Verdict = {verdict}, Violations = {violations_cnt}")
 
-    # 5. Generate Annotated Bounding Box Image
     annotated_filename = f"{file_id}_annotated.jpg"
     annotated_path = str(settings.PROCESSED_DIR / annotated_filename)
     try:
@@ -164,7 +153,6 @@ async def upload_and_analyze_packaging(
     except Exception as e:
         annotated_path = prep_path
 
-    # Web-accessible URLs
     images_meta = [
         {
             "original_path": orig_path,
@@ -181,7 +169,6 @@ async def upload_and_analyze_packaging(
     pdf_filename = f"{notice_no}_report.pdf"
     pdf_path = str(settings.REPORT_DIR / pdf_filename)
 
-    # 6. Generate Statutory Form 1 Notice PDF
     report_dict = {
         "notice_number": notice_no,
         "inspector_id": inspector_id,
@@ -204,7 +191,6 @@ async def upload_and_analyze_packaging(
     except Exception as e:
         report_pdf_path = None
 
-    # 7. Persist to Database and link to Regulated Commercial Entity
     party_id = None
     try:
         party_filters = []
@@ -319,7 +305,6 @@ async def scan_ecommerce_url(
     file_id = f"insp_{uuid.uuid4().hex[:10]}"
     orig_path = scraped["local_image_path"]
 
-    # Preprocess
     settings.PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     settings.REPORT_DIR.mkdir(parents=True, exist_ok=True)
     prep_filename = f"{file_id}_preprocessed.jpg"
@@ -331,19 +316,16 @@ async def scan_ecommerce_url(
         logger.warning(f"Preprocessing fallback for URL {clean_url}: {e}")
         prep_path = orig_path
 
-    # Prioritize user-provided / auto-filled PDP area; fallback to OpenCV estimate only if none given
     if req.pdp_area_sqcm and float(req.pdp_area_sqcm) > 0:
         calc_pdp_area = float(req.pdp_area_sqcm)
     else:
         calc_pdp_area = prep_meta.get("estimated_pdp_area_sqcm", 100.0)
 
-    # 3. Local Deep-Learning OCR Extraction
     try:
         local_ocr_tokens = OCREngine.run_local_ocr(prep_path)
     except Exception:
         local_ocr_tokens = []
 
-    # 4. State-of-the-Art Gemini Multimodal Reasoning
     try:
         analysis_raw = GeminiService.analyze_packaging_image(prep_path, local_ocr_tokens=local_ocr_tokens)
     except Exception as e:
@@ -357,7 +339,6 @@ async def scan_ecommerce_url(
     det_category = req.category or analysis_raw.get("category") or "Packaged Commodity"
     executive_summary = analysis_raw.get("executive_summary", "")
 
-    # Calculate font heights in mm
     raw_declarations = analysis_raw.get("declarations", [])
     for d in raw_declarations:
         bbox = d.get("bounding_box", [])
@@ -379,7 +360,6 @@ async def scan_ecommerce_url(
             for r in db_rules
         ]
 
-    # Verify Rules deterministically in Python with DB active rules
     verified_decls, overall_score, verdict, violations_cnt, warnings_cnt = (
         LegalMetrologyRuleEngine.verify_all_declarations(
             raw_declarations,
@@ -397,7 +377,6 @@ async def scan_ecommerce_url(
             viol_str += f" (+{len(viol_names) - 3} more)"
         executive_summary = f"Statutory inspection identified {violations_cnt} non-compliance violation(s) under Legal Metrology Act, 2009: {viol_str}."
 
-    # Annotated bounding box overlay
     annotated_filename = f"{file_id}_annotated.jpg"
     annotated_path = str(settings.PROCESSED_DIR / annotated_filename)
     try:
@@ -447,7 +426,6 @@ async def scan_ecommerce_url(
     except Exception:
         report_pdf_path = None
 
-    # Auto-link to matching regulated party entity if exists
     party_id = None
     try:
         party_filters = []

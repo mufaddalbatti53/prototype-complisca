@@ -41,28 +41,26 @@ export default function Documents() {
   } = useAicte();
   const { role, roleConfig } = useRole();
 
-  // Filter States
+  //filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [docTypeFilter, setDocTypeFilter] = useState('ALL');
 
-  // Renewal Modal
+  //modals
   const [selectedDocForRenewal, setSelectedDocForRenewal] = useState(null);
   const [newIssuedOn, setNewIssuedOn] = useState(simulatedDate);
   const [newExpiryDate, setNewExpiryDate] = useState('2029-10-28');
   const [renewalNotes, setRenewalNotes] = useState('');
 
-  // AI Multimodal Vision Scanner Modal / Drawer
   const [aiScannerOpen, setAiScannerOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [selectedSample, setSelectedSample] = useState('sample_lease_deed');
   const [customFile, setCustomFile] = useState(null);
 
-  // Selected Doc for Full Dossier Inspector
   const [activeInspectorDoc, setActiveInspectorDoc] = useState(null);
 
-  // Institution & Regional Officer Role Isolation
+  //role scoping
   const isInstitutionRole = role === 'INSTITUTION';
   const isRegionalOfficer = role === 'REGIONAL_OFFICER';
 
@@ -84,7 +82,6 @@ export default function Documents() {
       })
     : documents;
 
-  // Filtered documents
   const filteredDocs = accessibleDocs.filter((doc) => {
     const matchesSearch =
       doc.institutionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -98,7 +95,6 @@ export default function Documents() {
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  // Calculate high-level metrics
   const totalCount = accessibleDocs.length;
   const expiredCount = accessibleDocs.filter((d) => d.status === 'EXPIRED').length;
   const expiringSoonCount = accessibleDocs.filter((d) => d.status === 'EXPIRING_SOON').length;
@@ -108,7 +104,6 @@ export default function Documents() {
   const handleOpenRenewalModal = (doc) => {
     setSelectedDocForRenewal(doc);
     setNewIssuedOn(simulatedDate);
-    // default 3 years ahead
     const dt = new Date(simulatedDate);
     dt.setFullYear(dt.getFullYear() + 3);
     setNewExpiryDate(dt.toISOString().split('T')[0]);
@@ -133,7 +128,7 @@ export default function Documents() {
     verifyDocumentRenewal(docId, 'VERIFIED', 'Certified genuine after physical seal comparison.', role, roleConfig.title);
   };
 
-  // Run Gemini Vision OCR on document
+  //ai vision
   const handleRunAiDocScan = async () => {
     setIsScanning(true);
     setScanResult(null);
@@ -153,7 +148,6 @@ export default function Documents() {
       setScanResult(result);
     } catch (err) {
       console.warn('Backend AI Scan fallback:', err);
-      // Fallback sample data
       if (selectedSample === 'sample_building_safety') {
         setScanResult({
           doc_type: 'Building Safety & Structural Stability Certificate',

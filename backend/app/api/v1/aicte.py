@@ -35,7 +35,7 @@ async def scan_aicte_document(
     """
     try:
         if sample_id:
-            # High-fidelity built-in sample demo certificates
+            # demo certificates
             sample_catalog = {
                 "sample_lease_deed": {
                     "doc_type": "Land Lease Deed (30-Year Registered)",

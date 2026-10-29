@@ -34,7 +34,6 @@ export default function Dashboard({ onSelectInspection }) {
     fetchStats(true);
   }, []);
 
-  // Real-time synchronization across all browser tabs and focus events
   useEffect(() => {
     const unsubscribe = subscribeSync(() => {
       fetchStats(false);
