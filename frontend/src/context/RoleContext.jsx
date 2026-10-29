@@ -67,7 +67,7 @@ export const AICTE_ROLES = {
     bannerBg: 'bg-amber-950 text-amber-100 border-amber-800',
     description: 'Track your college applications, view AI status briefs, upload proof for conditional approvals, and check lease/NOC expiry dates.',
     defaultTab: 'compliance',
-    jurisdiction: 'College Portal: Sunrise Institute of Technology (Pune, Western Region)',
+    jurisdiction: 'College Campus: Pune, Maharashtra (AISHE: C-41208)',
     allowedTabs: ['applications', 'compliance', 'documents']
   }
 };

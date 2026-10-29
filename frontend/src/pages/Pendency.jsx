@@ -145,7 +145,7 @@ export default function Pendency() {
           </div>
         ) : (
           <div className="px-3 py-1.5 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold font-mono">
-            College View: Western Regional Office (Pune)
+            College Portal · Sunrise Institute (Pune)
           </div>
         )}
       </div>

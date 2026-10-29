@@ -44,7 +44,9 @@ export default function Navbar({ activeTab, setActiveTab }) {
     changeRole(newRoleId);
     setRoleMenuOpen(false);
     const targetRole = allRoles[newRoleId];
-    if (targetRole && !targetRole.allowedTabs.includes(activeTab)) {
+    if (targetRole?.defaultTab) {
+      setActiveTab(targetRole.defaultTab);
+    } else if (targetRole && !targetRole.allowedTabs.includes(activeTab)) {
       setActiveTab(targetRole.allowedTabs[0] || 'applications');
     }
   };

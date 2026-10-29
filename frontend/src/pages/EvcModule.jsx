@@ -24,8 +24,10 @@ export default function EvcModule() {
   const { evcVisits, scheduleEvcVisit, completeEvcVisit, simulatedDate } = useAicte();
   const { role, roleConfig } = useRole();
   const isInstitutionRole = role === 'INSTITUTION';
+  const isRegionalOfficer = role === 'REGIONAL_OFFICER';
+  const isCommitteeRole = role === 'COMMITTEE';
 
-  const [activeTab, setActiveTab] = useState('QUEUE'); // 'QUEUE', 'SCHEDULED', 'COMPLETED', 'CALENDAR'
+  const [activeTab, setActiveTab] = useState(isCommitteeRole ? 'SCHEDULED' : 'QUEUE'); // 'QUEUE', 'SCHEDULED', 'COMPLETED', 'CALENDAR'
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals
@@ -48,10 +50,23 @@ export default function EvcModule() {
     reportUrl: '/reports/EVC_Final_Report_Verified.pdf'
   });
 
-  // Institution Isolation: If logged in as college, only see your own institution visits
+  // Role Scoping for EVC Module:
+  // - College only sees own institution visits
+  // - RO-West only sees Western Regional Office visits
+  // - Committee head only sees assigned inspections
+  // - DG / Bureau sees national visits
   const accessibleVisits = isInstitutionRole
     ? evcVisits.filter(
         (v) => v.institutionId === 'inst_sunrise' || v.institutionName.toLowerCase().includes('sunrise')
+      )
+    : isRegionalOfficer
+    ? evcVisits.filter((v) => v.region?.toLowerCase().includes('west'))
+    : isCommitteeRole
+    ? evcVisits.filter(
+        (v) =>
+          v.convener?.toLowerCase().includes('ramanathan') ||
+          v.members?.some((m) => m.toLowerCase().includes('ramanathan')) ||
+          v.status === 'SCHEDULED'
       )
     : evcVisits;
 

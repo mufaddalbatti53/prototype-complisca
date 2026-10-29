@@ -23,12 +23,14 @@ import { useRole } from '../context/RoleContext';
 export default function AuditTrail() {
   const { auditLog, applications, undertakings, simulatedDate } = useAicte();
   const { role, roleConfig } = useRole();
+  const isRegionalOfficer = role === 'REGIONAL_OFFICER';
+  const isInstitutionRole = role === 'INSTITUTION';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [actionFilter, setActionFilter] = useState('ALL');
   const [refTypeFilter, setRefTypeFilter] = useState('ALL');
-  const [regionFilter, setRegionFilter] = useState('ALL');
+  const [regionFilter, setRegionFilter] = useState(isRegionalOfficer ? 'Western' : 'ALL');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
@@ -287,21 +289,27 @@ export default function AuditTrail() {
             </select>
           </div>
 
-          <div>
-            <select
-              value={regionFilter}
-              onChange={(e) => setRegionFilter(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
-            >
-              <option value="ALL">All Regional Jurisdictions</option>
-              <option value="Western">Western Regional Office</option>
-              <option value="Northern">Northern Regional Office</option>
-              <option value="North-Western">North-Western Regional Office</option>
-              <option value="Southern">Southern Regional Office</option>
-              <option value="Central">Central Regional Office</option>
-              <option value="Eastern">Eastern Regional Office</option>
-            </select>
-          </div>
+          {!isRegionalOfficer && !isInstitutionRole ? (
+            <div>
+              <select
+                value={regionFilter}
+                onChange={(e) => setRegionFilter(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
+              >
+                <option value="ALL">All Regional Jurisdictions</option>
+                <option value="Western">Western Regional Office</option>
+                <option value="Northern">Northern Regional Office</option>
+                <option value="North-Western">North-Western Regional Office</option>
+                <option value="Southern">Southern Regional Office</option>
+                <option value="Central">Central Regional Office</option>
+                <option value="Eastern">Eastern Regional Office</option>
+              </select>
+            </div>
+          ) : isRegionalOfficer ? (
+            <div className="px-3 py-2 text-xs rounded-xl border border-blue-200 bg-blue-50 text-blue-900 font-bold font-mono">
+              Western Regional Office (Fixed)
+            </div>
+          ) : null}
 
           <div>
             <select

@@ -47,10 +47,12 @@ function AppContent() {
     }
   };
 
-  // When role changes, if current activeTab is not allowed, switch to defaultTab
+  // When role changes, switch directly to that role's designated landing first-page
   useEffect(() => {
-    if (roleConfig && !roleConfig.allowedTabs.includes(activeTab)) {
-      setActiveTab(roleConfig.defaultTab || roleConfig.allowedTabs[0] || 'applications');
+    if (roleConfig?.defaultTab) {
+      setActiveTab(roleConfig.defaultTab);
+    } else if (roleConfig && !roleConfig.allowedTabs.includes(activeTab)) {
+      setActiveTab(roleConfig.allowedTabs[0] || 'applications');
     }
   }, [role]);
 

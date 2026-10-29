@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileText,
   Search,
@@ -62,6 +62,13 @@ export default function Applications() {
   const [revertAppTarget, setRevertAppTarget] = useState(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [bureauEscalationInboxOnly, setBureauEscalationInboxOnly] = useState(role === 'BUREAU_OFFICER');
+
+  // Automatically activate the Escalation Inbox for Bureau Officer persona
+  useEffect(() => {
+    if (role === 'BUREAU_OFFICER') {
+      setBureauEscalationInboxOnly(true);
+    }
+  }, [role]);
 
   // Dynamically derive selectedApp so all changes update in REAL-TIME with ZERO REFRESH
   const selectedApp = applications.find((a) => a.id === selectedAppId) || null;
