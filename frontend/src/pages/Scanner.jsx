@@ -361,7 +361,7 @@ export default function Scanner() {
                     <span className="text-sm font-bold text-slate-900">
                       Open camera
                     </span>
-                    <span className="text-xs text-slate-400 mt-1">
+                    <span className="text-xs text-slate-600 font-medium mt-1">
                       or try a demo pack below
                     </span>
                   </div>
@@ -373,7 +373,7 @@ export default function Scanner() {
                       className="max-h-[280px] w-auto object-contain rounded-2xl border border-slate-100 shadow-sm"
                     />
                     <div className="w-full flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
-                      <span className="text-xs font-mono text-slate-700 font-semibold truncate max-w-[200px]">
+                      <span className="text-xs font-mono text-slate-900 font-bold truncate max-w-[200px]">
                         {file?.name || 'Captured Image'}
                       </span>
                       <button
@@ -408,8 +408,8 @@ export default function Scanner() {
                     <span className="text-sm font-bold text-slate-900">
                       Drop a photo here, or browse
                     </span>
-                    <span className="text-xs text-slate-400 mt-1 max-w-xs">
-                      Best results: the front panel, flat, well lit. JPG, PNG or WEBP.
+                    <span className="text-xs text-slate-700 font-medium mt-1 max-w-xs">
+                      Best results: front packaging panel, flat, clear lighting. JPG, PNG or WEBP.
                     </span>
                   </div>
                 ) : (
@@ -420,7 +420,7 @@ export default function Scanner() {
                       className="max-h-[280px] w-auto object-contain rounded-2xl border border-slate-100 shadow-sm"
                     />
                     <div className="w-full flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
-                      <span className="text-xs font-mono text-slate-700 font-semibold truncate max-w-[200px]">
+                      <span className="text-xs font-mono text-slate-900 font-bold truncate max-w-[200px]">
                         {file?.name}
                       </span>
                       <button
@@ -451,8 +451,8 @@ export default function Scanner() {
                   placeholder="https://www.amazon.in/dp/B0..."
                   className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-xs text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  CompliScan extracts high-resolution packaging images and audits mandatory digital commerce declarations under the Legal Metrology Rules, 2021.
+                <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                  CompliScan reads product labels and checks mandatory commerce rules quickly and clearly.
                 </p>
               </div>
             )}

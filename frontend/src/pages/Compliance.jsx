@@ -602,8 +602,8 @@ export default function Compliance() {
 
               {/* Upload Custom Evidence */}
               <div className="pt-2">
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                  Or Upload Your Own Laboratory / Installation Proof:
+                <label className="text-xs font-bold text-slate-800 block mb-1">
+                  Or Upload Your Own Laboratory / Installation Proof (PDF, PNG or JPG):
                 </label>
                 <input
                   type="file"
@@ -614,7 +614,7 @@ export default function Compliance() {
                       setSelectedSampleEvidence(null);
                     }
                   }}
-                  className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+                  className="w-full text-xs text-slate-800 font-medium file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-200 file:text-slate-900 hover:file:bg-slate-300"
                 />
               </div>
             </div>
@@ -730,11 +730,11 @@ export default function Compliance() {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Upload Certified Evidence / Photo File</label>
-                <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:bg-slate-50 transition cursor-pointer">
-                  <Upload className="w-6 h-6 text-slate-400 mx-auto mb-1" />
-                  <span className="font-medium text-slate-700 text-xs block">Click to select or drag compliance proof</span>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">PDF or Geo-Tagged photo file up to 20MB</span>
+                <label className="font-bold text-slate-800 block mb-1">Upload Certified Evidence / Photo File</label>
+                <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:bg-slate-50 transition cursor-pointer">
+                  <Upload className="w-6 h-6 text-slate-600 mx-auto mb-1" />
+                  <span className="font-bold text-slate-900 text-xs block">Click to select or drag compliance proof</span>
+                  <span className="text-[11px] text-slate-700 font-medium block mt-0.5">PDF or Geo-Tagged photo file up to 20MB</span>
                 </div>
               </div>
 

@@ -14,7 +14,8 @@ import {
   ArrowRight,
   ShieldAlert,
   Search,
-  Filter
+  Filter,
+  Building2
 } from 'lucide-react';
 import { useAicte } from '../context/AicteContext';
 import { useRole } from '../context/RoleContext';
@@ -22,6 +23,7 @@ import { useRole } from '../context/RoleContext';
 export default function EvcModule() {
   const { evcVisits, scheduleEvcVisit, completeEvcVisit, simulatedDate } = useAicte();
   const { role, roleConfig } = useRole();
+  const isInstitutionRole = role === 'INSTITUTION';
 
   const [activeTab, setActiveTab] = useState('QUEUE'); // 'QUEUE', 'SCHEDULED', 'COMPLETED', 'CALENDAR'
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,8 +48,15 @@ export default function EvcModule() {
     reportUrl: '/reports/EVC_Final_Report_Verified.pdf'
   });
 
+  // Institution Isolation: If logged in as college, only see your own institution visits
+  const accessibleVisits = isInstitutionRole
+    ? evcVisits.filter(
+        (v) => v.institutionId === 'inst_sunrise' || v.institutionName.toLowerCase().includes('sunrise')
+      )
+    : evcVisits;
+
   // Filtered visits
-  const filteredVisits = evcVisits.filter((v) => {
+  const filteredVisits = accessibleVisits.filter((v) => {
     const matchesSearch =
       v.refNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.institutionName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -58,9 +67,9 @@ export default function EvcModule() {
     return matchesSearch;
   });
 
-  const queuedCount = evcVisits.filter((v) => v.status === 'QUEUED').length;
-  const scheduledCount = evcVisits.filter((v) => v.status === 'SCHEDULED').length;
-  const completedCount = evcVisits.filter((v) => v.status === 'COMPLETED').length;
+  const queuedCount = accessibleVisits.filter((v) => v.status === 'QUEUED').length;
+  const scheduledCount = accessibleVisits.filter((v) => v.status === 'SCHEDULED').length;
+  const completedCount = accessibleVisits.filter((v) => v.status === 'COMPLETED').length;
 
   const handleOpenSchedule = (visit) => {
     setSelectedVisit(visit);
@@ -120,6 +129,28 @@ export default function EvcModule() {
           </p>
         </div>
       </div>
+
+      {/* College Portal Banner (Shown ONLY for Institution role) */}
+      {isInstitutionRole && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs animate-fadeIn">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-bold text-slate-900 text-sm">Sunrise Institute of Technology (Pune)</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-200 text-amber-900">
+                  YOUR COLLEGE PORTAL
+                </span>
+              </div>
+              <p className="text-slate-600 mt-0.5">
+                Viewing only your college's scheduled and upcoming inspection visits. Other institutions are hidden.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Metric Tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

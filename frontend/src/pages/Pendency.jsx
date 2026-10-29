@@ -15,14 +15,24 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useAicte, getStageSla } from '../context/AicteContext';
+import { useRole } from '../context/RoleContext';
 
 export default function Pendency() {
   const { applications, config, simulatedDate } = useAicte();
+  const { role } = useRole();
+  const isInstitutionRole = role === 'INSTITUTION';
 
   const [selectedRegion, setSelectedRegion] = useState('ALL');
 
+  // Institution Isolation: If logged in as college, only see your own institution files
+  const accessibleApps = isInstitutionRole
+    ? applications.filter(
+        (a) => a.institutionId === 'inst_sunrise' || a.institutionName.toLowerCase().includes('sunrise')
+      )
+    : applications;
+
   // Filtered applications
-  const activeApps = applications.filter(
+  const activeApps = accessibleApps.filter(
     (a) => selectedRegion === 'ALL' || a.region === selectedRegion
   );
 
@@ -91,23 +101,51 @@ export default function Pendency() {
           </p>
         </div>
 
-        {/* Region Quick Filter */}
-        <div className="flex items-center space-x-2">
-          <Filter className="w-4 h-4 text-slate-500" />
-          <select
-            value={selectedRegion}
-            onChange={(e) => setSelectedRegion(e.target.value)}
-            className="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20"
-          >
-            <option value="ALL">All 8 AICTE Regions (National View)</option>
-            {REGIONS.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Region Quick Filter (Only for Officers/Admins) */}
+        {!isInstitutionRole ? (
+          <div className="flex items-center space-x-2">
+            <Filter className="w-4 h-4 text-slate-500" />
+            <select
+              value={selectedRegion}
+              onChange={(e) => setSelectedRegion(e.target.value)}
+              className="text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20"
+            >
+              <option value="ALL">All 8 AICTE Regions (National View)</option>
+              {REGIONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="px-3 py-1.5 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold font-mono">
+            Western Regional Office (Pune)
+          </div>
+        )}
       </div>
+
+      {/* College Portal Banner (Shown ONLY for Institution role) */}
+      {isInstitutionRole && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs animate-fadeIn">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-bold text-slate-900 text-sm">Sunrise Institute of Technology (Pune)</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-200 text-amber-900">
+                  YOUR COLLEGE PORTAL
+                </span>
+              </div>
+              <p className="text-slate-600 mt-0.5">
+                Viewing only your institution's files, review progress, and waiting time. Other colleges are kept private.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Gold Bottleneck Strip */}
       <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
