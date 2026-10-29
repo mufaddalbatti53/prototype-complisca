@@ -118,7 +118,7 @@ function AppContent() {
       )}
 
       {/* Main Tab Routing */}
-      <main className="flex-1 pb-16">
+      <main className="flex-1 pb-24 xl:pb-12">
         {activeTab === 'applications' && <Applications />}
         {activeTab === 'pendency' && <Pendency />}
         {activeTab === 'evc' && <EvcModule />}

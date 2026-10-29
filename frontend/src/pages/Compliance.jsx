@@ -372,7 +372,7 @@ export default function Compliance() {
 
       {/* Undertakings Table */}
       <div className="civic-card rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#1e3a8a] text-white font-mono text-[11px] uppercase tracking-wider">
@@ -525,6 +525,140 @@ export default function Compliance() {
               }))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Compliance Undertakings Cards View (Zero Horizontal Scrolling) */}
+        <div className="block md:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
+          {filteredUts.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-xs">
+              No compliance undertakings found matching your filters.
+            </div>
+          ) : (
+            filteredUts.map((ut) => {
+              const isOverdue = ut.daysRemaining < 0;
+              const isEscalated = ut.status === 'ESCALATED';
+              const isSubmitted = ut.status === 'SUBMITTED';
+              const isVerified = ut.status === 'VERIFIED';
+
+              return (
+                <div
+                  key={ut.id}
+                  className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
+                    isEscalated
+                      ? 'border-rose-300 bg-rose-50/40 shadow-xs'
+                      : isOverdue
+                      ? 'border-amber-300 bg-amber-50/30 shadow-xs'
+                      : isSubmitted
+                      ? 'border-blue-300 bg-blue-50/20 shadow-xs'
+                      : 'border-slate-200 bg-white shadow-xs'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center space-x-1.5">
+                        <span className="font-mono font-bold text-xs text-[#1e3a8a]">
+                          {ut.id}
+                        </span>
+                        <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-slate-100 border border-slate-300 text-slate-700 font-bold">
+                          {ut.refNo}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 font-medium mt-0.5 block">
+                        Imposed: {ut.imposedAt}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full text-[9.5px] font-bold ${
+                          ut.escalationLevel === 4
+                            ? 'bg-rose-600 text-white'
+                            : ut.escalationLevel === 3
+                            ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                            : ut.escalationLevel === 2
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {ut.escalationLevel === 4
+                          ? 'L4: DG Flag'
+                          : ut.escalationLevel === 3
+                          ? 'L3: Bureau'
+                          : ut.escalationLevel === 2
+                          ? 'L2: RO Notice'
+                          : 'L1: Reminder'}
+                      </span>
+                      <span
+                        className={`stamp-badge text-[9.5px] ${
+                          isVerified
+                            ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                            : isEscalated
+                            ? 'bg-rose-100 text-rose-800 border-rose-300'
+                            : isSubmitted
+                            ? 'bg-blue-100 text-blue-900 border-blue-300'
+                            : 'bg-amber-100 text-amber-900 border-amber-300'
+                        }`}
+                      >
+                        {ut.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5 space-y-1 text-xs">
+                    <p className="font-bold text-slate-900">{ut.institutionName}</p>
+                    <p className="text-slate-800 font-medium leading-snug">{ut.conditionText}</p>
+                    <p className="text-[11px] text-slate-500 italic mt-0.5">Req: {ut.evidenceRequired}</p>
+                    <div className="flex items-center justify-between font-mono text-[11px] pt-1.5 border-t border-slate-100">
+                      <span className="text-slate-500">Due: {ut.dueDate}</span>
+                      {isVerified ? (
+                        <span className="text-emerald-700 font-bold">✓ Fulfilled</span>
+                      ) : isOverdue ? (
+                        <span className="text-rose-600 font-bold">
+                          {Math.abs(ut.daysRemaining)}d OVERDUE
+                        </span>
+                      ) : (
+                        <span className="text-slate-700 font-medium">
+                          {ut.daysRemaining}d remaining
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => setActiveInspectorUt(ut)}
+                      className="flex-1 py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center space-x-1 border border-slate-200 transition"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#1e3a8a]" />
+                      <span>Inspect</span>
+                    </button>
+
+                    {(role === 'INSTITUTION' || role === 'SUPERADMIN') && !isVerified && (
+                      <button
+                        onClick={() => handleOpenEvidenceModal(ut)}
+                        className="flex-1 py-1.5 px-3 rounded-xl bg-[#1e3a8a] hover:bg-[#172554] text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-xs transition"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Upload Proof</span>
+                      </button>
+                    )}
+
+                    {(role === 'REGIONAL_OFFICER' || role === 'BUREAU_OFFICER' || role === 'SUPERADMIN') &&
+                      (isSubmitted || isOverdue || isEscalated) &&
+                      !isVerified && (
+                        <button
+                          onClick={() => handleOpenVerificationModal(ut)}
+                          className="flex-1 py-1.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-xs transition"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+                          <span>Verify</span>
+                        </button>
+                      )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -707,8 +841,8 @@ export default function Compliance() {
 
       {/* EVIDENCE SUBMIT MODAL (INSTITUTION) */}
       {selectedUtForEvidence && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center space-x-2 text-[#1e3a8a]">
                 <Upload className="w-5 h-5 text-amber-500" />
@@ -770,8 +904,8 @@ export default function Compliance() {
 
       {/* VERIFY / REJECT MODAL (REGIONAL / BUREAU OFFICER) */}
       {selectedUtForVerification && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
@@ -851,8 +985,8 @@ export default function Compliance() {
 
       {/* INSPECTOR MODAL */}
       {activeInspectorUt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center space-x-2">
                 <FileCheck className="w-5 h-5 text-[#1e3a8a]" />

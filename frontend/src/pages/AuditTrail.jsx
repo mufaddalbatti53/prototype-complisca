@@ -145,7 +145,7 @@ export default function AuditTrail() {
 
       {/* Main Audit Trail Table */}
       <div className="civic-card rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#1e3a8a] text-white font-mono text-[11px] uppercase tracking-wider">
@@ -238,6 +238,98 @@ export default function AuditTrail() {
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Audit Log Cards View (Zero Horizontal Scrolling) */}
+        <div className="block md:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
+          {filteredLog.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-xs">
+              No audit events found matching your search.
+            </div>
+          ) : (
+            filteredLog.map((evt) => {
+              const isRevert = evt.action.includes('REVERT');
+              const isBreach = evt.action.includes('BREACH');
+              const isEscalation = evt.action.includes('ESCALATION');
+
+              return (
+                <div
+                  key={evt.id}
+                  className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
+                    isRevert
+                      ? 'border-rose-300 bg-rose-50/20 shadow-xs'
+                      : isBreach
+                      ? 'border-amber-300 bg-amber-50/20 shadow-xs'
+                      : isEscalation
+                      ? 'border-purple-300 bg-purple-50/20 shadow-xs'
+                      : 'border-slate-200 bg-white shadow-xs'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-mono font-bold text-xs text-[#1e3a8a] block">
+                        {evt.id}
+                      </span>
+                      <span className="font-mono text-[10px] text-slate-500 block">
+                        Date: {evt.simulatedDate}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-md font-mono text-[9.5px] font-bold ${
+                        isRevert
+                          ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                          : isBreach
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : isEscalation
+                          ? 'bg-purple-100 text-purple-900 border border-purple-300'
+                          : 'bg-blue-50 text-[#1e3a8a] border border-blue-200'
+                      }`}
+                    >
+                      {evt.action}
+                    </span>
+                  </div>
+
+                  <div className="mt-2 space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900">{evt.actorName}</span>
+                      <span className="font-mono text-[10.5px] text-slate-500">{evt.actorRole}</span>
+                    </div>
+
+                    <div className="flex items-center space-x-1.5 text-[11px] font-mono text-slate-600 pt-1">
+                      <span className="font-bold text-slate-800">Target: {evt.refId}</span>
+                      <span>·</span>
+                      <span>{evt.refType}</span>
+                    </div>
+
+                    {evt.fromStage && evt.toStage && (
+                      <div className="flex items-center space-x-1.5 text-[11px] font-mono pt-1">
+                        <span className="text-slate-500">{evt.fromStage}</span>
+                        <ArrowRight className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span className="font-bold text-[#1e3a8a]">{evt.toStage}</span>
+                      </div>
+                    )}
+
+                    {evt.note && (
+                      <p className="text-[11px] text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100 mt-1.5 leading-relaxed">
+                        {evt.note}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-3 pt-2 border-t border-slate-100 flex justify-end">
+                    <button
+                      onClick={() => setSelectedEvent(evt)}
+                      className="font-bold text-xs inline-flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 transition"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#1e3a8a]" />
+                      <span>Inspect Event</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

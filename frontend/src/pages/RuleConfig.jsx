@@ -309,7 +309,55 @@ export default function RuleConfig() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile View: Escalation Cards (Hidden on sm screens and up) */}
+            <div className="block sm:hidden space-y-2.5">
+              {escalationRows.map((row) => {
+                const daysVal =
+                  row.days_from_due !== undefined ? row.days_from_due : row.days;
+                const targetVal = row.target_role || row.target;
+
+                return (
+                  <div
+                    key={row.level}
+                    className="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-1.5 text-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10.5px] font-mono font-bold ${
+                          row.level === 4
+                            ? "bg-rose-100 text-rose-800 border border-rose-300"
+                            : row.level === 3
+                            ? "bg-amber-100 text-amber-800 border border-amber-300"
+                            : row.level === 2
+                            ? "bg-blue-100 text-blue-800 border border-blue-300"
+                            : "bg-slate-200 text-slate-700"
+                        }`}
+                      >
+                        Level {row.level}
+                      </span>
+                      <span className="font-mono text-[11px] text-slate-600 font-medium">
+                        {daysVal < 0
+                          ? `T${daysVal}d (Advance Reminder)`
+                          : daysVal === 0
+                          ? "Due Date (0d Breach)"
+                          : `+${daysVal}d Overdue`}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-800 pt-0.5">
+                      <span className="font-medium text-[11px] text-slate-500">Target Authority:</span>
+                      <span className="font-bold">{targetVal}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-0.5 border-t border-slate-200">
+                      <span className="font-medium text-[11px] text-slate-500">Action:</span>
+                      <span className="font-mono font-bold text-amber-900 text-[11px]">{row.action}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop View: Table (Hidden on Mobile) */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-[#1e293b] text-white text-[11px] font-mono uppercase">

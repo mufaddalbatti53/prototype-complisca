@@ -291,7 +291,7 @@ export default function EvcModule() {
       ) : (
         /* Visit Queue & Records Table */
         <div className="civic-card rounded-2xl overflow-hidden bg-white">
-          <div className="overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#1e293b] text-white text-[11px] font-mono uppercase tracking-wider">
@@ -403,13 +403,123 @@ export default function EvcModule() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile EVC Inspection Cards View (Zero Horizontal Scrolling) */}
+          <div className="block md:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
+            {filteredVisits.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 text-xs">
+                No EVC inspection visits matching current filter.
+              </div>
+            ) : (
+              filteredVisits.map((v) => {
+                const isUrgent = v.daysWaiting > v.urgencyWindowDays;
+
+                return (
+                  <div
+                    key={v.id}
+                    className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
+                      isUrgent
+                        ? 'border-rose-300 bg-rose-50/30 shadow-xs'
+                        : v.status === 'SCHEDULED'
+                        ? 'border-purple-300 bg-purple-50/20 shadow-xs'
+                        : v.status === 'COMPLETED'
+                        ? 'border-emerald-300 bg-emerald-50/20 shadow-xs'
+                        : 'border-slate-200 bg-white shadow-xs'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-mono font-bold text-xs text-[#1e3a8a] block">
+                          {v.refNo}
+                        </span>
+                        <span className="font-mono text-[10px] text-slate-500 block">ID: {v.id}</span>
+                      </div>
+
+                      <span
+                        className={`stamp-badge text-[9.5px] shrink-0 ${
+                          v.status === 'QUEUED'
+                            ? 'bg-amber-50 text-amber-900 border-amber-300'
+                            : v.status === 'SCHEDULED'
+                            ? 'bg-purple-50 text-purple-900 border-purple-300'
+                            : 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                        }`}
+                      >
+                        {v.status}
+                      </span>
+                    </div>
+
+                    <div className="mt-2.5 space-y-1 text-xs">
+                      <p className="font-bold text-slate-900">{v.institutionName}</p>
+                      <p className="text-[11px] text-slate-500 font-mono">{v.region}</p>
+                      {v.convener ? (
+                        <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 mt-1.5 space-y-0.5">
+                          <span className="text-[10px] font-mono text-slate-500 uppercase block font-bold">
+                            Assigned Convener
+                          </span>
+                          <p className="font-semibold text-slate-800 text-[11px]">{v.convener}</p>
+                          <span className="text-[10px] text-purple-700 font-mono block">
+                            Date: {v.scheduledDate} ({v.mode})
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 italic">Convener not yet assigned</p>
+                      )}
+                    </div>
+
+                    {/* Dwell / Urgency bar */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs gap-2">
+                      <div className="flex items-center space-x-1.5">
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span
+                          className={`font-mono font-bold ${
+                            isUrgent ? 'text-rose-600' : 'text-slate-800'
+                          }`}
+                        >
+                          {v.daysWaiting}d waiting
+                        </span>
+                        <span className="text-slate-400 font-mono text-[10px]">/ {v.urgencyWindowDays}d</span>
+                        {isUrgent && (
+                          <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse ml-0.5" />
+                        )}
+                      </div>
+
+                      {v.status === 'QUEUED' && (
+                        <button
+                          onClick={() => handleOpenSchedule(v)}
+                          className="bg-[#1e3a8a] hover:bg-[#172554] text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition shrink-0"
+                        >
+                          Schedule
+                        </button>
+                      )}
+
+                      {v.status === 'SCHEDULED' && (
+                        <button
+                          onClick={() => handleOpenComplete(v)}
+                          className="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition shrink-0"
+                        >
+                          Upload Report
+                        </button>
+                      )}
+
+                      {v.status === 'COMPLETED' && (
+                        <span className="text-emerald-700 font-bold font-mono text-[11px] inline-flex items-center space-x-1 shrink-0">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Verified</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
 
       {/* MODAL 1: Schedule EVC Visit */}
       {scheduleModalOpen && selectedVisit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center space-x-2 text-[#1e3a8a]">
                 <CalendarDays className="w-5 h-5" />
@@ -505,8 +615,8 @@ export default function EvcModule() {
 
       {/* MODAL 2: Complete EVC & Upload Report */}
       {completeModalOpen && selectedVisit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center space-x-2 text-emerald-800">
                 <FileCheck className="w-5 h-5 text-emerald-600" />

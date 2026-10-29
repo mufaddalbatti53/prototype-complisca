@@ -251,17 +251,82 @@ export default function Pendency() {
 
       {/* 8 AICTE Regional Offices Heat Grid */}
       <div className="civic-card rounded-2xl overflow-hidden bg-white">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50">
           <div className="flex items-center space-x-2">
             <MapPin className="w-4 h-4 text-[#1e3a8a]" />
             <h3 className="font-serif font-bold text-sm text-slate-900">
               National Pendency Matrix (8 AICTE Regional Offices × Lifecycle Stages)
             </h3>
           </div>
-          <span className="text-[11px] text-slate-500 font-mono">Red cell indicates SLA breach</span>
+          <span className="text-[11px] text-slate-500 font-mono">Red highlight indicates SLA breach</span>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile View: Clean Regional Cards (Hidden on Desktop) */}
+        <div className="block md:hidden p-3 space-y-3">
+          {REGIONS.map((region) => {
+            const regApps = applications.filter((a) => a.region === region);
+            const countByStage = (stg) => regApps.filter((a) => a.currentStage === stg).length;
+            const hasBreachInStage = (stg) =>
+              regApps.some(
+                (a) =>
+                  a.currentStage === stg &&
+                  (a.isBreached ||
+                    (a.currentStage !== 'CLOSED' &&
+                      a.daysInStage > getStageSla(config, a.currentStage, a.appType, a.resubmissionCount)))
+              );
+            const anyBreach = STAGES.some((stg) => hasBreachInStage(stg));
+
+            return (
+              <div
+                key={region}
+                className={`p-3.5 rounded-xl border ${
+                  anyBreach ? 'border-rose-300 bg-rose-50/40' : 'border-slate-200 bg-white'
+                } shadow-xs space-y-2`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-bold text-xs text-slate-900">{region}</div>
+                  <div className="flex items-center space-x-1.5 shrink-0">
+                    {anyBreach && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-600 text-white animate-pulse">
+                        BREACH
+                      </span>
+                    )}
+                    <span className="px-2 py-0.5 rounded-md font-mono text-xs font-bold bg-blue-50 text-[#1e3a8a] border border-blue-200">
+                      {regApps.length} active
+                    </span>
+                  </div>
+                </div>
+
+                {/* Stage distribution pills */}
+                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  {STAGES.filter((stg) => countByStage(stg) > 0).map((stg) => {
+                    const count = countByStage(stg);
+                    const breached = hasBreachInStage(stg);
+                    return (
+                      <div
+                        key={stg}
+                        className={`px-2 py-1 rounded text-[11px] font-mono flex items-center justify-between border ${
+                          breached
+                            ? 'bg-rose-100 border-rose-300 text-rose-900 font-bold'
+                            : 'bg-slate-50 border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        <span className="truncate pr-1">{stg.replace('_', ' ')}</span>
+                        <span className="font-bold">{count}</span>
+                      </div>
+                    );
+                  })}
+                  {regApps.length === 0 && (
+                    <span className="text-[11px] text-slate-400 font-mono italic col-span-2">No active applications</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop View: Full 9-Column Heatmap Table (Hidden on Mobile) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#1e293b] text-white text-[11px] font-mono uppercase tracking-wider">

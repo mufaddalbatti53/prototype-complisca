@@ -193,7 +193,7 @@ export default function Institutions() {
 
       {/* Main Table */}
       <div className="civic-card rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#1e3a8a] text-white font-mono text-[11px] uppercase tracking-wider">
@@ -299,6 +299,101 @@ export default function Institutions() {
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Institutions Cards View (Zero Horizontal Scrolling) */}
+        <div className="block md:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
+          {filteredInsts.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-xs">
+              No institutions found matching your search.
+            </div>
+          ) : (
+            filteredInsts.map((inst) => {
+              const isHighRisk = inst.riskFlag === 'HIGH';
+              const isMedRisk = inst.riskFlag === 'MEDIUM';
+
+              return (
+                <div
+                  key={inst.id}
+                  className="p-3.5 sm:p-4 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 shadow-xs transition-all space-y-2.5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1e3a8a] flex items-center justify-center shrink-0">
+                        <Building2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 text-xs block leading-tight">{inst.name}</span>
+                        <span className="font-mono text-[10px] text-slate-500">AISHE: {inst.aisheCode}</span>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-full text-[9.5px] font-mono font-bold shrink-0 ${
+                        inst.status === 'ACTIVE'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          : inst.status === 'UNDER_REVIEW'
+                          ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                          : 'bg-rose-50 text-rose-800 border border-rose-200'
+                      }`}
+                    >
+                      {inst.status.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+
+                  <div className="text-xs space-y-1">
+                    <p className="text-slate-600">
+                      {inst.district}, {inst.state} · <span className="font-medium text-slate-800">{inst.region.replace(' Regional Office', '')}</span>
+                    </p>
+                    <div className="flex items-center justify-between text-[11px] pt-1">
+                      <span className="font-mono text-slate-600">{inst.type}</span>
+                      <span className="font-mono font-bold text-slate-800">{inst.intakeCapacity} Seats</span>
+                    </div>
+                  </div>
+
+                  {/* Compliance Score Bar */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-20 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
+                        <div
+                          className={`h-full rounded-full ${
+                            inst.complianceScore >= 90
+                              ? 'bg-emerald-500'
+                              : inst.complianceScore >= 75
+                              ? 'bg-amber-500'
+                              : 'bg-rose-500'
+                          }`}
+                          style={{ width: `${inst.complianceScore}%` }}
+                        />
+                      </div>
+                      <span className="font-mono font-bold text-[11px] text-slate-900">
+                        {inst.complianceScore}%
+                      </span>
+                      <span
+                        className={`text-[9.5px] font-mono px-1.5 py-0.5 rounded-full font-bold ${
+                          isHighRisk
+                            ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                            : isMedRisk
+                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                            : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        }`}
+                      >
+                        {inst.riskFlag} RISK
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => setSelectedInst(inst)}
+                      className="font-bold text-xs inline-flex items-center space-x-1 bg-[#1e3a8a] text-white hover:bg-[#172554] px-3 py-1.5 rounded-xl transition shadow-xs"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Dossier</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

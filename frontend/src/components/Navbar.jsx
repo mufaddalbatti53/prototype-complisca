@@ -72,51 +72,52 @@ export default function Navbar({ activeTab, setActiveTab }) {
     <>
       <header className="sticky top-0 z-50 bg-[#ffffff] border-b border-[oklch(0.9_0.01_90)] shadow-xs">
         {/* Top Gazette Bar: Authority Identification & Simulated Clock */}
-        <div className="bg-[#1e293b] text-white px-4 sm:px-6 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2 border-b border-slate-700">
-          <div className="flex items-center space-x-2 font-mono text-[11px] text-slate-300">
-            <span className="text-amber-400 font-bold tracking-wider">AICTE REGULATION BUREAU</span>
-            <span>·</span>
-            <span>PS 26262</span>
-            <span>·</span>
-            <span className="text-slate-300 hidden sm:inline">C.O.M.P.L.I.S.C.A.N. — Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network</span>
+        <div className="bg-[#1e293b] text-white px-3 sm:px-6 py-1.5 text-xs flex items-center justify-between gap-1.5 sm:gap-2 border-b border-slate-700">
+          <div className="flex items-center space-x-1.5 font-mono text-[10px] sm:text-[11px] text-slate-300 shrink-0">
+            <span className="text-amber-400 font-bold tracking-wider">AICTE BUREAU</span>
+            <span className="hidden xs:inline">·</span>
+            <span className="hidden xs:inline text-slate-400">PS 26262</span>
+            <span className="hidden lg:inline">·</span>
+            <span className="text-slate-300 hidden lg:inline truncate max-w-md">C.O.M.P.L.I.S.C.A.N.</span>
           </div>
 
           {/* Time-Machine Clock Simulation Widget (Evaluator Demo Feature) */}
-          <div className="flex items-center space-x-2 ml-auto">
-            <div className="flex items-center space-x-1.5 bg-slate-800/90 border border-slate-600 px-2.5 py-0.5 rounded text-[11px] font-mono text-amber-300">
-              <Clock className="w-3.5 h-3.5 text-amber-400" />
-              <span>Simulated Date: <strong>{simulatedDate}</strong></span>
+          <div className="flex items-center space-x-1 sm:space-x-1.5 ml-auto">
+            <div className="flex items-center space-x-1 bg-slate-800/90 border border-slate-600 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono text-amber-300">
+              <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+              <span className="hidden sm:inline">Date: </span>
+              <strong>{simulatedDate}</strong>
             </div>
 
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-0.5 sm:space-x-1">
               <button
                 onClick={() => advanceDays(1)}
-                className="bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 hover:text-white px-2 py-0.5 rounded text-[10.5px] font-mono font-medium transition"
+                className="bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition"
                 title="Advance clock by 1 day"
               >
                 +1d
               </button>
               <button
                 onClick={() => advanceDays(7)}
-                className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded text-[10.5px] font-mono font-medium transition flex items-center space-x-1"
+                className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition flex items-center space-x-0.5"
                 title="Advance clock by 7 days to trigger SLA warnings"
               >
-                <FastForward className="w-3 h-3" />
+                <FastForward className="w-2.5 h-2.5" />
                 <span>+7d</span>
               </button>
               <button
                 onClick={() => advanceDays(15)}
-                className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded text-[10.5px] font-mono font-medium transition"
+                className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition"
                 title="Advance clock by 15 days to trigger critical escalations"
               >
                 +15d
               </button>
               <button
                 onClick={resetClock}
-                className="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white p-1 rounded transition"
+                className="bg-slate-700 hover:bg-slate-600 text-slate-300 p-1 rounded transition"
                 title="Reset clock to 28 Oct 2026"
               >
-                <RotateCcw className="w-3 h-3" />
+                <RotateCcw className="w-2.5 h-2.5" />
               </button>
             </div>
 
@@ -191,9 +192,12 @@ export default function Navbar({ activeTab, setActiveTab }) {
                 <button
                   type="button"
                   onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-                  className={`flex items-center space-x-2.5 px-3 py-1.5 rounded-xl border text-left transition-all ${roleConfig.badgeColor} hover:shadow-xs`}
+                  className={`flex items-center space-x-1.5 sm:space-x-2.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-left transition-all ${roleConfig.badgeColor} hover:shadow-xs`}
                 >
                   <UserCheck className="w-4 h-4 shrink-0 text-slate-700" />
+                  <span className="text-[11px] font-bold block md:hidden truncate max-w-[85px] leading-tight">
+                    {roleConfig.name.split(' ')[0]}
+                  </span>
                   <div className="hidden md:block">
                     <span className="block text-[10.5px] uppercase font-mono font-bold tracking-wider leading-none opacity-80">
                       {roleConfig.name}
@@ -202,7 +206,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
                       {roleConfig.title}
                     </span>
                   </div>
-                  <ChevronDown className="w-3.5 h-3.5 opacity-60 ml-0.5" />
+                  <ChevronDown className="w-3.5 h-3.5 opacity-60 ml-0.5 shrink-0" />
                 </button>
 
                 {roleMenuOpen && (
@@ -211,7 +215,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
                       className="fixed inset-0 z-40"
                       onClick={() => setRoleMenuOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white border border-slate-200 shadow-xl z-50 p-2 overflow-hidden animate-fadeIn">
+                    <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-xs sm:max-w-sm rounded-2xl bg-white border border-slate-200 shadow-xl z-50 p-2 overflow-hidden animate-fadeIn">
                       <div className="px-3 py-2 border-b border-slate-100 mb-1">
                         <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700">
                           SWITCH USER ROLE (TEST AS ANY PERSON)
@@ -297,37 +301,155 @@ export default function Navbar({ activeTab, setActiveTab }) {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="xl:hidden border-t border-slate-200 bg-white p-4 space-y-1 animate-fadeIn">
-            <span className="text-[10px] font-mono uppercase font-bold text-slate-400 block px-3 py-1">
-              NAVIGATION MODULES
-            </span>
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
+          <div className="xl:hidden border-t border-slate-200 bg-white p-4 space-y-3 animate-fadeIn max-h-[80vh] overflow-y-auto">
+            {/* Quick 1-Click Demo on Mobile */}
+            <button
+              onClick={() => {
+                runOneClickDemo();
+                setActiveTab('applications');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-500 to-amber-600 active:from-amber-600 active:to-amber-700 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-xs shadow-xs transition"
+            >
+              <Sparkles className="w-4 h-4 text-slate-950" />
+              <span>Run 1-Click Application Demo</span>
+            </button>
+
+            <div>
+              <span className="text-[10px] font-mono uppercase font-bold text-slate-400 block px-2 pb-1.5">
+                ALL 8 WORKFLOW MODULES
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        setMobileMenuOpen(false);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        isActive
+                          ? 'bg-[#1e3a8a] text-white shadow-xs'
+                          : 'text-slate-800 hover:bg-slate-100 bg-slate-50 border border-slate-200/60'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <Icon className={`w-4 h-4 ${isActive ? 'text-amber-300' : 'text-[#1e3a8a]'}`} />
+                        <span>{item.label}</span>
+                      </div>
+                      <span className={`text-[10px] font-mono ${isActive ? 'text-amber-200' : 'text-slate-500'}`}>
+                        {item.tag}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick Time-Machine on Mobile */}
+            <div className="p-3 bg-slate-100 rounded-xl border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="font-bold text-slate-700 flex items-center space-x-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Time-Machine Simulation</span>
+                </span>
+                <span className="font-bold text-[#1e3a8a]">{simulatedDate}</span>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5 pt-1">
                 <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    isActive
-                      ? 'bg-[#1e3a8a] text-white'
-                      : 'text-slate-700 hover:bg-slate-100'
-                  }`}
+                  onClick={() => advanceDays(1)}
+                  className="py-1.5 text-center bg-white border border-slate-300 hover:bg-slate-50 rounded-lg text-xs font-bold text-slate-800 transition"
                 >
-                  <div className="flex items-center space-x-2.5">
-                    <Icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </div>
-                  <span className="text-[10px] opacity-70 font-mono">{item.tag}</span>
+                  +1d
                 </button>
-              );
-            })}
+                <button
+                  onClick={() => advanceDays(7)}
+                  className="py-1.5 text-center bg-amber-100 border border-amber-300 hover:bg-amber-200 rounded-lg text-xs font-bold text-amber-900 transition"
+                >
+                  +7d (L2)
+                </button>
+                <button
+                  onClick={() => advanceDays(15)}
+                  className="py-1.5 text-center bg-rose-100 border border-rose-300 hover:bg-rose-200 rounded-lg text-xs font-bold text-rose-900 transition"
+                >
+                  +15d (L4)
+                </button>
+                <button
+                  onClick={resetClock}
+                  className="py-1.5 text-center bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-slate-800 transition flex items-center justify-center space-x-1"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset</span>
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </header>
+
+      {/* Mobile Bottom Navigation Bar (Persistent Thumb Navigation) */}
+      <nav className="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1 flex items-center justify-around shadow-lg">
+        {[
+          { id: 'applications', label: 'Apps', icon: FileText },
+          { id: 'pendency', label: 'Pendency', icon: BarChart3 },
+          { id: 'compliance', label: 'Compliance', icon: ShieldAlert },
+          { id: 'documents', label: 'Docs', icon: FileCheck2 }
+        ].map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id);
+                setMobileMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all relative ${
+                isActive
+                  ? 'text-[#1e3a8a] font-bold'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <div className="relative">
+                <Icon className={`w-5 h-5 ${isActive ? 'text-[#1e3a8a]' : 'text-slate-500'}`} />
+                {isActive && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#1e3a8a]" />
+                )}
+              </div>
+              <span className="text-[10.5px] mt-1 font-medium truncate max-w-[64px] tracking-tight">
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+
+        {/* More / All Modules Tab */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all ${
+            mobileMenuOpen || ['evc', 'institutions', 'timelines', 'audit'].includes(activeTab)
+              ? 'text-amber-600 font-bold'
+              : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <div className="relative">
+            <Menu className="w-5 h-5" />
+            {['evc', 'institutions', 'timelines', 'audit'].includes(activeTab) && (
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-600" />
+            )}
+          </div>
+          <span className="text-[10.5px] mt-1 font-medium tracking-tight">
+            {['evc', 'institutions', 'timelines', 'audit'].includes(activeTab)
+              ? navItems.find((i) => i.id === activeTab)?.label || 'More'
+              : 'More'}
+          </span>
+        </button>
+      </nav>
 
       {/* Notifications Drawer (Slide-Over) */}
       {notifDrawerOpen && (
