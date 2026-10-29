@@ -35,6 +35,13 @@ def seed_default_rules(db=None):
     """Seed helper kept for server startup compatibility."""
     pass
 
+def _deep_merge_dict(target: Dict[str, Any], source: Dict[str, Any]):
+    for k, v in source.items():
+        if isinstance(v, dict) and k in target and isinstance(target[k], dict):
+            _deep_merge_dict(target[k], v)
+        else:
+            target[k] = v
+
 @router.get("")
 @router.get("/")
 @router.get("/config")
@@ -45,7 +52,14 @@ def get_aph_config():
 @router.put("/config")
 def update_aph_config(new_config: Dict[str, Any]):
     """Updates SLA days, alert lead times, or escalation ladder from Timelines tab."""
-    engine.config.update(new_config)
+    _deep_merge_dict(engine.config, new_config)
+    if "stage_sla_days" in engine.config and isinstance(engine.config["stage_sla_days"], dict):
+        normalized = {}
+        for k, v in list(engine.config["stage_sla_days"].items()):
+            normalized[k] = v
+            normalized[k.upper()] = v
+            normalized[k.lower()] = v
+        engine.config["stage_sla_days"] = normalized
     return {"status": "updated", "config": engine.config}
 
 @router.post("/config/reset")

@@ -14,7 +14,7 @@ import {
   Filter,
   CheckCircle2
 } from 'lucide-react';
-import { useAicte } from '../context/AicteContext';
+import { useAicte, getStageSla } from '../context/AicteContext';
 
 export default function Pendency() {
   const { applications, config, simulatedDate } = useAicte();
@@ -31,7 +31,9 @@ export default function Pendency() {
   const inScrutinyCount = activeApps.filter((a) => a.currentStage === 'SCRUTINY').length;
   const inEvcCount = activeApps.filter((a) => a.currentStage === 'EVC_QUEUE' || a.currentStage === 'EVC_SCHEDULED').length;
   const inSacCount = activeApps.filter((a) => a.currentStage === 'SAC_REVIEW').length;
-  const overdueCount = activeApps.filter((a) => a.isBreached).length;
+  const overdueCount = activeApps.filter(
+    (a) => a.currentStage !== 'CLOSED' && (a.isBreached || a.daysInStage > getStageSla(config, a.currentStage, a.appType, a.resubmissionCount))
+  ).length;
   const avgDwellDays = Math.round(
     activeApps.reduce((acc, a) => acc + (a.daysInStage || 0), 0) / (totalCount || 1)
   );
@@ -240,7 +242,14 @@ export default function Pendency() {
               {REGIONS.map((region) => {
                 const regApps = applications.filter((a) => a.region === region);
                 const countByStage = (stg) => regApps.filter((a) => a.currentStage === stg).length;
-                const hasBreachInStage = (stg) => regApps.some((a) => a.currentStage === stg && a.isBreached);
+                const hasBreachInStage = (stg) =>
+                  regApps.some(
+                    (a) =>
+                      a.currentStage === stg &&
+                      (a.isBreached ||
+                        (a.currentStage !== 'CLOSED' &&
+                          a.daysInStage > getStageSla(config, a.currentStage, a.appType, a.resubmissionCount)))
+                  );
 
                 return (
                   <tr key={region} className="hover:bg-slate-50 transition-colors">

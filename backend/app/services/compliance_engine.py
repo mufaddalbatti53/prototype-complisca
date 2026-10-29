@@ -494,15 +494,26 @@ class AICTEWorkflowRuleEngine:
     # =========================================================================
     # INTERNAL HELPERS
     # =========================================================================
-    def _get_stage_sla_days(self, stage: str, app_type: str, resubmission_count: int) -> int:
-        slas = self.config["stage_sla_days"]
-        if stage == "SCRUTINY" and resubmission_count > 0:
-            return slas.get("RE_SCRUTINY", 10)
-        if stage == "EVC_QUEUE":
+    def _get_stage_sla_days(self, stage: str, app_type: str, resubmission_count: int = 0) -> int:
+        slas = self.config.get("stage_sla_days", {})
+        s = (stage or "").upper()
+        if (s == "SCRUTINY" and resubmission_count > 0) or s in ("RE_SCRUTINY", "REVERTED"):
+            return slas.get("RE_SCRUTINY", slas.get("re_scrutiny", 10))
+        if s == "EVC_QUEUE":
             if app_type == "NEW_INSTITUTION":
-                return slas.get("EVC_QUEUE_NEW_INSTITUTION", 21)
-            return slas.get("EVC_QUEUE_STANDARD", 30)
-        return slas.get(stage, 15)
+                return slas.get("EVC_QUEUE_NEW_INSTITUTION", slas.get("evc_new_institution", 21))
+            return slas.get("EVC_QUEUE_STANDARD", slas.get("evc_queue", slas.get("EVC_QUEUE", 30)))
+        if s == "EVC_SCHEDULED":
+            return slas.get("EVC_SCHEDULED", slas.get("evc_scheduled", 14))
+        if s == "EVC_DONE":
+            return slas.get("EVC_DONE", slas.get("evc_done", 7))
+        if s == "SAC_REVIEW":
+            return slas.get("SAC_REVIEW", slas.get("sac_review", 30))
+        if s == "DECISION":
+            return slas.get("DECISION", slas.get("decision", 7))
+        if s == "SUBMITTED":
+            return slas.get("SUBMITTED", slas.get("submitted", 3))
+        return slas.get(s, slas.get(s.lower(), slas.get(stage, 15)))
 
     def _get_responsible_role(self, stage: str) -> str:
         role_map = {

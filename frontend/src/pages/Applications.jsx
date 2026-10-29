@@ -29,7 +29,7 @@ import {
   Loader2,
   Info
 } from 'lucide-react';
-import { useAicte } from '../context/AicteContext';
+import { useAicte, getStageSla } from '../context/AicteContext';
 import { useRole } from '../context/RoleContext';
 import { api } from '../services/api';
 
@@ -373,7 +373,7 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
                 </tr>
               ) : (
                 filteredApps.map((app) => {
-                  const slaLimit = config.stage_sla_days[app.currentStage.toLowerCase()] || 21;
+                  const slaLimit = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
                   const isOverdue = app.daysInStage > slaLimit && app.currentStage !== 'CLOSED';
                   const isSelected = selectedAppId === app.id;
 

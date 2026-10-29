@@ -1,5 +1,48 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialInstitutions, initialApplications, initialEvcVisits, initialUndertakings, initialDocuments, initialConfig, initialAuditLog, initialNotifications } from './aicteSeedData';
+import { api } from '../services/api';
+
+/**
+ * Universal APH Stage SLA Lookup Helper.
+ * Correctly resolves statutory timelines regardless of case, sub-route, or resubmission cycle.
+ */
+export function getStageSla(cfg, stage, appType = '', resubmissionCount = 0) {
+  if (!cfg || !cfg.stage_sla_days) return 21;
+  const slas = cfg.stage_sla_days;
+  const s = (stage || '').toUpperCase();
+
+  if ((s === 'SCRUTINY' && resubmissionCount > 0) || s === 'RE_SCRUTINY' || s === 'REVERTED') {
+    return slas.RE_SCRUTINY ?? slas.re_scrutiny ?? 10;
+  }
+  if (s === 'EVC_QUEUE') {
+    if (appType === 'NEW_INSTITUTION') {
+      return slas.EVC_QUEUE_NEW_INSTITUTION ?? slas.evc_new_institution ?? 21;
+    }
+    return slas.EVC_QUEUE_STANDARD ?? slas.evc_queue ?? slas.EVC_QUEUE ?? 30;
+  }
+  if (s === 'EVC_SCHEDULED') {
+    return slas.EVC_SCHEDULED ?? slas.evc_scheduled ?? 14;
+  }
+  if (s === 'EVC_DONE') {
+    return slas.EVC_DONE ?? slas.evc_done ?? 7;
+  }
+  if (s === 'SAC_REVIEW') {
+    return slas.SAC_REVIEW ?? slas.sac_review ?? 30;
+  }
+  if (s === 'DECISION') {
+    return slas.DECISION ?? slas.decision ?? 7;
+  }
+  if (s === 'SUBMITTED') {
+    return slas.SUBMITTED ?? slas.submitted ?? 3;
+  }
+
+  // Direct lookup with uppercase & lowercase fallback
+  if (slas[s] !== undefined) return Number(slas[s]);
+  if (slas[s.toLowerCase()] !== undefined) return Number(slas[s.toLowerCase()]);
+  if (slas[stage] !== undefined) return Number(slas[stage]);
+
+  return 15;
+}
 
 const AicteContext = createContext(null);
 
@@ -188,7 +231,7 @@ export function AicteProvider({ children }) {
         }
 
         const newDaysInStage = app.daysInStage + daysAdded;
-        const slaMax = config.stage_sla_days[app.currentStage.toLowerCase()] || 21;
+        const slaMax = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
         const isBreached = newDaysInStage > slaMax;
 
         if (isBreached && !app.isBreached) {
@@ -316,6 +359,74 @@ export function AicteProvider({ children }) {
       })
     );
   };
+
+  // Continuous Cross-Page Synchronization:
+  // Re-evaluates application SLA breach flags, undertaking days remaining & escalation levels,
+  // and document expiry windows whenever simulatedDate or config changes.
+  useEffect(() => {
+    const now = new Date(simulatedDate);
+
+    // 1. Synchronize Application SLA breach flags across all pages
+    setApplications((prev) =>
+      prev.map((app) => {
+        if (app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED') {
+          return app;
+        }
+        const slaMax = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
+        const isBreached = app.daysInStage > slaMax;
+        if (app.isBreached !== isBreached) {
+          return { ...app, isBreached };
+        }
+        return app;
+      })
+    );
+
+    // 2. Synchronize Undertaking days remaining and escalation levels
+    setUndertakings((prev) =>
+      prev.map((ut) => {
+        if (ut.status === 'VERIFIED') return ut;
+        const dueDate = new Date(ut.dueDate);
+        const diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+        let newStatus = ut.status;
+        let newLevel = ut.escalationLevel || 1;
+        if (diffDays <= 0 && diffDays > -7 && ut.status === 'OPEN') {
+          newStatus = 'OVERDUE';
+          newLevel = 2;
+        } else if (diffDays <= -7 && diffDays > -15) {
+          newStatus = 'ESCALATED';
+          newLevel = 3;
+        } else if (diffDays <= -15) {
+          newStatus = 'ESCALATED';
+          newLevel = 4;
+        }
+        if (ut.daysRemaining !== diffDays || ut.status !== newStatus || ut.escalationLevel !== newLevel) {
+          return { ...ut, daysRemaining: diffDays, status: newStatus, escalationLevel: newLevel };
+        }
+        return ut;
+      })
+    );
+
+    // 3. Synchronize Document days to expiry and statuses
+    setDocuments((prev) =>
+      prev.map((doc) => {
+        if (doc.status === 'RENEWED' || doc.status === 'RENEWAL_SUBMITTED') return doc;
+        const expDate = new Date(doc.expiryDate);
+        const daysToExpiry = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+        let newStatus = doc.status;
+        if (daysToExpiry <= 0) {
+          newStatus = 'EXPIRED';
+        } else if (daysToExpiry <= 30) {
+          newStatus = 'EXPIRING_SOON';
+        } else {
+          newStatus = 'ACTIVE';
+        }
+        if (doc.daysToExpiry !== daysToExpiry || doc.status !== newStatus) {
+          return { ...doc, daysToExpiry, status: newStatus };
+        }
+        return doc;
+      })
+    );
+  }, [simulatedDate, config]);
 
   // =========================================================================
   // APPLICATION WORKFLOW STATE MACHINE (Module A)
@@ -855,20 +966,40 @@ export function AicteProvider({ children }) {
   // =========================================================================
   // APH TIMELINES CONFIGURATOR (Module F)
   // =========================================================================
-  const updateConfigJson = (newConfigJson, actorRole, actorName) => {
+  const updateConfigJson = async (newConfigJson, actorRole, actorName) => {
     try {
-      const parsed = typeof newConfigJson === 'string' ? JSON.parse(newConfigJson) : newConfigJson;
+      const parsed = typeof newConfigJson === 'string' ? JSON.parse(newConfigJson) : { ...newConfigJson };
+      
+      // Normalize stage_sla_days keys so uppercase and lowercase both work
+      if (parsed.stage_sla_days && typeof parsed.stage_sla_days === 'object') {
+        const normalized = {};
+        for (const [k, v] of Object.entries(parsed.stage_sla_days)) {
+          const num = Number(v) || 1;
+          normalized[k] = num;
+          normalized[k.toUpperCase()] = num;
+          normalized[k.toLowerCase()] = num;
+        }
+        parsed.stage_sla_days = normalized;
+      }
+
       setConfig(parsed);
 
+      // Asynchronously push to backend rule engine
+      try {
+        await api.updateAphConfig(parsed);
+      } catch (err) {
+        console.warn('Backend APH config sync notice:', err.message);
+      }
+
       logAuditEvent({
-        actorRole,
-        actorName,
+        actorRole: actorRole || 'REGULATORY_ADMIN',
+        actorName: actorName || 'System Administrator',
         action: 'APH_RULES_CONFIG_UPDATED',
         refId: 'CONFIG-MASTER',
         note: 'Approval Process Handbook (APH) SLA timelines and escalation ladder updated.'
       });
 
-      showToast('APH Timeline & Rules Configuration successfully saved!', 'success');
+      showToast('APH Timeline & Rules Configuration successfully saved and synced across all pages!', 'success');
       return true;
     } catch (err) {
       showToast(`Invalid JSON configuration: ${err.message}`, 'error');
@@ -876,11 +1007,19 @@ export function AicteProvider({ children }) {
     }
   };
 
-  const resetConfigDefaults = (actorRole, actorName) => {
+  const resetConfigDefaults = async (actorRole, actorName) => {
     setConfig(initialConfig);
+
+    // Asynchronously push to backend rule engine
+    try {
+      await api.resetAphConfig();
+    } catch (err) {
+      console.warn('Backend APH reset sync notice:', err.message);
+    }
+
     logAuditEvent({
-      actorRole,
-      actorName,
+      actorRole: actorRole || 'REGULATORY_ADMIN',
+      actorName: actorName || 'System Administrator',
       action: 'APH_RULES_RESET_DEFAULTS',
       refId: 'CONFIG-MASTER',
       note: 'Restored statutory Approval Process Handbook (APH) default thresholds.'
@@ -976,6 +1115,7 @@ export function AicteProvider({ children }) {
         updateConfig: updateConfigJson,
         updateConfigJson,
         resetConfigDefaults,
+        getStageSla: (stage, appType, resubmissionCount) => getStageSla(config, stage, appType, resubmissionCount),
         runOneClickDemo
       }}
     >

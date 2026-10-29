@@ -10,6 +10,7 @@ from backend.app import models
 from backend.app.api.v1 import scan, inspections, reports, rules, analytics, parties, aicte
 from backend.app.api.v1.rules import seed_default_rules
 from backend.app.api.v1.parties import seed_default_parties
+from backend.app.core.seed_aicte import seed_default_aicte_data
 
 logger = logging.getLogger("compliscan")
 
@@ -68,10 +69,11 @@ def auto_migrate_schema():
 if engine.dialect.name == "sqlite":
     auto_migrate_schema()
 
-# Seed default rules and parties
+# Seed default rules, parties, and AICTE approval workflow data
 with SessionLocal() as db:
     seed_default_rules(db)
     seed_default_parties(db)
+    seed_default_aicte_data(db)
 
 app = FastAPI(
     title="C.O.M.P.L.I.S.C.A.N. — Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network",

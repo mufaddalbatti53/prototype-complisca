@@ -2,11 +2,24 @@ import logging
 import base64
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from typing import Optional, List, Dict, Any
+from sqlalchemy.orm import Session
+from backend.app.core.database import get_db
+from backend.app.models.aicte import (
+    Institution,
+    Application,
+    StageEvent,
+    EvcVisit,
+    Undertaking,
+    Document,
+    Notification,
+)
 from backend.app.services.gemini_service import GeminiService
+from backend.app.services.compliance_engine import AICTEWorkflowRuleEngine
 
 logger = logging.getLogger("compliscan.aicte")
 
 router = APIRouter(prefix="/aicte", tags=["AICTE Approval Workflow (PS 26262)"])
+rule_engine = AICTEWorkflowRuleEngine()
 
 @router.post("/scan-document", summary="AI Multimodal Vision Extraction for Statutory Legal Documents")
 async def scan_aicte_document(
@@ -169,3 +182,40 @@ async def get_case_summary(app_data: Dict[str, Any]):
     except Exception as e:
         logger.exception("AI case summary generation failed: %s", e)
         raise HTTPException(status_code=500, detail=f"Case brief generation failed: {str(e)}")
+
+
+@router.get("/institutions", summary="List All Approved & Monitored Institutions")
+def list_institutions(db: Session = Depends(get_db)):
+    """Returns all institutions from SQLite database."""
+    return db.query(Institution).all()
+
+
+@router.get("/applications", summary="List Applications with Optional Institution Isolation")
+def list_applications(institution_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """Returns applications, optionally filtered by institution for college dashboard isolation."""
+    q = db.query(Application)
+    if institution_id:
+        q = q.filter(Application.institution_id == institution_id)
+    return q.all()
+
+
+@router.get("/undertakings", summary="List Time-Bound Undertakings")
+def list_undertakings(db: Session = Depends(get_db)):
+    """Returns all conditional approval undertakings with escalation levels."""
+    return db.query(Undertaking).all()
+
+
+@router.get("/documents", summary="List Statutory Documents in Repository")
+def list_documents(institution_id: Optional[str] = None, db: Session = Depends(get_db)):
+    """Returns statutory documents (Lease Deeds, Fire NOCs, PWD Stability)."""
+    q = db.query(Document)
+    if institution_id:
+        q = q.filter(Document.institution_id == institution_id)
+    return q.all()
+
+
+@router.get("/notifications", summary="List Real-Time Regulatory Alerts")
+def list_notifications(db: Session = Depends(get_db)):
+    """Returns real-time SLA breach and escalation notifications."""
+    return db.query(Notification).order_by(Notification.created_at.desc()).all()
+

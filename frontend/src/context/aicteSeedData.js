@@ -563,15 +563,29 @@ export const initialDocuments = [
 ];
 
 export const initialConfig = {
+  rule_version: 'APH-2024-2027-v1.0',
+  protected: true,
+  simulated_day_offset: 0,
   stage_sla_days: {
-    submitted: 3,
+    SCRUTINY: 15,
+    RE_SCRUTINY: 10,
+    EVC_QUEUE_STANDARD: 30,
+    EVC_QUEUE_NEW_INSTITUTION: 21,
+    EVC_SCHEDULED: 14,
+    EVC_DONE: 7,
+    SAC_REVIEW: 30,
+    DECISION: 7,
+    SUBMITTED: 3,
+    // Lowercase compatibility aliases
     scrutiny: 15,
+    re_scrutiny: 10,
     evc_queue: 30,
     evc_new_institution: 21,
     evc_scheduled: 14,
     evc_done: 7,
     sac_review: 30,
-    decision: 7
+    decision: 7,
+    submitted: 3
   },
   routes: {
     ONLY_SCRUTINY: ['SUBMITTED', 'SCRUTINY', 'DECISION', 'ACTIVE_MONITORING', 'CLOSED'],
@@ -580,15 +594,14 @@ export const initialConfig = {
     ONLY_EVC: ['SUBMITTED', 'EVC_QUEUE', 'EVC_SCHEDULED', 'EVC_DONE', 'DECISION', 'ACTIVE_MONITORING', 'CLOSED'],
     SCRUTINY_EVC_SAC: ['SUBMITTED', 'SCRUTINY', 'EVC_QUEUE', 'EVC_SCHEDULED', 'EVC_DONE', 'SAC_REVIEW', 'DECISION', 'ACTIVE_MONITORING', 'CLOSED']
   },
-  doc_expiry_alerts_days: [90, 60, 30],
+  doc_expiry_alerts_days: [90, 60, 30, 7],
   undertaking_due_days: 90,
   escalation_ladder: [
-    { days: -7, level: 1, target: 'INSTITUTION', action: 'Automated SMS / Email reminder to Registrar' },
-    { days: 0, level: 2, target: 'REGIONAL_OFFICER', action: 'Direct compliance flag on Regional Officer dashboard' },
-    { days: 7, level: 3, target: 'BUREAU_OFFICER', action: 'Formal Show-Cause Notice docket dispatched to Bureau Director' },
-    { days: 15, level: 4, target: 'MEMBER_SECRETARY', action: 'Critical statutory escalation: Withdrawal of conditional approval agenda item' }
-  ],
-  protected: true
+    { days_from_due: -7, days: -7, level: 1, target_role: 'INSTITUTION', target: 'INSTITUTION', severity: 'info', action: 'ADVANCE_REMINDER' },
+    { days_from_due: 0, days: 0, level: 2, target_role: 'REGIONAL_OFFICER', target: 'REGIONAL_OFFICER', severity: 'warning', action: 'SLA_DUE_ALERT' },
+    { days_from_due: 7, days: 7, level: 3, target_role: 'BUREAU_OFFICER', target: 'BUREAU_OFFICER', severity: 'critical', action: 'BUREAU_ESCALATION' },
+    { days_from_due: 15, days: 15, level: 4, target_role: 'MEMBER_SECRETARY', target: 'MEMBER_SECRETARY', severity: 'critical', action: 'DG_SHOW_CAUSE_FLAG' }
+  ]
 };
 
 export const initialAuditLog = [

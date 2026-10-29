@@ -79,19 +79,55 @@ export const api = {
   getPdfReportUrl: (inspectionId) => `${API_BASE}/reports/${inspectionId}/pdf`,
   getJsonReportUrl: (inspectionId) => `${API_BASE}/reports/${inspectionId}/json`,
 
-  // 5. Configurable Rules
+  // 5. Configurable Rules & APH Workflow Engine
+  getAphConfig: async () => {
+    const res = await client.get('/rules/config');
+    return res.data;
+  },
+
+  updateAphConfig: async (config) => {
+    const res = await client.put('/rules/config', config);
+    return res.data;
+  },
+
+  resetAphConfig: async () => {
+    const res = await client.post('/rules/config/reset');
+    return res.data;
+  },
+
+  routeWorkflow: async (appType, overrideRoute = null) => {
+    const res = await client.post('/rules/workflow/route', { app_type: appType, override_route: overrideRoute });
+    return res.data;
+  },
+
+  advanceWorkflow: async (payload) => {
+    const res = await client.post('/rules/workflow/advance', payload);
+    return res.data;
+  },
+
+  revertWorkflow: async (payload) => {
+    const res = await client.post('/rules/workflow/revert', payload);
+    return res.data;
+  },
+
+  simulateDays: async (days = 7, applications = [], undertakings = [], documents = []) => {
+    const res = await client.post('/rules/simulate/day', { days, applications, undertakings, documents });
+    return res.data;
+  },
+
+  // Legacy aliases
   getRules: async () => {
-    const res = await client.get('/rules');
+    const res = await client.get('/rules/config');
     return res.data;
   },
 
   updateRule: async (ruleCode, payload) => {
-    const res = await client.put(`/rules/${ruleCode}`, payload);
+    const res = await client.put('/rules/config', payload);
     return res.data;
   },
 
   resetRules: async () => {
-    const res = await client.post('/rules/reset');
+    const res = await client.post('/rules/config/reset');
     return res.data;
   },
 
@@ -118,6 +154,36 @@ export const api = {
 
   getAicteCaseSummary: async (appData) => {
     const res = await client.post('/aicte/case-summary', appData);
+    return res.data;
+  },
+
+  // 8. AICTE Approval Entities
+  getAicteInstitutions: async () => {
+    const res = await client.get('/aicte/institutions');
+    return res.data;
+  },
+
+  getAicteApplications: async (institutionId = null) => {
+    const res = await client.get('/aicte/applications', {
+      params: institutionId ? { institution_id: institutionId } : {},
+    });
+    return res.data;
+  },
+
+  getAicteUndertakings: async () => {
+    const res = await client.get('/aicte/undertakings');
+    return res.data;
+  },
+
+  getAicteDocuments: async (institutionId = null) => {
+    const res = await client.get('/aicte/documents', {
+      params: institutionId ? { institution_id: institutionId } : {},
+    });
+    return res.data;
+  },
+
+  getAicteNotifications: async () => {
+    const res = await client.get('/aicte/notifications');
     return res.data;
   },
 
