@@ -143,7 +143,7 @@ def root():
     return {
         "system": "CompliScan — AICTE Approval Workflow & Statutory Compliance Engine",
         "problem_statement": "PS 26262 (AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System)",
-        "team": "TECH SETU",
+        "team": "TECH SETU AI",
         "version": settings.VERSION,
         "build": "2026.10.28-aicte-v1",
         "status": "OPERATIONAL",

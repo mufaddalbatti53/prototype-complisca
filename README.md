@@ -7,7 +7,7 @@
 <br/>
 
 [![Smart India Hackathon 2026](https://img.shields.io/badge/SIH_2026-Problem_Statement_26262-FF9933?style=for-the-badge&logo=target&logoColor=white)](https://www.sih.gov.in/)
-[![Team Tech Setu](https://img.shields.io/badge/Team-TECH_SETU-138808?style=for-the-badge&logo=shield&logoColor=white)](#-team--acknowledgments)
+[![Team Tech Setu AI](https://img.shields.io/badge/Team-TECH_SETU_AI-138808?style=for-the-badge&logo=shield&logoColor=white)](#-team--acknowledgments)
 [![Status](https://img.shields.io/badge/Deployment-100%25_Operational_Live-0284C7?style=for-the-badge&logo=vercel&logoColor=white)](https://prototype-complisca.vercel.app/)
 [![Statutory Framework](https://img.shields.io/badge/Regulatory_Framework-AICTE_Approval_Process_Handbook_(APH)-0F172A?style=for-the-badge&logo=balance-scale&logoColor=white)](#-statutory-coverage-aicte-approval-process-handbook)
 [![Backend Framework](https://img.shields.io/badge/Backend-Python_FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](#-technology-stack--architecture)
@@ -15,7 +15,7 @@
 <br/>
 
 **Integrated AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System**  
-*Problem Statement ID: 26262 · Ministry of Education / AICTE · Team TECH SETU · Smart India Hackathon 2026*
+*Problem Statement ID: 26262 · Ministry of Education / AICTE · Team TECH SETU AI · Smart India Hackathon 2026*
 
 [Live Application](https://prototype-complisca.vercel.app/) • [FastAPI Interactive Swagger Docs](https://prototype-complisca.onrender.com/docs) • [GitHub Repository](https://github.com/mufaddalbatti53/prototype-complisca)
 
@@ -521,7 +521,7 @@ prototype-compliscan/
 
 ## 🏆 Team & Acknowledgments
 
-* **Team Name**: **TECH SETU**
+* **Team Name**: **TECH SETU AI**
 * **Project Name**: **C.O.M.P.L.I.S.C.A.N.** (*Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network*)
 * **Problem Statement ID**: **26262** — *Integrated AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System*
 * **Competition**: **Smart India Hackathon (SIH) 2026**
@@ -529,5 +529,5 @@ prototype-compliscan/
 * **Regulatory Authority**: **All India Council for Technical Education (AICTE)**
 
 <div align="center">
-  <sub>Built with pride by Team TECH SETU for a transparent, efficient, and AI-enabled Indian technical education regulatory framework.</sub>
+  <sub>Built with pride by Team TECH SETU AI for a transparent, efficient, and AI-enabled Indian technical education regulatory framework.</sub>
 </div>

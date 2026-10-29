@@ -1,18 +1,18 @@
 # CompliScan × AICTE — Complete Build Blueprint
 ## PS 26262: Integrated AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System
-Team TECH SETU · Prepared 28 Oct 2026 · Companion to `complisca-to-aicte-pivot-audit.md`
+Team TECH SETU AI · Prepared 28 Oct 2026 · Companion to `complisca-to-aicte-pivot-audit.md`
 
 ---
 
 ## 1. BRANDING & SLIDE-1 POSITIONING
 
-**Platform name:** CompliScan · **Team:** TECH SETU
+**Platform name:** CompliScan · **Team:** TECH SETU AI
 
 **Acronym (slide 1, official expansion):**
 > **C.O.M.P.L.I.S.C.A.N.** — **C**entralized **O**versight & **M**onitoring **P**latform for **L**egal **I**nstitutional **S**crutiny, **C**ompliance, **A**pprovals & **A**lert **N**etwork
 
 **Subtitle under the logo:** "Integrated Approval Workflow & Compliance Monitoring System · AICTE Regulation Bureau"  
-**Footer line:** "Smart Automation for the Approval Process Handbook · Smart India Hackathon 2026 · Team TECH SETU"  
+**Footer line:** "Smart Automation for the Approval Process Handbook · Smart India Hackathon 2026 · Team TECH SETU AI"  
 **One-liner for slide 1:** "One platform that routes every AICTE approval application through its prescribed stages, watches every deadline, and escalates every miss — automatically."
 
 Logo: Distinctive check-in-speech-bubble civic seal with AICTE Bharat Civic palette.

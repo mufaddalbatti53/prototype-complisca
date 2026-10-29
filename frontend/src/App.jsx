@@ -136,7 +136,7 @@ function AppContent() {
             <img src="/logo-icon.png" alt="C.O.M.P.L.I.S.C.A.N. Logo" className="w-5 h-5 object-contain" />
             <span className="font-serif font-bold text-slate-900 text-sm">C.O.M.P.L.I.S.C.A.N.</span>
             <span>·</span>
-            <span className="text-[#1e3a8a] font-semibold">Team TECH SETU</span>
+            <span className="text-[#1e3a8a] font-semibold">Team TECH SETU AI</span>
             <span>·</span>
             <span className="font-medium text-slate-700">Smart India Hackathon 2026</span>
             <span>·</span>

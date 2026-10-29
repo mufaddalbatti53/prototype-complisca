@@ -575,7 +575,7 @@ export default function Scanner() {
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Executing Tech Setu Pipeline...</span>
+                    <span>Executing Tech Setu AI Pipeline...</span>
                   </>
                 ) : (
                   <span>Run compliance check</span>
