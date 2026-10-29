@@ -54,13 +54,22 @@ export default function Compliance() {
   // Inspector Modal
   const [activeInspectorUt, setActiveInspectorUt] = useState(null);
 
-  // Institution Role Isolation: If user is logged in as an Institution, they ONLY see their own college
+  // Institution & Regional Officer Role Isolation
   const isInstitutionRole = role === 'INSTITUTION';
+  const isRegionalOfficer = role === 'REGIONAL_OFFICER';
+
   const accessibleUts = isInstitutionRole
     ? undertakings.filter(
         (ut) =>
           ut.institutionId === 'inst_sunrise' ||
-          ut.institutionName.toLowerCase().includes('sunrise')
+          ut.institutionName?.toLowerCase().includes('sunrise')
+      )
+    : isRegionalOfficer
+    ? undertakings.filter(
+        (ut) =>
+          ut.region?.toLowerCase().includes('west') ||
+          ut.institutionName?.toLowerCase().includes('sunrise') ||
+          ut.institutionName?.toLowerCase().includes('deccan')
       )
     : undertakings;
 
@@ -372,7 +381,7 @@ export default function Compliance() {
 
       {/* Undertakings Table */}
       <div className="civic-card rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#1e3a8a] text-white font-mono text-[11px] uppercase tracking-wider">
@@ -415,6 +424,7 @@ export default function Compliance() {
                     <td className="py-3.5 px-4 font-mono">
                       <span className="font-bold text-slate-900 block">{ut.id}</span>
                       <span className="text-[11px] text-slate-500 block">{ut.refNo}</span>
+                      <span className="text-[10px] text-slate-500 font-sans block mt-1">{ut.region || 'Western Regional Office'}</span>
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -424,11 +434,62 @@ export default function Compliance() {
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 max-w-xs">
-                      <p className="font-medium text-slate-900 line-clamp-2">{ut.conditionText}</p>
-                      <span className="text-[11px] text-slate-500 block mt-0.5 line-clamp-1 italic">
+                    <td className="py-3.5 px-4 max-w-sm">
+                      <p className="font-medium text-slate-900 leading-snug">{ut.conditionText}</p>
+                      <span className="text-[11px] text-slate-500 block mt-0.5 italic">
                         Req: {ut.evidenceRequired}
                       </span>
+
+                      {/* Condition Step-by-Step Audit Trail */}
+                      <div className="mt-2.5 p-2 rounded-xl bg-slate-50 border border-slate-200 font-sans space-y-1.5">
+                        <span className="text-[9.5px] font-mono font-bold uppercase tracking-wider text-slate-600 block">
+                          Condition Lifecycle Audit (3 Steps):
+                        </span>
+                        <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                          {/* Step 1: Imposed */}
+                          <div className="p-1.5 rounded-lg bg-white border border-slate-200">
+                            <span className="text-[9px] font-bold text-slate-500 uppercase block">1. Imposed</span>
+                            <span className="font-semibold text-slate-900 block truncate">{ut.imposedAt}</span>
+                            <span className="text-[9px] text-slate-600 truncate block">By SAC Authority</span>
+                          </div>
+                          {/* Step 2: Proof Upload */}
+                          <div className={`p-1.5 rounded-lg border ${
+                            ut.evidenceUploadedAt || ut.evidenceUrl
+                              ? 'bg-blue-50/70 border-blue-200 text-blue-950'
+                              : 'bg-white border-slate-200 text-slate-700'
+                          }`}>
+                            <span className="text-[9px] font-bold uppercase block text-slate-500">2. Proof Upload</span>
+                            <span className="font-semibold block truncate">
+                              {ut.evidenceUploadedAt || (ut.evidenceUrl ? 'Uploaded' : 'Pending')}
+                            </span>
+                            <span className="text-[9px] truncate block text-slate-600">
+                              {ut.evidenceUploadedBy || (ut.evidenceUrl ? 'College Registrar' : `Due: ${ut.dueDate}`)}
+                            </span>
+                          </div>
+                          {/* Step 3: Verification */}
+                          <div className={`p-1.5 rounded-lg border ${
+                            isVerified
+                              ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                              : isEscalated || isOverdue
+                              ? 'bg-rose-50 border-rose-300 text-rose-950'
+                              : 'bg-white border-slate-200 text-slate-700'
+                          }`}>
+                            <span className="text-[9px] font-bold uppercase block text-slate-500">3. Verification</span>
+                            <span className="font-semibold block truncate">
+                              {isVerified
+                                ? '✓ Fulfilled'
+                                : isEscalated
+                                ? '⚠️ Escalated L' + ut.escalationLevel
+                                : isSubmitted
+                                ? 'Review Pending'
+                                : 'Pending'}
+                            </span>
+                            <span className="text-[9px] truncate block text-slate-600">
+                              {ut.verifiedBy || (isVerified ? 'Regional Officer' : 'Awaiting RO')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </td>
 
                     <td className="py-3.5 px-4 font-mono">
@@ -528,7 +589,7 @@ export default function Compliance() {
         </div>
 
         {/* Mobile Compliance Undertakings Cards View (Zero Horizontal Scrolling) */}
-        <div className="block md:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
+        <div className="block lg:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
           {filteredUts.length === 0 ? (
             <div className="py-8 text-center text-slate-500 text-xs">
               No compliance undertakings found matching your filters.
@@ -564,7 +625,7 @@ export default function Compliance() {
                         </span>
                       </div>
                       <span className="text-[11px] text-slate-500 font-medium mt-0.5 block">
-                        Imposed: {ut.imposedAt}
+                        Imposed: {ut.imposedAt} · {ut.region || 'Western Regional Office'}
                       </span>
                     </div>
 
@@ -621,6 +682,31 @@ export default function Compliance() {
                           {ut.daysRemaining}d remaining
                         </span>
                       )}
+                    </div>
+                  </div>
+
+                  {/* 3-Step Lifecycle Audit for Mobile */}
+                  <div className="mt-2.5 p-2 rounded-xl bg-slate-50 border border-slate-200 text-[10.5px] space-y-1">
+                    <span className="text-[9.5px] font-mono font-bold uppercase text-slate-500 block">
+                      Lifecycle Audit:
+                    </span>
+                    <div className="space-y-1 text-slate-800">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">1. Imposed:</span>
+                        <span className="font-semibold">{ut.imposedAt} (SAC Decision)</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">2. Proof Upload:</span>
+                        <span className="font-semibold text-blue-900">
+                          {ut.evidenceUploadedAt ? `${ut.evidenceUploadedAt} (${ut.evidenceUploadedBy || 'College'})` : 'Pending Proof'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">3. Verification:</span>
+                        <span className="font-semibold text-emerald-900">
+                          {isVerified ? `✓ Verified by ${ut.verifiedBy || 'RO'}` : ut.verificationResult || 'Action Pending'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -1017,6 +1103,52 @@ export default function Compliance() {
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                   <span className="text-[10px] font-mono text-slate-500 uppercase block">DUE DATE</span>
                   <p className="font-mono font-bold text-slate-900 mt-0.5">{activeInspectorUt.dueDate}</p>
+                </div>
+              </div>
+
+              {/* Complete Condition Lifecycle Audit Trail (3 Steps) */}
+              <div className="p-3.5 bg-slate-900 text-white rounded-xl border border-slate-800 space-y-2.5">
+                <span className="text-[10px] font-mono text-amber-300 uppercase block font-bold tracking-wider">
+                  STATUTORY LIFECYCLE AUDIT (STEP 1 → STEP 3)
+                </span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-start justify-between border-b border-white/10 pb-1.5">
+                    <div>
+                      <span className="font-bold text-slate-200 block">Step 1: Statutory Condition Imposed</span>
+                      <span className="text-[11px] text-slate-400">By Standing Appellate Committee (SAC)</span>
+                    </div>
+                    <span className="font-mono text-amber-200 font-bold">{activeInspectorUt.imposedAt}</span>
+                  </div>
+
+                  <div className="flex items-start justify-between border-b border-white/10 pb-1.5">
+                    <div>
+                      <span className="font-bold text-slate-200 block">Step 2: Proof Upload</span>
+                      <span className="text-[11px] text-slate-400">
+                        {activeInspectorUt.evidenceUploadedBy || 'Institution Registrar'}
+                      </span>
+                    </div>
+                    <span className="font-mono text-slate-300">
+                      {activeInspectorUt.evidenceUploadedAt || (activeInspectorUt.evidenceUrl ? 'Uploaded' : 'Pending')}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="font-bold text-slate-200 block">Step 3: Regulatory Verification</span>
+                      <span className="text-[11px] text-slate-400">
+                        {activeInspectorUt.verifiedBy || 'Regional Officer (RO)'}
+                      </span>
+                    </div>
+                    <span className={`font-mono font-bold ${
+                      activeInspectorUt.status === 'VERIFIED'
+                        ? 'text-emerald-400'
+                        : activeInspectorUt.status === 'ESCALATED' || activeInspectorUt.daysRemaining < 0
+                        ? 'text-rose-400'
+                        : 'text-amber-300'
+                    }`}>
+                      {activeInspectorUt.verificationResult || (activeInspectorUt.status === 'VERIFIED' ? 'VERIFIED & FULFILLED' : 'ACTION PENDING')}
+                    </span>
+                  </div>
                 </div>
               </div>
 

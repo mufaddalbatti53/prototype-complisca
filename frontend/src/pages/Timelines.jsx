@@ -55,7 +55,7 @@ export default function Timelines() {
             }`}
           >
             <FileCode className="w-3.5 h-3.5" />
-            <span>Raw JSON Schema</span>
+            <span>Advanced: Raw JSON Schema (For Developers)</span>
           </button>
         </div>
       </div>

@@ -235,7 +235,7 @@ export const initialApplications = [
     createdAt: '2026-09-12',
     stageEnteredAt: '2026-10-05',
     daysInStage: 23,
-    isBreached: false,
+    isBreached: true,
     resubmissionCount: 0,
     decision: null,
     courseDetails: 'New Standalone PGDM Institute with 180 Intake Capacity'
@@ -416,6 +416,8 @@ export const initialUndertakings = [
     refNo: 'APH-2026-1041',
     institutionId: 'inst_sunrise',
     institutionName: 'Sunrise Institute of Technology',
+    region: 'Western Regional Office',
+    conditionTitle: 'Ph.D. Faculty & GPU AI Lab Setup',
     conditionText: 'Recruitment of 3 Ph.D. Faculty Members in AI & Data Science and setup of GPU AI Computing Lab (30 Workstations) within 90 days.',
     evidenceRequired: 'Faculty appointment letters, joining reports, and hardware tax invoices with geo-tagged lab photos.',
     imposedAt: '2026-10-18',
@@ -425,14 +427,19 @@ export const initialUndertakings = [
     escalationLevel: 1, // L1 (Reminder active)
     evidenceUrl: null,
     evidenceNote: null,
+    evidenceUploadedAt: null,
+    evidenceUploadedBy: null,
     verifiedAt: null,
-    verifiedBy: null
+    verifiedBy: null,
+    verificationResult: 'Awaiting Proof Upload from College'
   },
   {
     id: 'UT-2026-081',
     applicationId: 'app_108',
     refNo: 'APH-2026-1048',
     institutionName: 'North-Western School of Architecture & Planning',
+    region: 'North-Western Regional Office',
+    conditionTitle: 'Faculty Cadre & Licensed BIM Lab',
     conditionText: 'Recruitment of 2 Qualified Associate Professors (Ph.D.) and procurement of 40 Licensed BIM/CAD Workstations within 90 days.',
     evidenceRequired: 'Board of Governors Appointment Letters, P.F. Registration proof, and Equipment Invoices with Geo-Tagged Lab Photos.',
     imposedAt: '2026-09-01',
@@ -442,14 +449,19 @@ export const initialUndertakings = [
     escalationLevel: 1, // L1 (Reminder active)
     evidenceUrl: null,
     evidenceNote: null,
+    evidenceUploadedAt: null,
+    evidenceUploadedBy: null,
     verifiedAt: null,
-    verifiedBy: null
+    verifiedBy: null,
+    verificationResult: 'Awaiting Proof Upload from College'
   },
   {
     id: 'UT-2026-079',
     applicationId: 'app_105',
     refNo: 'APH-2026-1045',
     institutionName: 'Bengal College of Pharmacy & Allied Sciences',
+    region: 'Eastern Regional Office',
+    conditionTitle: 'CPCSEA Animal House & Fire NOC',
     conditionText: 'Rectification of Central Animal House air-handling unit (AHU) as per CPCSEA norms and submission of Fire NOC renewal.',
     evidenceRequired: 'HVAC Calibration Certificate and Divisional Fire Officer Clearance Certificate.',
     imposedAt: '2026-07-15',
@@ -459,14 +471,19 @@ export const initialUndertakings = [
     escalationLevel: 3, // Escalated to Director (Approval Bureau)
     evidenceUrl: null,
     evidenceNote: null,
+    evidenceUploadedAt: null,
+    evidenceUploadedBy: null,
     verifiedAt: null,
-    verifiedBy: null
+    verifiedBy: null,
+    verificationResult: 'Overdue Breach (Escalated to Bureau Officer)'
   },
   {
     id: 'UT-2026-072',
     applicationId: 'app_107',
     refNo: 'APH-2026-1047',
     institutionName: 'Central India Institute of Science & Technology',
+    region: 'Central Regional Office',
+    conditionTitle: 'STP Plant 50 KLD & MPPCB Clearance',
     conditionText: 'Installation of Sewage Treatment Plant (STP) of 50 KLD capacity with State Pollution Control Board clearance.',
     evidenceRequired: 'Consent to Operate (CTO) from MPPCB and commissioning report with geo-tagged images.',
     imposedAt: '2026-06-10',
@@ -476,8 +493,11 @@ export const initialUndertakings = [
     escalationLevel: 1,
     evidenceUrl: '/evidence/MPPCB_CTO_Certificate_STP.pdf',
     evidenceNote: 'Uploaded copy of valid MPPCB consent order valid till 2031 along with engineer commissioning certificate.',
+    evidenceUploadedAt: '2026-09-05',
+    evidenceUploadedBy: 'Registrar, Central India Institute',
     verifiedAt: '2026-09-08',
-    verifiedBy: 'RO-CENTRAL-09'
+    verifiedBy: 'RO-CENTRAL-09 (Regional Officer)',
+    verificationResult: 'VERIFIED & FULFILLED'
   }
 ];
 
@@ -506,6 +526,8 @@ export const initialDocuments = [
     renewalLeadDays: 60,
     daysToExpiry: -28, // Overdue!
     status: 'EXPIRED',
+    renewalRequestedAt: '2026-10-20',
+    renewalRequestedBy: 'RO–North (UP/Delhi)',
     fileUrl: '/docs/Delhi_Poly_Building_Safety_2023.pdf'
   },
   {
@@ -666,18 +688,19 @@ export const initialNotifications = [
     audienceRole: 'BUREAU_OFFICER',
     refType: 'UNDERTAKING',
     refId: 'UT-2026-079',
-    message: 'L3 Critical Escalation: Bengal College of Pharmacy has exceeded the 90-day undertaking deadline by 13 days without submitting CPCSEA clearance.',
+    message: 'L3 Bureau Escalation: Bengal College of Pharmacy has exceeded the 90-day undertaking deadline by 13 days without submitting CPCSEA clearance.',
     createdAt: '2026-10-28',
     acknowledged: false
   },
   {
     id: 'NOTIF-102',
-    type: 'DOC_EXPIRY',
-    severity: 'critical',
+    type: 'SCRUTINY_QUEUE',
+    severity: 'info',
     audienceRole: 'REGIONAL_OFFICER',
-    refType: 'DOCUMENT',
-    refId: 'DOC-902',
-    message: 'Mandatory Building Safety Certificate for Delhi Institute of Polytechnic has EXPIRED (28 days overdue).',
+    region: 'Western Regional Office',
+    refType: 'APPLICATION',
+    refId: 'APH-2026-1041',
+    message: 'Western RO Review Queue: Sunrise Institute of Technology (APH-2026-1041) completed scrutiny; ready for EVC inspection recommendation.',
     createdAt: '2026-10-28',
     acknowledged: false
   },
@@ -685,22 +708,47 @@ export const initialNotifications = [
     id: 'NOTIF-103',
     type: 'DOC_EXPIRY',
     severity: 'warning',
-    audienceRole: 'INSTITUTION',
+    audienceRole: 'REGIONAL_OFFICER',
+    region: 'Western Regional Office',
     refType: 'DOCUMENT',
-    refId: 'DOC-903',
-    message: 'T-20 Days Urgent Warning: Fire Safety NOC for Bengal College of Pharmacy expires on 17 Nov 2026. Please submit renewal online.',
+    refId: 'DOC-906',
+    message: 'Western RO Alert: Building Safety & Fire NOC for Sunrise Institute of Technology expires in 17 days. Renewal notice recommended.',
     createdAt: '2026-10-28',
     acknowledged: false
   },
   {
     id: 'NOTIF-104',
     type: 'EVC_DUE',
-    severity: 'warning',
+    severity: 'critical',
     audienceRole: 'COMMITTEE',
     refType: 'EVC_VISIT',
     refId: 'EVC-8802',
-    message: 'Urgent Scheduling Required: New Institution application APH-2026-1043 is pending EVC scheduling for 23 days (exceeding 21-day window).',
+    message: 'Urgent Scheduling Required: New Institution application APH-2026-1043 is pending EVC scheduling for 23 days (exceeding 21-day statutory window).',
     createdAt: '2026-10-27',
+    acknowledged: false
+  },
+  {
+    id: 'NOTIF-105',
+    type: 'DOC_EXPIRY',
+    severity: 'warning',
+    audienceRole: 'INSTITUTION',
+    institutionId: 'inst_sunrise',
+    refType: 'DOCUMENT',
+    refId: 'DOC-906',
+    message: 'Statutory Renewal Notice: Your Building Safety Certificate & Fire NOC expires on 14 Nov 2026 (17 days remaining). Please upload certified copy.',
+    createdAt: '2026-10-28',
+    acknowledged: false
+  },
+  {
+    id: 'NOTIF-106',
+    type: 'UNDERTAKING_REMINDER',
+    severity: 'info',
+    audienceRole: 'INSTITUTION',
+    institutionId: 'inst_sunrise',
+    refType: 'UNDERTAKING',
+    refId: 'UT-2026-085',
+    message: 'Undertaking Compliance: 51 days remaining to submit appointment letters for 3 Ph.D. Faculty & GPU AI lab purchase invoices.',
+    createdAt: '2026-10-28',
     acknowledged: false
   }
 ];

@@ -66,74 +66,136 @@ export default function Navbar({ activeTab, setActiveTab }) {
     roleConfig.allowedTabs.includes(item.id)
   );
 
-  const unreadNotifs = notifications.filter((n) => !n.acknowledged);
+  // Role-filtered notifications
+  const roleNotifs = notifications.filter((n) => {
+    if (role === 'INSTITUTION') {
+      return n.audienceRole === 'INSTITUTION' || n.institutionId === 'inst_sunrise';
+    }
+    if (role === 'REGIONAL_OFFICER') {
+      return n.audienceRole === 'REGIONAL_OFFICER' || n.region === 'Western Regional Office';
+    }
+    if (role === 'BUREAU_OFFICER') {
+      return n.audienceRole === 'BUREAU_OFFICER';
+    }
+    if (role === 'COMMITTEE') {
+      return n.audienceRole === 'COMMITTEE';
+    }
+    return true; // SUPERADMIN sees all
+  });
+
+  const unreadNotifs = roleNotifs.filter((n) => !n.acknowledged);
+
+  // Dynamic mobile bottom items tailored to each role
+  const mobileBottomItems = (() => {
+    if (role === 'INSTITUTION') {
+      return [
+        { id: 'applications', label: 'My Cases', icon: FileText },
+        { id: 'compliance', label: 'Deadlines', icon: ShieldAlert },
+        { id: 'documents', label: 'Docs', icon: FileCheck2 }
+      ];
+    }
+    if (role === 'COMMITTEE') {
+      return [
+        { id: 'evc', label: 'Visits', icon: CalendarDays },
+        { id: 'applications', label: 'Assigned', icon: FileText },
+        { id: 'documents', label: 'Docs', icon: FileCheck2 }
+      ];
+    }
+    if (role === 'REGIONAL_OFFICER') {
+      return [
+        { id: 'applications', label: 'Review', icon: FileText },
+        { id: 'pendency', label: 'Pendency', icon: BarChart3 },
+        { id: 'evc', label: 'EVC', icon: CalendarDays },
+        { id: 'compliance', label: 'Compliance', icon: ShieldAlert }
+      ];
+    }
+    return [
+      { id: 'applications', label: 'Apps', icon: FileText },
+      { id: 'pendency', label: 'Pendency', icon: BarChart3 },
+      { id: 'compliance', label: 'Compliance', icon: ShieldAlert },
+      { id: 'documents', label: 'Docs', icon: FileCheck2 }
+    ];
+  })();
 
   return (
     <>
       <header className="sticky top-0 z-50 bg-[#ffffff] border-b border-[oklch(0.9_0.01_90)] shadow-xs">
         {/* Top Gazette Bar: Authority Identification & Simulated Clock */}
-        <div className="bg-[#1e293b] text-white px-3 sm:px-6 py-1.5 text-xs flex items-center justify-between gap-1.5 sm:gap-2 border-b border-slate-700">
-          <div className="flex items-center space-x-1.5 font-mono text-[10px] sm:text-[11px] text-slate-300 shrink-0">
+        <div className="bg-[#1e293b] text-white px-3 sm:px-6 py-1.5 text-xs flex items-center justify-between gap-2 border-b border-slate-700 flex-nowrap overflow-x-auto">
+          <div className="flex items-center space-x-1.5 font-mono text-[10px] sm:text-[11px] text-slate-300 shrink-0 whitespace-nowrap">
             <span className="text-amber-400 font-bold tracking-wider">AICTE BUREAU</span>
-            <span className="hidden xs:inline">·</span>
-            <span className="hidden xs:inline text-slate-400">PS 26262</span>
-            <span className="hidden lg:inline">·</span>
-            <span className="text-slate-300 hidden lg:inline truncate max-w-md">C.O.M.P.L.I.S.C.A.N.</span>
+            <span className="hidden xs:inline text-slate-500">·</span>
+            <span className="hidden sm:inline text-slate-400">PS 26262</span>
+            <span className="hidden lg:inline text-slate-500">·</span>
+            <span className="text-slate-300 hidden lg:inline">C.O.M.P.L.I.S.C.A.N.</span>
           </div>
 
-          {/* Time-Machine Clock Simulation Widget (Evaluator Demo Feature) */}
-          <div className="flex items-center space-x-1 sm:space-x-1.5 ml-auto">
-            <div className="flex items-center space-x-1 bg-slate-800/90 border border-slate-600 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono text-amber-300">
-              <Clock className="w-3 h-3 text-amber-400 shrink-0" />
-              <span className="hidden sm:inline">Date: </span>
-              <strong>{simulatedDate}</strong>
-            </div>
+          {/* Time-Machine Clock Simulation Widget (Hidden for College role) */}
+          {role !== 'INSTITUTION' ? (
+            <div className="flex items-center space-x-1 sm:space-x-1.5 ml-auto flex-nowrap shrink-0">
+              <div className="flex items-center space-x-1 bg-slate-800/90 border border-slate-600 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono text-amber-300 whitespace-nowrap shrink-0">
+                <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+                <span className="hidden sm:inline">Date: </span>
+                <strong className="whitespace-nowrap">{simulatedDate}</strong>
+              </div>
 
-            <div className="flex items-center space-x-0.5 sm:space-x-1">
+              <div className="flex items-center space-x-0.5 sm:space-x-1 shrink-0">
+                <button
+                  onClick={() => advanceDays(1)}
+                  className="bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition whitespace-nowrap"
+                  title="Advance clock by 1 day"
+                >
+                  +1d
+                </button>
+                <button
+                  onClick={() => advanceDays(7)}
+                  className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition flex items-center space-x-0.5 whitespace-nowrap"
+                  title="Advance clock by 7 days to trigger SLA warnings"
+                >
+                  <FastForward className="w-2.5 h-2.5" />
+                  <span>+7d</span>
+                </button>
+                <button
+                  onClick={() => advanceDays(15)}
+                  className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition whitespace-nowrap"
+                  title="Advance clock by 15 days to trigger critical escalations"
+                >
+                  +15d
+                </button>
+                <button
+                  onClick={resetClock}
+                  className="bg-slate-700 hover:bg-slate-600 text-slate-300 p-1 rounded transition shrink-0"
+                  title="Reset clock to 28 Oct 2026"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                </button>
+              </div>
+
+              {/* One-Click Evaluator Demo Runner */}
               <button
-                onClick={() => advanceDays(1)}
-                className="bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition"
-                title="Advance clock by 1 day"
+                onClick={() => {
+                  runOneClickDemo();
+                  setActiveTab('applications');
+                }}
+                className="hidden lg:flex items-center space-x-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-2.5 py-0.5 rounded text-[11px] shadow-xs transition whitespace-nowrap"
+                title="Test a complete live college application flow with 1 click"
               >
-                +1d
-              </button>
-              <button
-                onClick={() => advanceDays(7)}
-                className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition flex items-center space-x-0.5"
-                title="Advance clock by 7 days to trigger SLA warnings"
-              >
-                <FastForward className="w-2.5 h-2.5" />
-                <span>+7d</span>
-              </button>
-              <button
-                onClick={() => advanceDays(15)}
-                className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition"
-                title="Advance clock by 15 days to trigger critical escalations"
-              >
-                +15d
-              </button>
-              <button
-                onClick={resetClock}
-                className="bg-slate-700 hover:bg-slate-600 text-slate-300 p-1 rounded transition"
-                title="Reset clock to 28 Oct 2026"
-              >
-                <RotateCcw className="w-2.5 h-2.5" />
+                <Sparkles className="w-3 h-3" />
+                <span>Try 1-Click Demo</span>
               </button>
             </div>
-
-            {/* One-Click Evaluator Demo Runner */}
-            <button
-              onClick={() => {
-                runOneClickDemo();
-                setActiveTab('applications');
-              }}
-              className="hidden lg:flex items-center space-x-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-2.5 py-0.5 rounded text-[11px] shadow-xs transition"
-              title="Test a complete live college application flow with 1 click"
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>Try 1-Click Demo</span>
-            </button>
-          </div>
+          ) : (
+            <div className="flex items-center space-x-2 ml-auto shrink-0 flex-nowrap">
+              <div className="flex items-center space-x-1 bg-amber-950/80 border border-amber-600/50 px-2.5 py-0.5 rounded text-[10px] sm:text-[11px] font-mono text-amber-300 whitespace-nowrap">
+                <Building2 className="w-3 h-3 text-amber-400 shrink-0" />
+                <span>Sunrise Institute of Technology</span>
+              </div>
+              <div className="flex items-center space-x-1 bg-slate-800/90 border border-slate-600 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono text-slate-300 whitespace-nowrap">
+                <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                <span className="whitespace-nowrap">{simulatedDate}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Main Header Bar */}
@@ -195,8 +257,8 @@ export default function Navbar({ activeTab, setActiveTab }) {
                   className={`flex items-center space-x-1.5 sm:space-x-2.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-left transition-all ${roleConfig.badgeColor} hover:shadow-xs`}
                 >
                   <UserCheck className="w-4 h-4 shrink-0 text-slate-700" />
-                  <span className="text-[11px] font-bold block md:hidden truncate max-w-[85px] leading-tight">
-                    {roleConfig.name.split(' ')[0]}
+                  <span className="text-[11px] font-bold block md:hidden truncate max-w-[110px] leading-tight">
+                    {roleConfig.shortName || roleConfig.name}
                   </span>
                   <div className="hidden md:block">
                     <span className="block text-[10.5px] uppercase font-mono font-bold tracking-wider leading-none opacity-80">
@@ -393,12 +455,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
 
       {/* Mobile Bottom Navigation Bar (Persistent Thumb Navigation) */}
       <nav className="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1 flex items-center justify-around shadow-lg">
-        {[
-          { id: 'applications', label: 'Apps', icon: FileText },
-          { id: 'pendency', label: 'Pendency', icon: BarChart3 },
-          { id: 'compliance', label: 'Compliance', icon: ShieldAlert },
-          { id: 'documents', label: 'Docs', icon: FileCheck2 }
-        ].map((item) => {
+        {mobileBottomItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
@@ -483,14 +540,14 @@ export default function Navbar({ activeTab, setActiveTab }) {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {notifications.length === 0 ? (
+              {roleNotifs.length === 0 ? (
                 <div className="text-center py-12 text-slate-400">
                   <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-500 mb-2 opacity-60" />
                   <p className="text-sm font-semibold">No active notifications</p>
-                  <p className="text-xs">All application stages and undertakings are within SLA limits.</p>
+                  <p className="text-xs">All application stages and undertakings are within SLA limits for your role.</p>
                 </div>
               ) : (
-                notifications.map((n) => (
+                roleNotifs.map((n) => (
                   <div
                     key={n.id}
                     className={`p-3.5 rounded-xl border transition-all ${

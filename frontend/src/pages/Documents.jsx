@@ -21,14 +21,24 @@ import {
   Loader2,
   Stamp,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  Mail
 } from 'lucide-react';
 import { useAicte } from '../context/AicteContext';
 import { useRole } from '../context/RoleContext';
 import { api } from '../services/api';
 
 export default function Documents() {
-  const { documents, institutions, simulatedDate, submitDocumentRenewal, verifyDocumentRenewal, addNotification, logAuditEvent } = useAicte();
+  const {
+    documents,
+    institutions,
+    simulatedDate,
+    submitDocumentRenewal,
+    verifyDocumentRenewal,
+    requestDocumentRenewal,
+    addNotification,
+    logAuditEvent
+  } = useAicte();
   const { role, roleConfig } = useRole();
 
   // Filter States
@@ -52,14 +62,26 @@ export default function Documents() {
   // Selected Doc for Full Dossier Inspector
   const [activeInspectorDoc, setActiveInspectorDoc] = useState(null);
 
-  // Institution Role Isolation: If user is logged in as an Institution, they ONLY see their own college
+  // Institution & Regional Officer Role Isolation
   const isInstitutionRole = role === 'INSTITUTION';
+  const isRegionalOfficer = role === 'REGIONAL_OFFICER';
+
   const accessibleDocs = isInstitutionRole
     ? documents.filter(
         (doc) =>
           doc.institutionId === 'inst_sunrise' ||
           doc.institutionName.toLowerCase().includes('sunrise')
       )
+    : isRegionalOfficer
+    ? documents.filter((doc) => {
+        const inst = institutions.find((i) => i.id === doc.institutionId);
+        const region = inst?.region || '';
+        return (
+          region.toLowerCase().includes('west') ||
+          doc.institutionName.toLowerCase().includes('sunrise') ||
+          doc.institutionName.toLowerCase().includes('deccan')
+        );
+      })
     : documents;
 
   // Filtered documents
@@ -407,7 +429,7 @@ export default function Documents() {
 
       {/* Main Documents Registry Table */}
       <div className="civic-card rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#1e3a8a] text-white font-mono text-[11px] uppercase tracking-wider">
@@ -481,22 +503,50 @@ export default function Documents() {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider ${
-                          isExpired
-                            ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                            : isExpiringSoon
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                            : isSubmitted
-                            ? 'bg-purple-100 text-purple-900 border border-purple-300 animate-pulse'
-                            : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                        }`}
-                      >
-                        {doc.status.replace(/_/g, ' ')}
-                      </span>
+                      <div className="space-y-1">
+                        <span
+                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider ${
+                            isExpired
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                              : isExpiringSoon
+                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                              : isSubmitted
+                              ? 'bg-purple-100 text-purple-900 border border-purple-300 animate-pulse'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          }`}
+                        >
+                          {doc.status.replace(/_/g, ' ')}
+                        </span>
+                        {doc.renewalRequestedAt && (
+                          <div className="text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                            Notice Sent: {doc.renewalRequestedAt}
+                          </div>
+                        )}
+                      </div>
                     </td>
 
                     <td className="py-3.5 px-4 text-right space-x-2">
+                      {/* Officer Action: Request Renewal Notice */}
+                      {(role === 'REGIONAL_OFFICER' || role === 'BUREAU_OFFICER' || role === 'SUPERADMIN' || role === 'MEMBER_SECRETARY') &&
+                        (isExpired || isExpiringSoon) &&
+                        !isSubmitted && (
+                          doc.renewalRequestedAt ? (
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-300 text-[10.5px] font-mono font-bold">
+                              <Clock className="w-3 h-3 text-amber-700" />
+                              <span>Notice Dispatched</span>
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => requestDocumentRenewal(doc.id, role, roleConfig.title)}
+                              className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shadow-xs transition"
+                              title="Send official renewal notice to institution"
+                            >
+                              <Mail className="w-3 h-3 text-amber-200" />
+                              <span>Request Renewal</span>
+                            </button>
+                          )
+                        )}
+
                       {/* Institution Action: Submit Renewal */}
                       {(role === 'INSTITUTION' || role === 'SUPERADMIN') && (isExpired || isExpiringSoon) && !isSubmitted && (
                         <button
@@ -535,7 +585,7 @@ export default function Documents() {
         </div>
 
         {/* Mobile Documents Card View (Zero Horizontal Scrolling) */}
-        <div className="block md:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
+        <div className="block lg:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
           {filteredDocs.length === 0 ? (
             <div className="py-8 text-center text-slate-500 text-xs">
               No documents found matching your search.
@@ -601,6 +651,11 @@ export default function Documents() {
                           : `${doc.daysToExpiry}d left`}
                       </span>
                     </div>
+                    {doc.renewalRequestedAt && (
+                      <div className="text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        Notice Dispatched: {doc.renewalRequestedAt} by {doc.renewalRequestedBy}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
@@ -611,6 +666,25 @@ export default function Documents() {
                       <Eye className="w-3.5 h-3.5 text-[#1e3a8a]" />
                       <span>Inspect</span>
                     </button>
+
+                    {(role === 'REGIONAL_OFFICER' || role === 'BUREAU_OFFICER' || role === 'SUPERADMIN' || role === 'MEMBER_SECRETARY') &&
+                      (isExpired || isExpiringSoon) &&
+                      !isSubmitted && (
+                        doc.renewalRequestedAt ? (
+                          <span className="flex-1 py-1.5 px-2 rounded-xl bg-amber-50 text-amber-900 border border-amber-300 font-bold text-xs flex items-center justify-center space-x-1">
+                            <Clock className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Sent</span>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => requestDocumentRenewal(doc.id, role, roleConfig.title)}
+                            className="flex-1 py-1.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center justify-center space-x-1 shadow-xs transition"
+                          >
+                            <Mail className="w-3.5 h-3.5 text-amber-200" />
+                            <span>Req Renewal</span>
+                          </button>
+                        )
+                      )}
 
                     {(role === 'INSTITUTION' || role === 'SUPERADMIN') &&
                       (isExpired || isExpiringSoon) &&
@@ -976,6 +1050,14 @@ export default function Documents() {
                 <span className="text-[10px] font-mono text-slate-500 uppercase block">APPLICANT INSTITUTION</span>
                 <p className="font-medium text-slate-800 mt-0.5">{activeInspectorDoc.institutionName}</p>
               </div>
+
+              {activeInspectorDoc.renewalRequestedAt && (
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-950 space-y-1">
+                  <span className="text-[10px] font-mono uppercase block font-bold text-amber-800">STATUTORY RENEWAL NOTICE RECORD</span>
+                  <p className="font-semibold text-xs">Official Renewal Demand Notice Dispatched on {activeInspectorDoc.renewalRequestedAt}</p>
+                  <p className="text-[11px] text-amber-800">Issued by: {activeInspectorDoc.renewalRequestedBy || 'Regional Officer'}</p>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">

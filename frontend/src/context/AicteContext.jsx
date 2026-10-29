@@ -15,7 +15,8 @@ export function getStageSla(cfg, stage, appType = '', resubmissionCount = 0) {
     return slas.RE_SCRUTINY ?? slas.re_scrutiny ?? 10;
   }
   if (s === 'EVC_QUEUE') {
-    if (appType === 'NEW_INSTITUTION') {
+    const at = (appType || '').toUpperCase().trim();
+    if (at === 'NEW_INSTITUTION' || at.includes('NEW_INST') || at.includes('NEW COLLEGE')) {
       return slas.EVC_QUEUE_NEW_INSTITUTION ?? slas.evc_new_institution ?? 21;
     }
     return slas.EVC_QUEUE_STANDARD ?? slas.evc_queue ?? slas.EVC_QUEUE ?? 30;
@@ -815,7 +816,10 @@ export function AicteProvider({ children }) {
           status: 'SUBMITTED',
           evidenceUrl: fileUrl || '/evidence/compliance_affidavit.pdf',
           evidenceNote: note,
-          submittedAt: simulatedDate
+          submittedAt: simulatedDate,
+          evidenceUploadedAt: simulatedDate,
+          evidenceUploadedBy: actorName || 'Institution Registrar',
+          verificationResult: 'Submitted · Awaiting RO Verification'
         };
       })
     );
@@ -840,8 +844,9 @@ export function AicteProvider({ children }) {
           ...ut,
           status: verdict,
           verifiedAt: simulatedDate,
-          verifiedBy: actorName,
-          verifyNote
+          verifiedBy: actorName || 'Regional Officer',
+          verifyNote,
+          verificationResult: verdict === 'VERIFIED' ? 'VERIFIED & FULFILLED' : 'REJECTED · ACTION PENDING'
         };
       })
     );
@@ -850,6 +855,39 @@ export function AicteProvider({ children }) {
   // =========================================================================
   // DOCUMENT VALIDITY ACTIONS (Module E)
   // =========================================================================
+  const requestDocumentRenewal = (docId, actorRole = 'REGIONAL_OFFICER', actorName = 'Regional Officer') => {
+    setDocuments((prev) =>
+      prev.map((doc) => {
+        if (doc.id !== docId) return doc;
+
+        logAuditEvent({
+          actorRole,
+          actorName,
+          action: 'RENEWAL_NOTICE_DISPATCHED',
+          refId: doc.id,
+          note: `Statutory renewal notice dispatched to ${doc.institutionName} for ${doc.docType}. Expiry: ${doc.expiryDate}`
+        });
+
+        addNotification({
+          type: 'DOC_EXPIRY',
+          severity: 'warning',
+          audienceRole: 'INSTITUTION',
+          institutionId: doc.institutionId,
+          refType: 'DOCUMENT',
+          refId: doc.id,
+          message: `Statutory Renewal Notice from ${actorName}: Please upload renewed ${doc.docType} certificate.`
+        });
+
+        showToast(`Statutory renewal notice dispatched to ${doc.institutionName} for ${doc.docType}.`, 'info');
+
+        return {
+          ...doc,
+          renewalRequestedAt: simulatedDate,
+          renewalRequestedBy: actorName
+        };
+      })
+    );
+  };
   const submitDocumentRenewal = (docId, fileUrlOrObj, issuedOn, expiryDate, note, actorRole, actorName) => {
     let payload = {};
     let role = actorRole || 'INSTITUTION';
@@ -1112,6 +1150,7 @@ export function AicteProvider({ children }) {
         verifyUndertaking,
         submitDocumentRenewal,
         verifyDocumentRenewal,
+        requestDocumentRenewal,
         updateConfig: updateConfigJson,
         updateConfigJson,
         resetConfigDefaults,

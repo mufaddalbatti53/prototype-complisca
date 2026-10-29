@@ -30,13 +30,22 @@ export default function Institutions() {
   // Selected Institution Dossier Drawer
   const [selectedInst, setSelectedInst] = useState(null);
 
-  // Institution Role Isolation: If user is logged in as an Institution, they ONLY see their own college
+  // Institution & Regional Officer Role Scoping
   const isInstitutionRole = role === 'INSTITUTION';
+  const isRegionalOfficer = role === 'REGIONAL_OFFICER';
+
   const accessibleInsts = isInstitutionRole
     ? institutions.filter(
         (inst) =>
           inst.id === 'inst_sunrise' ||
-          inst.name.toLowerCase().includes('sunrise')
+          inst.name?.toLowerCase().includes('sunrise')
+      )
+    : isRegionalOfficer
+    ? institutions.filter(
+        (inst) =>
+          inst.region?.toLowerCase().includes('west') ||
+          inst.name?.toLowerCase().includes('sunrise') ||
+          inst.name?.toLowerCase().includes('deccan')
       )
     : institutions;
 
@@ -146,23 +155,30 @@ export default function Institutions() {
           />
         </div>
 
-        <div>
-          <select
-            value={regionFilter}
-            onChange={(e) => setRegionFilter(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
-          >
-            <option value="ALL">All Regional Offices (8)</option>
-            <option value="Western Regional Office">Western (Mumbai/Pune)</option>
-            <option value="Northern Regional Office">Northern (Delhi/UP)</option>
-            <option value="Southern Regional Office">Southern (Chennai)</option>
-            <option value="South-Western Regional Office">South-Western (Bengaluru/Kerala)</option>
-            <option value="South-Central Regional Office">South-Central (Hyderabad)</option>
-            <option value="Eastern Regional Office">Eastern (Kolkata/Assam)</option>
-            <option value="Central Regional Office">Central (Bhopal)</option>
-            <option value="North-Western Regional Office">North-Western (Chandigarh/Punjab)</option>
-          </select>
-        </div>
+        {!isRegionalOfficer && !isInstitutionRole ? (
+          <div>
+            <select
+              value={regionFilter}
+              onChange={(e) => setRegionFilter(e.target.value)}
+              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
+            >
+              <option value="ALL">All Regional Offices (8)</option>
+              <option value="Western Regional Office">Western (Mumbai/Pune)</option>
+              <option value="Northern Regional Office">Northern (Delhi/UP)</option>
+              <option value="Southern Regional Office">Southern (Chennai)</option>
+              <option value="South-Western Regional Office">South-Western (Bengaluru/Kerala)</option>
+              <option value="South-Central Regional Office">South-Central (Hyderabad)</option>
+              <option value="Eastern Regional Office">Eastern (Kolkata/Assam)</option>
+              <option value="Central Regional Office">Central (Bhopal)</option>
+              <option value="North-Western Regional Office">North-Western (Chandigarh/Punjab)</option>
+            </select>
+          </div>
+        ) : (
+          <div className="flex items-center px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium">
+            <MapPin className="w-3.5 h-3.5 text-[#1e3a8a] mr-1.5 shrink-0" />
+            <span className="truncate">Jurisdiction: {isInstitutionRole ? 'Western (Sunrise Inst)' : 'Western Regional Office'}</span>
+          </div>
+        )}
 
         <div>
           <select
@@ -193,7 +209,7 @@ export default function Institutions() {
 
       {/* Main Table */}
       <div className="civic-card rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#1e3a8a] text-white font-mono text-[11px] uppercase tracking-wider">
@@ -201,7 +217,18 @@ export default function Institutions() {
                 <th className="py-3 px-4">Regional Office & State</th>
                 <th className="py-3 px-4">Discipline / Type</th>
                 <th className="py-3 px-4">Intake Capacity</th>
-                <th className="py-3 px-4">Compliance Score</th>
+                <th className="py-3 px-4">
+                  <div className="flex items-center space-x-1 group relative cursor-help">
+                    <span>Compliance Score</span>
+                    <span className="text-[10px] bg-white/20 px-1 rounded font-normal text-amber-200">ℹ</span>
+                    <div className="hidden group-hover:block absolute top-full left-0 z-30 mt-1 w-64 p-2.5 bg-slate-900 text-white text-[11px] font-sans normal-case rounded-xl shadow-xl border border-slate-700 space-y-1">
+                      <span className="font-bold text-amber-300 block">Compliance Score Weightage:</span>
+                      <p>• <strong>40% Approvals:</strong> Procedural stage fidelity & zero unrectified deficiencies</p>
+                      <p>• <strong>30% Documents:</strong> Active land lease, structural PWD, and Fire NOC validity</p>
+                      <p>• <strong>30% Undertakings:</strong> Time-bound conditions discharged within 90 days</p>
+                    </div>
+                  </div>
+                </th>
                 <th className="py-3 px-4">Risk Rating</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Action</th>
@@ -238,22 +265,25 @@ export default function Institutions() {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-16 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
-                          <div
-                            className={`h-full rounded-full ${
-                              inst.complianceScore >= 90
-                                ? 'bg-emerald-500'
-                                : inst.complianceScore >= 75
-                                ? 'bg-amber-500'
-                                : 'bg-rose-500'
-                            }`}
-                            style={{ width: `${inst.complianceScore}%` }}
-                          />
+                      <div className="space-y-0.5">
+                        <div className="flex items-center space-x-2 cursor-help" title="Score breakdown: 40% Approvals + 30% Documents + 30% Undertakings">
+                          <div className="w-16 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
+                            <div
+                              className={`h-full rounded-full ${
+                                inst.complianceScore >= 90
+                                  ? 'bg-emerald-500'
+                                  : inst.complianceScore >= 75
+                                  ? 'bg-amber-500'
+                                  : 'bg-rose-500'
+                              }`}
+                              style={{ width: `${inst.complianceScore}%` }}
+                            />
+                          </div>
+                          <span className="font-mono font-bold text-[11px] text-slate-900">
+                            {inst.complianceScore}%
+                          </span>
                         </div>
-                        <span className="font-mono font-bold text-[11px] text-slate-900">
-                          {inst.complianceScore}%
-                        </span>
+                        <span className="text-[9.5px] text-slate-500 block">40% App · 30% Doc · 30% UT</span>
                       </div>
                     </td>
 
@@ -302,7 +332,7 @@ export default function Institutions() {
         </div>
 
         {/* Mobile Institutions Cards View (Zero Horizontal Scrolling) */}
-        <div className="block md:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
+        <div className="block lg:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
           {filteredInsts.length === 0 ? (
             <div className="py-8 text-center text-slate-500 text-xs">
               No institutions found matching your search.
@@ -351,24 +381,26 @@ export default function Institutions() {
                     </div>
                   </div>
 
-                  {/* Compliance Score Bar */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-20 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
-                        <div
-                          className={`h-full rounded-full ${
-                            inst.complianceScore >= 90
-                              ? 'bg-emerald-500'
-                              : inst.complianceScore >= 75
-                              ? 'bg-amber-500'
-                              : 'bg-rose-500'
-                          }`}
-                          style={{ width: `${inst.complianceScore}%` }}
-                        />
+                  {/* Compliance Score Bar & Explanation */}
+                  <div className="pt-2 border-t border-slate-100 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-20 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
+                          <div
+                            className={`h-full rounded-full ${
+                              inst.complianceScore >= 90
+                                ? 'bg-emerald-500'
+                                : inst.complianceScore >= 75
+                                ? 'bg-amber-500'
+                                : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${inst.complianceScore}%` }}
+                          />
+                        </div>
+                        <span className="font-mono font-bold text-[11px] text-slate-900">
+                          {inst.complianceScore}%
+                        </span>
                       </div>
-                      <span className="font-mono font-bold text-[11px] text-slate-900">
-                        {inst.complianceScore}%
-                      </span>
                       <span
                         className={`text-[9.5px] font-mono px-1.5 py-0.5 rounded-full font-bold ${
                           isHighRisk
@@ -381,7 +413,12 @@ export default function Institutions() {
                         {inst.riskFlag} RISK
                       </span>
                     </div>
+                    <span className="text-[10px] text-slate-500 block font-medium">
+                      Formula: 40% Approvals · 30% Documents · 30% Undertakings
+                    </span>
+                  </div>
 
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
                     <button
                       onClick={() => setSelectedInst(inst)}
                       className="font-bold text-xs inline-flex items-center space-x-1 bg-[#1e3a8a] text-white hover:bg-[#172554] px-3 py-1.5 rounded-xl transition shadow-xs"
@@ -435,7 +472,7 @@ export default function Institutions() {
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-mono text-slate-500 uppercase block">COMPLIANCE SCORE</span>
                 <p className="font-mono font-bold text-slate-900 mt-0.5">{selectedInst.complianceScore} / 100</p>
-                <span className="text-[11px] text-slate-500 block">{selectedInst.riskFlag} Risk Rating</span>
+                <span className="text-[10px] text-slate-500 block">{selectedInst.riskFlag} Risk · 40% App, 30% Doc, 30% UT</span>
               </div>
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">

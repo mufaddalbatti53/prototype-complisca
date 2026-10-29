@@ -344,17 +344,26 @@ export default function EvcModule() {
                         </td>
 
                         <td className="py-3.5 px-4">
-                          <span
-                            className={`stamp-badge ${
-                              v.status === 'QUEUED'
-                                ? 'bg-amber-50 text-amber-900 border-amber-300'
-                                : v.status === 'SCHEDULED'
-                                ? 'bg-purple-50 text-purple-900 border-purple-300'
-                                : 'bg-emerald-50 text-emerald-900 border-emerald-300'
-                            }`}
-                          >
-                            {v.status}
-                          </span>
+                          <div className="space-y-1">
+                            <span
+                              className={`stamp-badge ${
+                                isUrgent
+                                  ? 'bg-rose-100 text-rose-800 border-rose-300 font-bold'
+                                  : v.status === 'QUEUED'
+                                  ? 'bg-amber-50 text-amber-900 border-amber-300'
+                                  : v.status === 'SCHEDULED'
+                                  ? 'bg-purple-50 text-purple-900 border-purple-300'
+                                  : 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                              }`}
+                            >
+                              {isUrgent ? 'OVERDUE (2d Breach)' : v.status}
+                            </span>
+                            {isUrgent && (
+                              <span className="block text-[9.5px] font-mono text-rose-700 font-bold">
+                                L2 Escalated (RO SLA Alert)
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         <td className="py-3.5 px-4 max-w-xs">

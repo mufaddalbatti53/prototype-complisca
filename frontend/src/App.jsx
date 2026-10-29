@@ -8,10 +8,10 @@ import Documents from './pages/Documents';
 import Institutions from './pages/Institutions';
 import Timelines from './pages/Timelines';
 import AuditTrail from './pages/AuditTrail';
-import { RoleProvider } from './context/RoleContext';
+import { RoleProvider, useRole } from './context/RoleContext';
 import { AicteProvider, useAicte } from './context/AicteContext';
 import { api } from './services/api';
-import { Sparkles, CheckCircle2, AlertTriangle, Info, Bell } from 'lucide-react';
+import { Sparkles, CheckCircle2, AlertTriangle, Info, Bell, UserCheck } from 'lucide-react';
 
 const VALID_TABS = [
   'applications',
@@ -38,6 +38,7 @@ function AppContent() {
   const [activeTab, setActiveTabState] = useState(getInitialTab);
   const [serverStatus, setServerStatus] = useState('checking'); // checking, waking, ready
   const { activeToast } = useAicte();
+  const { role, roleConfig } = useRole();
 
   const setActiveTab = (tab) => {
     setActiveTabState(tab);
@@ -45,6 +46,13 @@ function AppContent() {
       window.location.hash = tab;
     }
   };
+
+  // When role changes, if current activeTab is not allowed, switch to defaultTab
+  useEffect(() => {
+    if (roleConfig && !roleConfig.allowedTabs.includes(activeTab)) {
+      setActiveTab(roleConfig.defaultTab || roleConfig.allowedTabs[0] || 'applications');
+    }
+  }, [role]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -106,6 +114,35 @@ function AppContent() {
 
       {/* Navigation Header */}
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* Colored Role Context Banner */}
+      <div
+        className={`px-3 sm:px-6 py-1.5 border-b text-xs flex flex-wrap items-center justify-between gap-2 shadow-2xs ${
+          role === 'SUPERADMIN'
+            ? 'bg-slate-900 text-amber-200 border-slate-800'
+            : role === 'REGIONAL_OFFICER'
+            ? 'bg-[#1e3a8a] text-blue-100 border-blue-900'
+            : role === 'BUREAU_OFFICER'
+            ? 'bg-indigo-950 text-indigo-100 border-indigo-900'
+            : role === 'COMMITTEE'
+            ? 'bg-emerald-900 text-emerald-100 border-emerald-800'
+            : 'bg-amber-950 text-amber-100 border-amber-900'
+        }`}
+      >
+        <div className="flex items-center space-x-2">
+          <span className="w-2 h-2 rounded-full bg-current animate-pulse shrink-0" />
+          <span className="font-bold tracking-wide">
+            Viewing as: {roleConfig.name} ({roleConfig.title})
+          </span>
+          <span className="hidden sm:inline opacity-60">|</span>
+          <span className="hidden sm:inline font-mono opacity-90 text-[11px]">
+            {roleConfig.jurisdiction || 'National'}
+          </span>
+        </div>
+        <div className="flex items-center space-x-2 text-[11px] font-mono opacity-90">
+          <span>Officer ID: <strong>{roleConfig.officerId}</strong></span>
+        </div>
+      </div>
 
       {/* Render Server Standby Banner */}
       {serverStatus === 'waking' && (

@@ -151,10 +151,72 @@ export default function RuleConfig() {
     });
   };
 
-  // Only display unique uppercase stage keys in the form to avoid duplicate rows
-  const stageEntries = Object.entries(localConfig?.stage_sla_days || {}).filter(
-    ([k]) => k === k.toUpperCase()
-  );
+  // Statutory Stage SLA Definitions with guaranteed defaults
+  const STATUTORY_STAGES = [
+    {
+      key: 'SCRUTINY',
+      title: 'SCRUTINY',
+      desc: 'Regional Officer initial document scrutiny window',
+      defaultDays: 15
+    },
+    {
+      key: 'RE_SCRUTINY',
+      title: 'RE_SCRUTINY',
+      desc: 'Re-scrutiny window following institution deficiency resubmission',
+      defaultDays: 10
+    },
+    {
+      key: 'EVC_QUEUE_STANDARD',
+      title: 'EVC_QUEUE_STANDARD',
+      desc: 'Standard queue for existing institutions (Extension / Intake)',
+      defaultDays: 30
+    },
+    {
+      key: 'EVC_QUEUE_NEW_INSTITUTION',
+      title: 'EVC_QUEUE_NEW_INSTITUTION',
+      desc: 'Strict 21-day priority window for New Institutions (Module C)',
+      defaultDays: 21
+    },
+    {
+      key: 'EVC_SCHEDULED',
+      title: 'EVC_SCHEDULED',
+      desc: 'Inspection committee campus visit execution window',
+      defaultDays: 14
+    },
+    {
+      key: 'EVC_DONE',
+      title: 'EVC_DONE',
+      desc: 'Committee report upload and post-visit review window',
+      defaultDays: 7
+    },
+    {
+      key: 'SAC_REVIEW',
+      title: 'SAC_REVIEW',
+      desc: 'Standing Appellate Committee appellate review window',
+      defaultDays: 30
+    },
+    {
+      key: 'DECISION',
+      title: 'DECISION',
+      desc: 'Competent Authority final decision recording window',
+      defaultDays: 7
+    },
+    {
+      key: 'SUBMITTED',
+      title: 'SUBMITTED',
+      desc: 'Initial intake and assignment window',
+      defaultDays: 3
+    }
+  ];
+
+  const getStageDays = (stageKey, defaultVal) => {
+    if (!localConfig?.stage_sla_days) return defaultVal;
+    const val =
+      localConfig.stage_sla_days[stageKey] ??
+      localConfig.stage_sla_days[stageKey.toLowerCase()] ??
+      localConfig.stage_sla_days[stageKey.toUpperCase()];
+    return val !== undefined && val !== null ? val : defaultVal;
+  };
 
   const escalationRows = localConfig?.escalation_ladder || [];
 
@@ -248,34 +310,19 @@ export default function RuleConfig() {
           </div>
 
           <div className="space-y-3">
-            {stageEntries.map(([stage, days]) => {
-              const description =
-                stage === "EVC_QUEUE_NEW_INSTITUTION"
-                  ? "Strict 21-day priority window for New Institutions (Module C)"
-                  : stage === "EVC_QUEUE_STANDARD"
-                  ? "Standard queue for existing institutions (Extension / Intake)"
-                  : stage === "SCRUTINY"
-                  ? "Regional Officer initial document scrutiny window"
-                  : stage === "RE_SCRUTINY"
-                  ? "Re-scrutiny window following institution deficiency resubmission"
-                  : stage === "EVC_SCHEDULED"
-                  ? "Inspection committee campus visit execution window"
-                  : stage === "SAC_REVIEW"
-                  ? "Standing Appellate Committee appellate review window"
-                  : stage === "DECISION"
-                  ? "Competent Authority final decision recording window"
-                  : "Maximum allowable days before SLA breach";
+            {STATUTORY_STAGES.map((stageObj) => {
+              const days = getStageDays(stageObj.key, stageObj.defaultDays);
 
               return (
                 <div
-                  key={stage}
+                  key={stageObj.key}
                   className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0"
                 >
                   <div className="pr-4">
                     <div className="text-xs font-mono font-bold text-slate-900">
-                      {stage}
+                      {stageObj.title}
                     </div>
-                    <div className="text-[11px] text-slate-500">{description}</div>
+                    <div className="text-[11px] text-slate-500">{stageObj.desc}</div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <input
@@ -283,7 +330,7 @@ export default function RuleConfig() {
                       min="1"
                       max="180"
                       value={days}
-                      onChange={(e) => handleSlaChange(stage, e.target.value)}
+                      onChange={(e) => handleSlaChange(stageObj.key, e.target.value)}
                       className="w-20 px-2.5 py-1 text-sm font-mono border border-slate-300 rounded-lg text-right font-bold text-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] focus:border-[#1e3a8a]"
                     />
                     <span className="text-xs text-slate-500 font-mono">days</span>

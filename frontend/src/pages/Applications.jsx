@@ -57,6 +57,9 @@ export default function Applications() {
 
   // Selected application ID for INLINE accordion expansion (directly below clicked row)
   const [selectedAppId, setSelectedAppId] = useState(null);
+  const [revertAppTarget, setRevertAppTarget] = useState(null);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [bureauEscalationInboxOnly, setBureauEscalationInboxOnly] = useState(role === 'BUREAU_OFFICER');
 
   // Dynamically derive selectedApp so all changes update in REAL-TIME with ZERO REFRESH
   const selectedApp = applications.find((a) => a.id === selectedAppId) || null;
@@ -95,25 +98,53 @@ export default function Applications() {
     courseDetails: 'Addition of B.Tech in Artificial Intelligence & Machine Learning (60 Seats)'
   });
 
-  // Institution Role Isolation: If user is logged in as an Institution, they ONLY see their own college
+  // Role Scoping & Isolation
   const isInstitutionRole = role === 'INSTITUTION';
-  const accessibleApps = isInstitutionRole
-    ? applications.filter(
-        (app) =>
-          app.institutionId === 'inst_sunrise' ||
-          app.institutionName.toLowerCase().includes('sunrise')
-      )
-    : applications;
+  const isRegionalOfficer = role === 'REGIONAL_OFFICER';
+  const isCommitteeRole = role === 'COMMITTEE';
+  const isBureauOfficer = role === 'BUREAU_OFFICER';
 
-  // Filtered List based on search and filters
+  const accessibleApps = applications.filter((app) => {
+    if (isInstitutionRole) {
+      return (
+        app.institutionId === 'inst_sunrise' ||
+        app.institutionName.toLowerCase().includes('sunrise')
+      );
+    }
+    if (isRegionalOfficer) {
+      // RO-West only sees Western Regional Office applications
+      return app.region === 'Western Regional Office';
+    }
+    if (isCommitteeRole) {
+      // Inspection committee only sees applications at EVC inspection stages
+      return (
+        app.currentStage === 'EVC_QUEUE' ||
+        app.currentStage === 'EVC_SCHEDULED' ||
+        app.currentStage === 'EVC_DONE'
+      );
+    }
+    return true;
+  });
+
+  // Filtered List based on search, filters, and Bureau Escalation Inbox toggle
   const filteredApps = accessibleApps.filter((app) => {
+    if (isBureauOfficer && bureauEscalationInboxOnly) {
+      const sla = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
+      const isBreached = app.isBreached || (app.currentStage !== 'CLOSED' && app.daysInStage > sla);
+      const isSac = app.currentStage === 'SAC_REVIEW';
+      if (!isBreached && !isSac) return false;
+    }
+
     const matchesSearch =
       app.refNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.institutionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.district.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStage = stageFilter === 'ALL' || app.currentStage === stageFilter;
-    const matchesRegion = regionFilter === 'ALL' || app.region === regionFilter;
+    const matchesRegion =
+      isRegionalOfficer
+        ? true
+        : regionFilter === 'ALL' || app.region === regionFilter;
     const matchesRoute = routeFilter === 'ALL' || app.route === routeFilter;
 
     return matchesSearch && matchesStage && matchesRegion && matchesRoute;
@@ -155,9 +186,73 @@ export default function Applications() {
   };
 
   const handleConfirmRevert = () => {
-    if (!selectedApp) return;
-    revertApplication(selectedApp.id, deficiencyReason, deficiencyNotes, role, roleConfig.title);
+    const target = revertAppTarget || selectedApp;
+    if (!target) return;
+    revertApplication(target.id, deficiencyReason, deficiencyNotes, role, roleConfig.title);
     setRevertModalOpen(false);
+    setDeficiencyNotes('');
+    setRevertAppTarget(null);
+  };
+
+  const getRouteMilestones = (routeKey) => {
+    switch (routeKey) {
+      case 'ONLY_SCRUTINY':
+        return [
+          { id: 'SUBMITTED', label: '1. Intake' },
+          { id: 'SCRUTINY', label: '2. Scrutiny' },
+          { id: 'DECISION', label: '3. Decision' },
+          { id: 'CLOSED', label: '4. Clearance' }
+        ];
+      case 'SCRUTINY_EVC':
+        return [
+          { id: 'SUBMITTED', label: '1. Intake' },
+          { id: 'SCRUTINY', label: '2. Scrutiny' },
+          { id: 'EVC', label: '3. Campus EVC' },
+          { id: 'DECISION', label: '4. Decision' },
+          { id: 'CLOSED', label: '5. Clearance' }
+        ];
+      case 'EVC_SAC':
+        return [
+          { id: 'SUBMITTED', label: '1. Intake' },
+          { id: 'EVC', label: '2. Campus EVC' },
+          { id: 'SAC_REVIEW', label: '3. SAC Appeal' },
+          { id: 'DECISION', label: '4. Decision' },
+          { id: 'CLOSED', label: '5. Clearance' }
+        ];
+      case 'ONLY_EVC':
+        return [
+          { id: 'SUBMITTED', label: '1. Intake' },
+          { id: 'EVC', label: '2. Campus EVC' },
+          { id: 'DECISION', label: '3. Decision' },
+          { id: 'CLOSED', label: '4. Clearance' }
+        ];
+      case 'SCRUTINY_EVC_SAC':
+      default:
+        return [
+          { id: 'SUBMITTED', label: '1. Intake' },
+          { id: 'SCRUTINY', label: '2. Scrutiny' },
+          { id: 'EVC', label: '3. Campus EVC' },
+          { id: 'SAC_REVIEW', label: '4. SAC Appeal' },
+          { id: 'DECISION', label: '5. Decision' },
+          { id: 'CLOSED', label: '6. Clearance' }
+        ];
+    }
+  };
+
+  const getMilestoneStatus = (milestoneId, currentStage, milestones) => {
+    const stageToId = (stg) => {
+      if (stg === 'EVC_QUEUE' || stg === 'EVC_SCHEDULED' || stg === 'EVC_DONE') return 'EVC';
+      if (stg === 'REVERTED') return 'SCRUTINY';
+      return stg;
+    };
+
+    const currentNormalized = stageToId(currentStage);
+    const curIdx = milestones.findIndex((m) => m.id === currentNormalized);
+    const thisIdx = milestones.findIndex((m) => m.id === milestoneId);
+
+    if (currentNormalized === milestoneId) return 'CURRENT';
+    if (curIdx > thisIdx || currentStage === 'CLOSED') return 'PASSED';
+    return 'UPCOMING';
   };
 
   const handleConfirmDecision = () => {
@@ -251,7 +346,7 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
         {/* Officer / College Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
           {/* College action if Reverted */}
-          {app.currentStage === 'REVERTED' && (
+          {app.currentStage === 'REVERTED' && isInstitutionRole && (
             <button
               onClick={() => resubmitApplication(app.id, role, roleConfig.title)}
               className="flex items-center space-x-1.5 bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition"
@@ -261,30 +356,55 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
             </button>
           )}
 
-          {/* Regional Officer actions */}
-          {app.currentStage !== 'CLOSED' && app.currentStage !== 'REVERTED' && !isInstitutionRole && (
-            <>
+          {/* Inspection Committee Actions (Scoped to EVC inspection only) */}
+          {isCommitteeRole ? (
+            app.currentStage.startsWith('EVC') ? (
               <button
-                onClick={() => setRevertModalOpen(true)}
-                className="flex items-center space-x-1.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 px-3.5 py-2 rounded-xl text-xs font-bold transition"
+                onClick={() => {
+                  window.location.hash = 'evc';
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center space-x-1.5 bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition"
               >
-                <Ban className="w-3.5 h-3.5 text-rose-600" />
-                <span>Return to Fix Issues</span>
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Open EVC Inspection Roster</span>
               </button>
+            ) : (
+              <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                Committee review reserved for EVC stage
+              </span>
+            )
+          ) : (
+            // Regional Officer / Superadmin actions for Scrutiny and Advance
+            (isRegionalOfficer || role === 'SUPERADMIN') &&
+            app.currentStage !== 'CLOSED' &&
+            app.currentStage !== 'REVERTED' && (
+              <>
+                <button
+                  onClick={() => {
+                    setRevertAppTarget(app);
+                    setRevertModalOpen(true);
+                  }}
+                  className="flex items-center space-x-1.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 px-3.5 py-2 rounded-xl text-xs font-bold transition"
+                >
+                  <Ban className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Return to Fix Issues</span>
+                </button>
 
-              <button
-                onClick={() => advanceApplication(app.id, role, roleConfig.title)}
-                className="flex items-center space-x-1.5 bg-[#1e3a8a] hover:bg-[#172554] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5 text-amber-300" />
-                <span>Move to Next Step</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </>
+                <button
+                  onClick={() => advanceApplication(app.id, role, roleConfig.title)}
+                  className="flex items-center space-x-1.5 bg-[#1e3a8a] hover:bg-[#172554] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Move to Next Step</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )
           )}
 
           {/* Bureau Director / Superadmin final approval */}
-          {(role === 'BUREAU_OFFICER' || role === 'SUPERADMIN') && app.currentStage !== 'CLOSED' && (
+          {(isBureauOfficer || role === 'SUPERADMIN') && app.currentStage !== 'CLOSED' && (
             <button
               onClick={() => setDecisionModalOpen(true)}
               className="flex items-center space-x-1.5 bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition"
@@ -317,22 +437,22 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
         </div>
       )}
 
-      {/* Stage Progression Stepper */}
+      {/* Stage Progression Stepper: Filtered dynamically to the exact statutory route stages */}
       <div>
         <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-slate-500 block mb-2">
-          APPROVAL PROGRESS TIMELINE ({app.route})
+          APPROVAL PROGRESS TIMELINE ({app.route.replace(/_/g, ' ')})
         </span>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-          {(config.routes[app.route] || ['SUBMITTED', 'SCRUTINY', 'DECISION', 'CLOSED']).map(
-            (stg, idx) => {
-              const isCurrent = app.currentStage === stg;
-              const routeList = config.routes[app.route] || [];
-              const curIdx = routeList.indexOf(app.currentStage);
-              const isPassed = curIdx > idx;
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+          {(() => {
+            const milestones = getRouteMilestones(app.route);
+            return milestones.map((m, idx) => {
+              const status = getMilestoneStatus(m.id, app.currentStage, milestones);
+              const isCurrent = status === 'CURRENT';
+              const isPassed = status === 'PASSED';
 
               return (
                 <div
-                  key={stg}
+                  key={m.id}
                   className={`p-2.5 sm:p-3 rounded-xl border text-center transition-all ${
                     isCurrent
                       ? 'bg-[#1e3a8a] text-white border-[#1e3a8a] shadow-xs'
@@ -341,15 +461,15 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
                       : 'bg-slate-50 text-slate-400 border-slate-200'
                   }`}
                 >
-                  <span className="font-mono text-[10px] block opacity-70">STEP {idx + 1}</span>
-                  <span className="font-bold text-xs mt-0.5 block truncate">{stg}</span>
+                  <span className="font-mono text-[10px] block opacity-70">STAGE {idx + 1}</span>
+                  <span className="font-bold text-xs mt-0.5 block truncate">{m.label}</span>
                   <span className="text-[10px] font-mono mt-1 block">
-                    {isCurrent ? `${app.daysInStage}d elapsed` : isPassed ? '✓ Done' : 'Waiting'}
+                    {isCurrent ? `${app.daysInStage}d elapsed` : isPassed ? '✓ Cleared' : 'Waiting'}
                   </span>
                 </div>
               );
-            }
-          )}
+            });
+          })()}
         </div>
       </div>
 
@@ -388,6 +508,7 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
                     <span>{briefCopied ? 'Copied' : 'Copy Brief'}</span>
                   </button>
                 )}
+                {/* Single Consolidated AI Button */}
                 <button
                   onClick={() => handleGenerateCaseBrief(app)}
                   disabled={isGeneratingBrief}
@@ -396,12 +517,12 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
                   {isGeneratingBrief ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-950" />
-                      <span>Analyzing Docket...</span>
+                      <span>Synthesizing Docket...</span>
                     </>
                   ) : (
                     <>
-                      <Bot className="w-3.5 h-3.5 text-slate-950" />
-                      <span>{brief ? 'Regenerate AI Brief' : 'Generate AI Case Brief'}</span>
+                      <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                      <span>{brief ? 'Regenerate 5-Point AI Brief' : 'Generate 5-Point AI Case Brief'}</span>
                     </>
                   )}
                 </button>
@@ -486,18 +607,10 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
                 </div>
               </div>
             ) : (
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-                <p className="text-slate-300 text-center sm:text-left leading-relaxed">
-                  AI Electronic Case Summary is ready to synthesize for docket <strong>{app.refNo}</strong>.
-                  Combines college information, document check history, campus visits, and pending conditions into a concise 5-point brief.
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs">
+                <p className="text-slate-300 leading-relaxed">
+                  Click the amber <strong>"Generate 5-Point AI Case Brief"</strong> button in the top right to analyze docket <strong>{app.refNo}</strong> ({app.institutionName}). The AI will read the college information, past scrutiny checks, and campus inspection findings into a simple 5-point brief.
                 </p>
-                <button
-                  onClick={() => handleGenerateCaseBrief(app)}
-                  className="shrink-0 flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold transition shadow-xs"
-                >
-                  <Sparkles className="w-4 h-4 text-slate-950" />
-                  <span>Create 5-Point AI Brief</span>
-                </button>
               </div>
             )}
           </div>
@@ -582,70 +695,136 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
         </div>
       )}
 
+      {/* Bureau Escalation Inbox Banner Toggle (Shown when logged in as Bureau Officer) */}
+      {isBureauOfficer && (
+        <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center space-x-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+            <div>
+              <span className="font-bold text-indigo-950 text-sm">Bureau Officer Escalation Workstation</span>
+              <p className="text-indigo-800 text-[11px] mt-0.5">
+                Focus on high-priority dossiers: 7+ days overdue stages, SLA breaches, and Standing Appellate Committee (SAC) appeals.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-1.5 shrink-0">
+            <button
+              onClick={() => setBureauEscalationInboxOnly(true)}
+              className={`px-3 py-1.5 rounded-xl font-bold transition text-xs flex items-center space-x-1 ${
+                bureauEscalationInboxOnly
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Escalation Inbox</span>
+            </button>
+            <button
+              onClick={() => setBureauEscalationInboxOnly(false)}
+              className={`px-3 py-1.5 rounded-xl font-bold transition text-xs ${
+                !bureauEscalationInboxOnly
+                  ? 'bg-[#1e3a8a] text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              All Dockets
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Filter & Search Bar */}
-      <div className="civic-card rounded-2xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-white">
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by ref number, college, city..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
-          />
-        </div>
+      <div className="civic-card rounded-2xl p-4 bg-white space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by ref number, college, city..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
+            />
+          </div>
 
-        <div>
-          <select
-            value={stageFilter}
-            onChange={(e) => setStageFilter(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
+          {/* Mobile Filter Toggle Button */}
+          <button
+            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+            className="md:hidden flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-200 transition"
           >
-            <option value="ALL">All Approval Steps</option>
-            <option value="SUBMITTED">1. Submitted</option>
-            <option value="SCRUTINY">2. Scrutiny (Document Check)</option>
-            <option value="REVERTED">⚠️ Returned to Fix Issues</option>
-            <option value="EVC_QUEUE">3. Inspection Waiting List</option>
-            <option value="EVC_SCHEDULED">4. Inspection Scheduled</option>
-            <option value="EVC_DONE">5. Inspection Completed</option>
-            <option value="SAC_REVIEW">6. Committee Review (SAC)</option>
-            <option value="CLOSED">7. Decided / Closed</option>
-          </select>
+            <Filter className="w-3.5 h-3.5 text-slate-600" />
+            <span>Filters {stageFilter !== 'ALL' || routeFilter !== 'ALL' ? '(Active)' : ''}</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${mobileFiltersOpen ? 'rotate-180' : ''}`} />
+          </button>
         </div>
 
-        {!isInstitutionRole && (
+        {/* Dropdowns (Responsive: hidden on mobile unless toggled; grid on md+) */}
+        <div className={`${mobileFiltersOpen ? 'grid' : 'hidden'} md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1`}>
           <div>
+            <label className="text-[10px] font-mono uppercase font-bold text-slate-500 block mb-1">Approval Step</label>
             <select
-              value={regionFilter}
-              onChange={(e) => setRegionFilter(e.target.value)}
+              value={stageFilter}
+              onChange={(e) => setStageFilter(e.target.value)}
               className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
             >
-              <option value="ALL">All Regional Offices (8)</option>
-              <option value="Western Regional Office">Western (Mumbai/Pune)</option>
-              <option value="Northern Regional Office">Northern (Delhi/Kanpur)</option>
-              <option value="Southern Regional Office">Southern (Chennai)</option>
-              <option value="South-Western Regional Office">South-Western (Bengaluru)</option>
-              <option value="South-Central Regional Office">South-Central (Hyderabad)</option>
-              <option value="Eastern Regional Office">Eastern (Kolkata)</option>
-              <option value="Central Regional Office">Central (Bhopal)</option>
-              <option value="North-Western Regional Office">North-Western (Chandigarh)</option>
+              <option value="ALL">All Approval Steps</option>
+              <option value="SUBMITTED">1. Submitted</option>
+              <option value="SCRUTINY">2. Scrutiny (Document Check)</option>
+              <option value="REVERTED">⚠️ Returned to Fix Issues</option>
+              <option value="EVC_QUEUE">3. Inspection Waiting List</option>
+              <option value="EVC_SCHEDULED">4. Inspection Scheduled</option>
+              <option value="EVC_DONE">5. Inspection Completed</option>
+              <option value="SAC_REVIEW">6. Committee Review (SAC)</option>
+              <option value="CLOSED">7. Decided / Closed</option>
             </select>
           </div>
-        )}
 
-        <div>
-          <select
-            value={routeFilter}
-            onChange={(e) => setRouteFilter(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
-          >
-            <option value="ALL">All Approval Routes</option>
-            <option value="ONLY_SCRUTINY">ONLY_SCRUTINY (Extension of Approval)</option>
-            <option value="SCRUTINY_EVC">SCRUTINY_EVC (New Courses / Intake)</option>
-            <option value="SCRUTINY_EVC_SAC">SCRUTINY_EVC_SAC (New Colleges)</option>
-            <option value="EVC_SAC">EVC_SAC (Closure / Merger)</option>
-            <option value="ONLY_EVC">ONLY_EVC</option>
-          </select>
+          {!isInstitutionRole && !isRegionalOfficer && (
+            <div>
+              <label className="text-[10px] font-mono uppercase font-bold text-slate-500 block mb-1">Regional Office</label>
+              <select
+                value={regionFilter}
+                onChange={(e) => setRegionFilter(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
+              >
+                <option value="ALL">All Regional Offices (8)</option>
+                <option value="Western Regional Office">Western (Mumbai/Pune)</option>
+                <option value="Northern Regional Office">Northern (Delhi/Kanpur)</option>
+                <option value="Southern Regional Office">Southern (Chennai)</option>
+                <option value="South-Western Regional Office">South-Western (Bengaluru)</option>
+                <option value="South-Central Regional Office">South-Central (Hyderabad)</option>
+                <option value="Eastern Regional Office">Eastern (Kolkata)</option>
+                <option value="Central Regional Office">Central (Bhopal)</option>
+                <option value="North-Western Regional Office">North-Western (Chandigarh)</option>
+              </select>
+            </div>
+          )}
+
+          {isRegionalOfficer && (
+            <div>
+              <label className="text-[10px] font-mono uppercase font-bold text-slate-500 block mb-1">Regional Jurisdiction</label>
+              <div className="px-3 py-2 text-xs rounded-xl border border-blue-200 bg-blue-50 text-blue-900 font-bold font-mono">
+                Western Regional Office (Fixed)
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="text-[10px] font-mono uppercase font-bold text-slate-500 block mb-1">APH Route</label>
+            <select
+              value={routeFilter}
+              onChange={(e) => setRouteFilter(e.target.value)}
+              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 focus:border-[#1e3a8a]"
+            >
+              <option value="ALL">All Approval Routes</option>
+              <option value="ONLY_SCRUTINY">ONLY_SCRUTINY (Extension of Approval)</option>
+              <option value="SCRUTINY_EVC">SCRUTINY_EVC (New Courses / Intake)</option>
+              <option value="SCRUTINY_EVC_SAC">SCRUTINY_EVC_SAC (New Colleges)</option>
+              <option value="EVC_SAC">EVC_SAC (Closure / Merger)</option>
+              <option value="ONLY_EVC">ONLY_EVC</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -663,8 +842,9 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
           </span>
         </div>
 
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        {/* Desktop View: Full 7-column table (lg: screens and up) */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[760px]">
             <thead>
               <tr className="bg-[#1e293b] text-white text-[11px] font-mono uppercase tracking-wider">
                 <th className="py-3 px-4">Application No.</th>
@@ -787,7 +967,7 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
         </div>
 
         {/* Mobile Interactive Cards View (Zero Horizontal Scrolling) */}
-        <div className="block md:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
+        <div className="block lg:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
           {filteredApps.length === 0 ? (
             <div className="py-8 text-center text-slate-500 text-xs">
               No applications found matching your search.
@@ -894,70 +1074,92 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
       </div>
 
       {/* MODAL 1: Return for Deficiency */}
-      {revertModalOpen && selectedApp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div className="flex items-center space-x-2 text-rose-700">
-                <Ban className="w-5 h-5" />
-                <h3 className="font-serif font-bold text-lg text-slate-900">Return Application to Fix Issues</h3>
-              </div>
-              <button onClick={() => setRevertModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Returning this application pauses the time limit clock and sends an official deficiency notice to{' '}
-              <strong>{selectedApp.institutionName}</strong> ({selectedApp.refNo}) so they can upload fixed files.
-            </p>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Reason for Returning</label>
-                <select
-                  value={deficiencyReason}
-                  onChange={(e) => setDeficiencyReason(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-medium"
+      {revertModalOpen && (revertAppTarget || selectedApp) && (() => {
+        const target = revertAppTarget || selectedApp;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/50 backdrop-blur-xs animate-fadeIn">
+            <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                <div className="flex items-center space-x-2 text-rose-700">
+                  <Ban className="w-5 h-5" />
+                  <h3 className="font-serif font-bold text-lg text-slate-900">Return Application to Fix Issues</h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setRevertModalOpen(false);
+                    setRevertAppTarget(null);
+                  }}
+                  className="text-slate-400 hover:text-slate-600"
                 >
-                  <option>Deficient Documents / Affidavits</option>
-                  <option>Land Lease Deed / Building Safety NOC Discrepancy</option>
-                  <option>Faculty Cadre Ratio / Qualification Shortfall</option>
-                  <option>Laboratory Equipment / Carpet Area Mismatch</option>
-                  <option>Administrative Clarification Required</option>
-                </select>
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Details of What Needs to Be Fixed</label>
-                <textarea
-                  rows={4}
-                  value={deficiencyNotes}
-                  onChange={(e) => setDeficiencyNotes(e.target.value)}
-                  placeholder="Explain clearly what document or certificate the college needs to fix and re-upload..."
-                  className="w-full p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-xs"
-                />
-              </div>
-            </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Returning this application pauses the time limit clock and sends an official deficiency notice to{' '}
+                <strong>{target.institutionName}</strong> ({target.refNo}) so they can upload fixed files.
+              </p>
 
-            <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
-              <button
-                onClick={() => setRevertModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmRevert}
-                disabled={!deficiencyNotes.trim()}
-                className="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-xs disabled:opacity-50"
-              >
-                Send Notice & Return
-              </button>
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Reason for Returning</label>
+                  <select
+                    value={deficiencyReason}
+                    onChange={(e) => setDeficiencyReason(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-medium"
+                  >
+                    <option>Deficient Documents / Affidavits</option>
+                    <option>Land Lease Deed / Building Safety NOC Discrepancy</option>
+                    <option>Faculty Cadre Ratio / Qualification Shortfall</option>
+                    <option>Laboratory Equipment / Carpet Area Mismatch</option>
+                    <option>Administrative Clarification Required</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold text-slate-800 text-xs">
+                      Mandatory Written Justification <span className="text-rose-600">*</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-slate-500">
+                      {deficiencyNotes.trim().length} chars (required to submit)
+                    </span>
+                  </div>
+                  <textarea
+                    rows={4}
+                    value={deficiencyNotes}
+                    onChange={(e) => setDeficiencyNotes(e.target.value)}
+                    placeholder="Statutory requirement: State the specific clauses or certificates the college needs to rectify and re-upload before approval can proceed..."
+                    className="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-xs text-slate-900 bg-white"
+                  />
+                  <span className="text-[10px] text-slate-500 font-mono mt-1 block">
+                    Recorded permanently with Officer ID <strong>{roleConfig.officerId}</strong> in the statutory audit log.
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100">
+                <button
+                  onClick={() => {
+                    setRevertModalOpen(false);
+                    setRevertAppTarget(null);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmRevert}
+                  disabled={!deficiencyNotes.trim()}
+                  className="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-xs disabled:opacity-50"
+                >
+                  Send Notice & Return
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* MODAL 2: Record Final Decision */}
       {decisionModalOpen && selectedApp && (
