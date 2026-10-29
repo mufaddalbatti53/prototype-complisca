@@ -278,7 +278,7 @@ export const initialApplications = [
     assignedOfficer: 'RO-EAST-004',
     createdAt: '2026-09-25',
     stageEnteredAt: '2026-09-25',
-    daysInStage: 33, // Overdue SLA breach (>15d)
+    daysInStage: 33,
     isBreached: true,
     resubmissionCount: 0,
     decision: null,
@@ -380,8 +380,8 @@ export const initialEvcVisits = [
     region: 'South-Western Regional Office',
     status: 'QUEUED',
     urgencyWindowDays: 21,
-    daysWaiting: 23, // Urgent
-    deadline: '2026-10-26', // Overdue scheduling
+    daysWaiting: 23,
+    deadline: '2026-10-26',
     convener: null,
     members: [],
     scheduledDate: null,
@@ -424,7 +424,7 @@ export const initialUndertakings = [
     dueDate: '2026-12-18',
     daysRemaining: 51,
     status: 'OPEN',
-    escalationLevel: 1, // L1 (Reminder active)
+    escalationLevel: 1,
     evidenceUrl: null,
     evidenceNote: null,
     evidenceUploadedAt: null,
@@ -446,7 +446,7 @@ export const initialUndertakings = [
     dueDate: '2026-11-30',
     daysRemaining: 33,
     status: 'OPEN',
-    escalationLevel: 1, // L1 (Reminder active)
+    escalationLevel: 1,
     evidenceUrl: null,
     evidenceNote: null,
     evidenceUploadedAt: null,
@@ -466,9 +466,9 @@ export const initialUndertakings = [
     evidenceRequired: 'HVAC Calibration Certificate and Divisional Fire Officer Clearance Certificate.',
     imposedAt: '2026-07-15',
     dueDate: '2026-10-15',
-    daysRemaining: -13, // 13 days overdue!
+    daysRemaining: -13,
     status: 'ESCALATED',
-    escalationLevel: 3, // Escalated to Director (Approval Bureau)
+    escalationLevel: 3,
     evidenceUrl: null,
     evidenceNote: null,
     evidenceUploadedAt: null,
@@ -524,10 +524,10 @@ export const initialDocuments = [
     issuedOn: '2023-09-30',
     expiryDate: '2026-09-30',
     renewalLeadDays: 60,
-    daysToExpiry: -28, // Overdue!
+    daysToExpiry: -28,
     status: 'EXPIRED',
     renewalRequestedAt: '2026-10-20',
-    renewalRequestedBy: 'RO–North (UP/Delhi)',
+    renewalRequestedBy: 'RO-North (UP/Delhi)',
     fileUrl: '/docs/Delhi_Poly_Building_Safety_2023.pdf'
   },
   {
@@ -539,7 +539,7 @@ export const initialDocuments = [
     issuedOn: '2025-11-18',
     expiryDate: '2026-11-17',
     renewalLeadDays: 30,
-    daysToExpiry: 20, // Expiring soon (<30d)
+    daysToExpiry: 20,
     status: 'EXPIRING_SOON',
     fileUrl: '/docs/WB_Fire_NOC_Bengal_Pharmacy.pdf'
   },
@@ -578,7 +578,7 @@ export const initialDocuments = [
     issuedOn: '2023-11-15',
     expiryDate: '2026-11-14',
     renewalLeadDays: 45,
-    daysToExpiry: 17, // Expiring soon (<30d)
+    daysToExpiry: 17,
     status: 'EXPIRING_SOON',
     fileUrl: '/docs/Sunrise_Tech_Fire_NOC_2023.pdf'
   }
@@ -668,7 +668,7 @@ export const initialAuditLog = [
     timestamp: '2026-10-14T11:20:00+05:30',
     simulatedDate: '2026-10-14',
     actorRole: 'REGIONAL_OFFICER',
-    actorName: 'RO–North, Northern Regional Office',
+    actorName: 'RO-North, Northern Regional Office',
     action: 'REVERTED_FOR_DEFICIENCY',
     refId: 'APH-2026-1042',
     refType: 'APPLICATION',

@@ -8,7 +8,10 @@ export function getStageSla(cfg, stage, appType = '', resubmissionCount = 0) {
   const slas = cfg.stage_sla_days;
   const s = (stage || '').toUpperCase();
 
-  if ((s === 'SCRUTINY' && resubmissionCount > 0) || s === 'RE_SCRUTINY' || s === 'REVERTED') {
+  if (s === 'REVERTED') {
+    return slas.REVERTED ?? slas.reverted ?? 15;
+  }
+  if ((s === 'SCRUTINY' && resubmissionCount > 0) || s === 'RE_SCRUTINY') {
     return slas.RE_SCRUTINY ?? slas.re_scrutiny ?? 10;
   }
   if (s === 'EVC_QUEUE') {
@@ -39,6 +42,20 @@ export function getStageSla(cfg, stage, appType = '', resubmissionCount = 0) {
   if (slas[stage] !== undefined) return Number(slas[stage]);
 
   return 15;
+}
+
+//calculate days in stage
+export function calculateDaysInStage(targetDateStr, stageEnteredAt, fallback = 0) {
+  if (!stageEnteredAt || !targetDateStr) return fallback;
+  try {
+    const target = new Date(targetDateStr);
+    const entered = new Date(stageEnteredAt);
+    const diffTime = target.getTime() - entered.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  } catch (e) {
+    return fallback;
+  }
 }
 
 const AicteContext = createContext(null);
@@ -205,7 +222,92 @@ export function AicteProvider({ children }) {
   const resetClock = () => {
     const today = '2026-10-28';
     setSimulatedDate(today);
-    showToast('Simulated clock reset to base date (28 Oct 2026)', 'info');
+
+    setApplications((prev) =>
+      prev.map((app) => {
+        if (app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED') {
+          return { ...app, daysInStage: 0, isBreached: false };
+        }
+        const resetDays = calculateDaysInStage(today, app.stageEnteredAt, app.daysInStage);
+        const slaMax = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
+        return {
+          ...app,
+          daysInStage: resetDays,
+          isBreached: resetDays > slaMax
+        };
+      })
+    );
+
+    const now = new Date(today);
+    setUndertakings((prev) =>
+      prev.map((ut) => {
+        if (ut.status === 'VERIFIED') return ut;
+        const dueDate = new Date(ut.dueDate);
+        const diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+        let status = 'OPEN';
+        let escalationLevel = 1;
+        if (diffDays <= 0 && diffDays > -7) {
+          status = 'OVERDUE';
+          escalationLevel = 2;
+        } else if (diffDays <= -7 && diffDays > -15) {
+          status = 'ESCALATED';
+          escalationLevel = 3;
+        } else if (diffDays <= -15) {
+          status = 'ESCALATED';
+          escalationLevel = 4;
+        }
+        return { ...ut, daysRemaining: diffDays, status, escalationLevel };
+      })
+    );
+
+    setDocuments((prev) =>
+      prev.map((doc) => {
+        if (doc.status === 'RENEWED' || doc.status === 'RENEWAL_SUBMITTED') return doc;
+        const expDate = new Date(doc.expiryDate);
+        const daysToExpiry = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+        let status = 'ACTIVE';
+        if (daysToExpiry <= 0) {
+          status = 'EXPIRED';
+        } else if (daysToExpiry <= 30) {
+          status = 'EXPIRING_SOON';
+        }
+        return { ...doc, daysToExpiry, status };
+      })
+    );
+
+    showToast('Simulated clock reset to 28 Oct 2026. All step days returned to normal.', 'info');
+  };
+
+  //clear demo data
+  const clearAllDemoData = () => {
+    try {
+      const keysToRemove = [
+        'compliscan_sim_date',
+        'compliscan_institutions',
+        'compliscan_applications',
+        'compliscan_evc_visits',
+        'compliscan_undertakings',
+        'compliscan_documents',
+        'compliscan_config',
+        'compliscan_audit_log',
+        'compliscan_notifications'
+      ];
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
+    } catch (e) {
+      console.error('Failed to clear demo data from localStorage', e);
+    }
+
+    setSimulatedDate('2026-10-28');
+    setInstitutions(initialInstitutions);
+    setApplications(initialApplications);
+    setEvcVisits(initialEvcVisits);
+    setUndertakings(initialUndertakings);
+    setDocuments(initialDocuments);
+    setConfig(initialConfig);
+    setAuditLog(initialAuditLog);
+    setNotifications(initialNotifications);
+
+    showToast('All demo data cleared. Baseline state restored.', 'success');
   };
 
   const evaluateDeadlinesOnClockTick = (currentSimDate, daysAdded) => {
@@ -217,7 +319,7 @@ export function AicteProvider({ children }) {
           return app;
         }
 
-        const newDaysInStage = app.daysInStage + daysAdded;
+        const newDaysInStage = calculateDaysInStage(currentSimDate, app.stageEnteredAt, app.daysInStage + daysAdded);
         const slaMax = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
         const isBreached = newDaysInStage > slaMax;
 
@@ -350,12 +452,16 @@ export function AicteProvider({ children }) {
     setApplications((prev) =>
       prev.map((app) => {
         if (app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED') {
+          if (app.daysInStage !== 0 || app.isBreached !== false) {
+            return { ...app, daysInStage: 0, isBreached: false };
+          }
           return app;
         }
+        const calcDays = calculateDaysInStage(simulatedDate, app.stageEnteredAt, app.daysInStage);
         const slaMax = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
-        const isBreached = app.daysInStage > slaMax;
-        if (app.isBreached !== isBreached) {
-          return { ...app, isBreached };
+        const isBreached = calcDays > slaMax;
+        if (app.daysInStage !== calcDays || app.isBreached !== isBreached) {
+          return { ...app, daysInStage: calcDays, isBreached };
         }
         return app;
       })
@@ -1072,6 +1178,7 @@ export function AicteProvider({ children }) {
         simulatedDate,
         advanceDays,
         resetClock,
+        clearAllDemoData,
         institutions,
         applications,
         evcVisits,
