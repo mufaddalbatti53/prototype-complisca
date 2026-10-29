@@ -347,12 +347,17 @@ The backend exposes full OpenAPI / Swagger documentation at `/docs`. Key endpoin
 | `POST` | `/api/v1/rules/workflow/revert` | Returns an application for deficiency with mandatory reason and note |
 | `POST` | `/api/v1/rules/simulate/day` | Ticks the clock forward $N$ days and runs the daily due-date sweep |
 
-### 2. AICTE AI Vision & Summary Services (`/api/v1/aicte`)
+### 2. AICTE AI Vision & Database Entity Services (`/api/v1/aicte`)
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/v1/aicte/scan-document` | Reads 30-year lease deeds, building safety, and fire NOCs using Gemini Vision |
 | `POST` | `/api/v1/aicte/scan-evidence` | Verifies geo-tagged lab equipment photos and GST tax invoices |
 | `POST` | `/api/v1/aicte/case-summary` | Generates 5-bullet AI Executive Case Brief for committee review |
+| `GET` | `/api/v1/aicte/institutions` | Returns all technical colleges and AISHE records from SQLite database |
+| `GET` | `/api/v1/aicte/applications` | Returns applications, with optional `institution_id` query isolation |
+| `GET` | `/api/v1/aicte/undertakings` | Returns active undertakings with calculated L1–L4 escalation levels |
+| `GET` | `/api/v1/aicte/documents` | Returns statutory documents (lease deeds, NOCs) with validity countdowns |
+| `GET` | `/api/v1/aicte/notifications` | Returns real-time regulatory breach alerts and escalation memos |
 
 ### 3. System Health & Core
 | Method | Endpoint | Description |
@@ -465,7 +470,7 @@ prototype-compliscan/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/
-│   │   │   ├── aicte.py            # AICTE Vision & Case Summary endpoints
+│   │   │   ├── aicte.py            # AICTE Vision, Case Summary & Database Entity endpoints
 │   │   │   ├── rules.py            # APH Config, Routing, & Day-Simulation API
 │   │   │   ├── scan.py             # Packaging OCR & Inspection endpoint
 │   │   │   ├── inspections.py      # Historical Inspection query endpoints
@@ -474,14 +479,17 @@ prototype-compliscan/
 │   │   │   └── parties.py          # Regulated Entities & Parties directory
 │   │   ├── core/
 │   │   │   ├── config.py           # App title, CORS, & environment settings
-│   │   │   └── database.py         # SQLAlchemy engine & session factory
-│   │   ├── models/                 # SQLAlchemy DB models
+│   │   │   ├── database.py         # SQLAlchemy engine & session factory
+│   │   │   └── seed_aicte.py       # Canonical AICTE SQLite database seeder
+│   │   ├── models/                 # SQLAlchemy DB models (Institution, Application, Evc, etc.)
 │   │   ├── schemas/                # Pydantic request/response validation schemas
 │   │   └── services/
 │   │       ├── compliance_engine.py # AICTEWorkflowRuleEngine (4 Sub-Engines)
 │   │       ├── gemini_service.py   # Google Gemini 3.1 Multimodal Vision Client
 │   │       ├── preprocessor.py     # OpenCV deskewing & enhancement
 │   │       └── report_generator.py # ReportLab PDF statutory notice generator
+│   ├── storage/
+│   │   └── compliscan.db           # SQLite database with seeded tables
 │   ├── tests/
 │   │   ├── test_compliance_rules.py # 9 Unit tests for APH Workflow Engine
 │   │   ├── test_api.py             # API health & rules endpoint tests
@@ -489,8 +497,11 @@ prototype-compliscan/
 │   └── requirements.txt
 ├── frontend/
 │   ├── public/
-│   │   ├── logo-icon.png           # Original teal-ring checkmark logo emblem
-│   │   └── favicon.png
+│   │   ├── logo-icon.png           # 512×512 High-res transparent emblem
+│   │   ├── favicon.svg             # Scalable SVG vector emblem
+│   │   ├── favicon.png             # 192×192 browser favicon
+│   │   ├── logo-lockup.png         # Horizontal logo lockup
+│   │   └── brand-sheet.png         # Official brand reference sheet
 │   ├── src/
 │   │   ├── components/
 │   │   │   └── Navbar.jsx          # Gazette header, Clock simulator & Role switcher
