@@ -221,7 +221,7 @@ export default function RuleConfig() {
   const escalationRows = localConfig?.escalation_ladder || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
       {/* Header Banner */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-xs">
         <div>

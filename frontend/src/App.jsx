@@ -84,7 +84,7 @@ function AppContent() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[oklch(0.985_0.005_90)] text-[oklch(0.22_0.04_260)] flex flex-col font-sans selection:bg-[#1e3a8a] selection:text-white">
+    <div className="min-h-screen bg-[oklch(0.985_0.005_90)] text-[oklch(0.22_0.04_260)] flex flex-col font-sans selection:bg-[#1e3a8a] selection:text-white overflow-x-hidden w-full max-w-full">
       {/* Toast Banner notification */}
       {activeToast && (
         <div
@@ -115,9 +115,9 @@ function AppContent() {
       {/* Navigation Header */}
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* Colored Role Context Banner */}
+      {/* Colored Role Context Banner (Strict zero horizontal overflow) */}
       <div
-        className={`px-3 sm:px-6 py-1.5 border-b text-xs flex flex-wrap items-center justify-between gap-2 shadow-2xs ${
+        className={`px-3 sm:px-6 py-1.5 border-b text-xs flex items-center justify-between gap-2 shadow-2xs w-full max-w-full overflow-hidden ${
           role === 'SUPERADMIN'
             ? 'bg-slate-900 text-amber-200 border-slate-800'
             : role === 'REGIONAL_OFFICER'
@@ -129,19 +129,20 @@ function AppContent() {
             : 'bg-amber-950 text-amber-100 border-amber-900'
         }`}
       >
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 min-w-0">
           <span className="w-2 h-2 rounded-full bg-current animate-pulse shrink-0" />
-          <span className="font-bold tracking-wide">
-            Viewing as: {roleConfig.name} ({roleConfig.title})
+          <span className="font-bold tracking-wide truncate text-[11px] sm:text-xs">
+            Viewing as: {roleConfig.shortName || roleConfig.name}
+            <span className="hidden md:inline font-normal opacity-90"> ({roleConfig.title})</span>
           </span>
-          <span className="hidden sm:inline opacity-60">|</span>
-          <span className="hidden sm:inline font-mono opacity-90 text-[11px]">
+          <span className="hidden lg:inline opacity-60">|</span>
+          <span className="hidden lg:inline font-mono opacity-90 text-[11px] truncate">
             {roleConfig.jurisdiction || 'National'}
           </span>
         </div>
-        <div className="flex items-center space-x-2 text-[11px] font-mono opacity-90">
+        <div className="flex items-center space-x-2 text-[10px] sm:text-[11px] font-mono opacity-90 shrink-0">
           <span className="hidden sm:inline">Team: <strong>TECH SETU AI</strong> ·</span>
-          <span>Officer ID: <strong>{roleConfig.officerId}</strong></span>
+          <span>ID: <strong>{roleConfig.officerId}</strong></span>
         </div>
       </div>
 

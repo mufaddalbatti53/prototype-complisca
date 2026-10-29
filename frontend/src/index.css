@@ -25,6 +25,9 @@
 body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
   font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--background);
   color: var(--foreground);
@@ -34,6 +37,12 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+}
+
+html, #root {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 /* Institutional Headings with Authority */

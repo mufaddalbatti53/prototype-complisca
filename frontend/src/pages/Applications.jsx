@@ -27,7 +27,9 @@ import {
   Download,
   Check,
   Loader2,
-  Info
+  Info,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useAicte, getStageSla } from '../context/AicteContext';
 import { useRole } from '../context/RoleContext';
@@ -318,27 +320,27 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
   };
 
   const renderDocketWorkstation = (app) => (
-    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-300 shadow-sm space-y-4 sm:space-y-5">
+    <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-300 shadow-sm space-y-3.5 sm:space-y-5 w-full max-w-full overflow-hidden">
       {/* Workstation Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 sm:pb-4 border-b border-slate-200 gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-sm sm:text-base font-bold text-[#1e3a8a]">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="font-mono text-xs sm:text-base font-bold text-[#1e3a8a] break-all">
               Application #{app.refNo}
             </span>
-            <span className={`stamp-badge ${getStageColor(app.currentStage)}`}>
+            <span className={`stamp-badge text-[10px] sm:text-[11px] ${getStageColor(app.currentStage)}`}>
               {app.currentStage}
             </span>
             {app.decision && (
-              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
+              <span className="font-mono text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
                 Decision: {app.decision}
               </span>
             )}
           </div>
-          <h3 className="text-lg sm:text-xl font-serif font-bold text-slate-900 mt-1">
+          <h3 className="text-base sm:text-xl font-serif font-bold text-slate-900 mt-1 break-words">
             {app.institutionName}
           </h3>
-          <p className="text-xs text-slate-600 font-mono mt-0.5">
+          <p className="text-[11px] sm:text-xs text-slate-600 font-mono mt-0.5 break-words">
             {app.appType.replace(/_/g, ' ')} · Route: {app.route} · Officer: {app.assignedOfficer}
           </p>
         </div>
@@ -648,7 +650,7 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
@@ -829,15 +831,15 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
       </div>
 
       {/* Applications Table with INLINE Expansion directly below the clicked row */}
-      <div className="civic-card rounded-2xl overflow-hidden bg-white shadow-xs border border-slate-200">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <div className="flex items-center space-x-2">
-            <Layers className="w-4 h-4 text-[#1e3a8a]" />
-            <h3 className="font-serif font-bold text-sm text-slate-900">
+      <div className="civic-card rounded-2xl overflow-hidden bg-white shadow-xs border border-slate-200 w-full max-w-full">
+        <div className="px-3.5 sm:px-5 py-3 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 gap-2 flex-wrap w-full max-w-full">
+          <div className="flex items-center space-x-2 min-w-0">
+            <Layers className="w-4 h-4 text-[#1e3a8a] shrink-0" />
+            <h3 className="font-serif font-bold text-xs sm:text-sm text-slate-900 truncate">
               Active Application Dockets ({filteredApps.length} Cases)
             </h3>
           </div>
-          <span className="text-[11px] text-slate-500 font-mono">
+          <span className="text-[10px] sm:text-[11px] text-slate-500 font-mono shrink-0">
             System Date: <strong className="text-slate-800">{simulatedDate}</strong>
           </span>
         </div>
@@ -966,103 +968,66 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
           </table>
         </div>
 
-        {/* Mobile Interactive Cards View (Zero Horizontal Scrolling) */}
-        <div className="block lg:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-3">
+        {/* Mobile View: ONLY College Name and View Eye Button (Zero Horizontal Scrolling) */}
+        <div className="block lg:hidden divide-y divide-slate-100 p-2 sm:p-3 space-y-2 w-full max-w-full overflow-hidden">
           {filteredApps.length === 0 ? (
             <div className="py-8 text-center text-slate-500 text-xs">
               No applications found matching your search.
             </div>
           ) : (
             filteredApps.map((app) => {
-              const slaLimit = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
-              const isOverdue = app.daysInStage > slaLimit && app.currentStage !== 'CLOSED';
               const isSelected = selectedAppId === app.id;
 
               return (
                 <div
                   key={app.id}
-                  className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
+                  className={`rounded-xl border transition-all w-full max-w-full overflow-hidden ${
                     isSelected
-                      ? 'border-[#1e3a8a] bg-amber-50/50 ring-2 ring-[#1e3a8a]/20 shadow-sm'
-                      : isOverdue
-                      ? 'border-rose-300 bg-rose-50/20'
-                      : 'border-slate-200 bg-white hover:border-slate-300 shadow-xs'
+                      ? 'border-[#1e3a8a] bg-amber-50/40 ring-1 ring-[#1e3a8a]/20 shadow-xs'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
-                  {/* Top Bar: Ref No + Route + Current Stage */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center space-x-1.5">
-                        <span className="font-mono font-bold text-xs text-[#1e3a8a]">
-                          {app.refNo}
-                        </span>
-                        <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-slate-100 border border-slate-300 text-slate-700 font-bold">
-                          {app.route}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-600 font-medium mt-0.5 block">
-                        {app.appType.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <span className={`stamp-badge text-[10px] ${getStageColor(app.currentStage)}`}>
-                        {app.currentStage}
-                      </span>
-                      {app.resubmissionCount > 0 && (
-                        <span className="block font-mono text-[9px] text-amber-700 font-bold mt-0.5">
-                          Cycle #{app.resubmissionCount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* College Name & Location */}
-                  <div className="mt-2.5">
-                    <h4 className="font-bold text-slate-900 text-sm leading-snug">
-                      {app.institutionName}
-                    </h4>
-                    <div className="text-[11px] text-slate-500 flex items-center space-x-1 mt-0.5">
-                      <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                      <span>{app.district}, {app.state}</span>
-                      <span>·</span>
-                      <span className="text-slate-400">{app.region.split(' ')[0]}</span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 font-mono mt-1 truncate">
-                      {app.courseDetails}
-                    </p>
-                  </div>
-
-                  {/* Dwell SLA Status Bar & Action Button */}
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs gap-2">
-                    <div className="flex items-center space-x-1.5">
-                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="text-[11px] text-slate-500">Wait:</span>
-                      <span className={`font-mono font-bold ${isOverdue ? 'text-rose-600' : 'text-slate-800'}`}>
-                        {app.daysInStage}d
-                      </span>
-                      <span className="text-slate-400 font-mono text-[10px]">/ {slaLimit}d max</span>
-                      {isOverdue && (
-                        <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse ml-0.5" />
-                      )}
+                  {/* Compact Mobile Row: ONLY College Name & View Eye Button */}
+                  <div
+                    onClick={() => toggleDocket(app.id)}
+                    className="p-3 sm:p-3.5 flex items-center justify-between gap-3 cursor-pointer select-none"
+                  >
+                    <div className="min-w-0 flex-1 pr-1">
+                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm leading-snug break-words">
+                        {app.institutionName}
+                      </h4>
                     </div>
 
                     <button
-                      onClick={() => toggleDocket(app.id)}
-                      className="font-bold text-xs inline-flex items-center space-x-1 bg-[#1e3a8a] text-white hover:bg-[#172554] px-3 py-1.5 rounded-xl transition shadow-xs shrink-0"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDocket(app.id);
+                      }}
+                      className={`shrink-0 inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-2xs ${
+                        isSelected
+                          ? 'bg-[#1e3a8a] text-white hover:bg-[#172554]'
+                          : 'bg-blue-50 text-[#1e3a8a] border border-blue-200 hover:bg-blue-100'
+                      }`}
+                      title={isSelected ? 'Close docket details' : 'View docket details and AI brief'}
                     >
-                      <span>{isSelected ? 'Close' : 'View AI Brief'}</span>
                       {isSelected ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-amber-300" />
+                        <>
+                          <EyeOff className="w-3.5 h-3.5" />
+                          <span>Close</span>
+                        </>
                       ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-amber-300" />
+                        <>
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View</span>
+                        </>
                       )}
                     </button>
                   </div>
 
-                  {/* Inline Expanded Workstation for Mobile */}
+                  {/* Inline Expanded Workstation for Mobile (100% Mobile Optimized, Zero Horizontal Scroll) */}
                   {isSelected && selectedApp && (
-                    <div className="mt-4 pt-4 border-t border-slate-200 animate-fadeIn">
+                    <div className="border-t border-slate-200 p-2 sm:p-3 bg-slate-50/70 animate-fadeIn w-full max-w-full overflow-hidden">
                       {renderDocketWorkstation(selectedApp)}
                     </div>
                   )}

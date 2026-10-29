@@ -121,13 +121,14 @@ export default function Navbar({ activeTab, setActiveTab }) {
     <>
       <header className="sticky top-0 z-50 bg-[#ffffff] border-b border-[oklch(0.9_0.01_90)] shadow-xs">
         {/* Top Gazette Bar: Authority Identification & Simulated Clock */}
-        <div className="bg-[#1e293b] text-white px-3 sm:px-6 py-1.5 text-xs flex items-center justify-between gap-2 border-b border-slate-700 flex-nowrap overflow-x-auto">
-          <div className="flex items-center space-x-1.5 font-mono text-[10px] sm:text-[11px] text-slate-300 shrink-0 whitespace-nowrap">
-            <span className="text-amber-400 font-bold tracking-wider">AICTE BUREAU</span>
-            <span className="hidden xs:inline text-slate-500">·</span>
-            <span className="hidden sm:inline text-slate-400">PS 26262</span>
-            <span className="hidden sm:inline text-slate-500">·</span>
-            <span className="text-emerald-400 font-bold hidden sm:inline">TEAM TECH SETU AI</span>
+        <div className="bg-[#1e293b] text-white px-2.5 sm:px-6 py-1.5 text-xs flex items-center justify-between gap-1.5 sm:gap-2 border-b border-slate-700 flex-nowrap w-full max-w-full overflow-x-hidden">
+          <div className="flex items-center space-x-1 sm:space-x-1.5 font-mono text-[10px] sm:text-[11px] text-slate-300 shrink-0 whitespace-nowrap">
+            <span className="text-amber-400 font-bold tracking-wider">AICTE</span>
+            <span className="hidden sm:inline text-amber-400 font-bold tracking-wider"> BUREAU</span>
+            <span className="text-slate-500">·</span>
+            <span className="text-emerald-400 font-bold">TECH SETU AI</span>
+            <span className="hidden md:inline text-slate-500">·</span>
+            <span className="hidden md:inline text-slate-400">PS 26262</span>
             <span className="hidden lg:inline text-slate-500">·</span>
             <span className="text-slate-300 hidden lg:inline">C.O.M.P.L.I.S.C.A.N.</span>
           </div>
@@ -135,7 +136,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
           {/* Time-Machine Clock Simulation Widget (Hidden for College role) */}
           {role !== 'INSTITUTION' ? (
             <div className="flex items-center space-x-1 sm:space-x-1.5 ml-auto flex-nowrap shrink-0">
-              <div className="flex items-center space-x-1 bg-slate-800/90 border border-slate-600 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono text-amber-300 whitespace-nowrap shrink-0">
+              <div className="flex items-center space-x-1 bg-slate-800/90 border border-slate-600 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-mono text-amber-300 whitespace-nowrap shrink-0">
                 <Clock className="w-3 h-3 text-amber-400 shrink-0" />
                 <span className="hidden sm:inline">Date: </span>
                 <strong className="whitespace-nowrap">{simulatedDate}</strong>
@@ -144,14 +145,14 @@ export default function Navbar({ activeTab, setActiveTab }) {
               <div className="flex items-center space-x-0.5 sm:space-x-1 shrink-0">
                 <button
                   onClick={() => advanceDays(1)}
-                  className="bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition whitespace-nowrap"
+                  className="bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-200 px-1.5 py-0.5 rounded text-[9.5px] sm:text-[10.5px] font-mono font-bold transition whitespace-nowrap"
                   title="Advance clock by 1 day"
                 >
                   +1d
                 </button>
                 <button
                   onClick={() => advanceDays(7)}
-                  className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition flex items-center space-x-0.5 whitespace-nowrap"
+                  className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded text-[9.5px] sm:text-[10.5px] font-mono font-bold transition flex items-center space-x-0.5 whitespace-nowrap"
                   title="Advance clock by 7 days to trigger SLA warnings"
                 >
                   <FastForward className="w-2.5 h-2.5" />
@@ -159,14 +160,14 @@ export default function Navbar({ activeTab, setActiveTab }) {
                 </button>
                 <button
                   onClick={() => advanceDays(15)}
-                  className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-1.5 py-0.5 rounded text-[10px] sm:text-[10.5px] font-mono font-bold transition whitespace-nowrap"
+                  className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-1.5 py-0.5 rounded text-[9.5px] sm:text-[10.5px] font-mono font-bold transition whitespace-nowrap"
                   title="Advance clock by 15 days to trigger critical escalations"
                 >
                   +15d
                 </button>
                 <button
                   onClick={resetClock}
-                  className="bg-slate-700 hover:bg-slate-600 text-slate-300 p-1 rounded transition shrink-0"
+                  className="bg-slate-700 hover:bg-slate-600 text-slate-300 p-0.5 sm:p-1 rounded transition shrink-0"
                   title="Reset clock to 28 Oct 2026"
                 >
                   <RotateCcw className="w-2.5 h-2.5" />
