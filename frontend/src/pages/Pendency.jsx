@@ -112,7 +112,7 @@ export default function Pendency() {
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="kicker-line mb-1">MODULE B · REGULATORY OVERSIGHT & WORKLOAD INTELLIGENCE</div>
+          <div className="kicker-line mb-1">MODULE B · REGULATORY OVERSIGHT & WORKLOAD INTELLIGENCE · TECH SETU AI</div>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
             Workload & Pendency Overview
           </h2>

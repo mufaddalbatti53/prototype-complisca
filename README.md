@@ -211,49 +211,62 @@ flowchart TD
 
 ### Module 1: Applications (`#applications`)
 * **Live Application Docket**: View and filter active applications across lifecycle steps, 8 regional offices, and approval routes.
-* **Inline AI Executive Case Brief**: Click **any college row** to expand details **directly underneath that college** (no scrolling to the bottom of the page).
-* **Officer Action Controls**: Move to next step, return application to fix issues, upload fixed documents & resubmit, or record final approval decision.
+* **Inline AI Executive Case Brief**: Click **any college row** to expand details **directly underneath that college** (no scrolling to the bottom of the page) with a single consolidated **"Generate 5-Point AI Case Brief"** / **"Regenerate"** button.
+* **Route-Specific Milestone Progress Bar**: Displays only the statutory steps for that docket's route (4 steps for `ONLY_SCRUTINY`, 5 for `SCRUTINY_EVC`, 6 for `SCRUTINY_EVC_SAC`), rather than generic static steps.
+* **Mandatory Written Justification on Return**: When an officer clicks *Return to Fix Issues*, a written reason is strictly required before submission, recording a permanent digital deficiency memo in the audit log.
 * **New Application Intake Modal**: Create a new application with auto-route determination and instant docket generation.
 
 ### Module 2: Workload & Pendency Overview (`#pendency`)
-* **6 Key Metrics**: Total Active Cases, Checking Documents, Inspection Needed, Committee Review, Overdue Cases, Average Wait Time.
-* **Workflow Bottleneck Strip**: Highlights the exact step causing delays across the country (e.g. EVC Queue averaging 23 days) and gives actionable recommendations.
-* **4 Aging Buckets**: Grouping cases into 0–15d, 16–30d, 31–60d, and 60+d.
-* **Regional Heat Grid**: Real-time breakdown across all 8 Regional Offices with breach indicators.
-* **Officer Workload Bars**: Assigned, completed, and overdue cases per regional officer.
+* **100% Mathematically Consistent Metrics**: Active dockets (6) strictly exclude closed cases (2). The 4 Aging Buckets (0–15d, 16–30d, 31–60d, 60+d) count only active applications and sum to exactly 6.
+* **Regional Active Dockets Breakdown**: Regional table column computes active dockets by subtracting closed cases (e.g. North-Western shows `0 active (1 closed)` and Central shows `1 active (1 closed)`).
+* **Interactive Drilldown Inspector**: Clicking any Aging Bucket card or regional matrix cell opens an interactive modal listing matching dockets with a 1-click shortcut to open the application workstation.
+* **Dynamic Officer Workload Bars**: Real-time workload bars dynamically derived from actual application assignments.
+* **Workflow Bottleneck Strip**: Highlights the exact step causing delays across the country (e.g. EVC Queue averaging 23 days) with actionable recommendations.
 
 ### Module 3: Campus Inspections & Committee Visits (`#evc`)
-* **Waiting List Queue**: Colleges ready for a campus inspection with urgent countdown timers.
+* **Waiting List Queue**: Colleges ready for a campus inspection with urgent countdown timers. Synchronized SLA limits (`23d waiting / max 21d` with `OVERDUE 2d Breach` and `L2 Escalated` badge for priority cases).
 * **Scheduled Visits**: Detailed rosters with Convener (e.g. IIT/NIT Professor), committee members, visit dates, and Physical/Hybrid mode.
 * **Visit Calendar**: Visual monthly view of scheduled campus inspections.
 * **Report Upload Modal**: Record physical classroom, laboratory, and library observations and upload signed inspection reports.
 
 ### Module 4: Time-Bound Compliance Conditions & Undertakings (`#compliance`)
 * **90-Day Registry**: Tracks conditions imposed during conditional approvals (e.g. recruiting Ph.D. faculty, installing 30 licensed CAD workstations, setting up sewage treatment plants).
+* **3-Step Condition Lifecycle Audit Trail**: Every undertaking displays complete audit provenance:
+  1. *Step 1: Imposed At & By* (by Standing Appellate Committee)
+  2. *Step 2: Proof Uploaded At & By* (by College Registrar)
+  3. *Step 3: Regulatory Verification At & By* (by Regional Officer) with statutory verdict (`VERIFIED & FULFILLED` / `ACTION PENDING`)
 * **AI Evidence Vision Verifier**: Analyze uploaded evidence files (invoices, photos) with Gemini AI to verify authentic serial numbers and GPS coordinates.
 * **4-Level Escalation Strip**: Clear, dark high-contrast cards showing automatic notification thresholds (L1 $\rightarrow$ L4).
 
 ### Module 5: College Documents, Leases & Safety Certificates (`#documents`)
 * **Certificate Vault**: Tracks 30-year registered land lease deeds, building safety certificates, and fire safety NOCs.
+* **Request Renewal Action**: Regulatory officers can dispatch official statutory renewal notices for expired/expiring documents, stamping a `Notice Sent: {date} by {officer}` badge.
 * **AI Document Vision Scanner**: Auto-extracts registration numbers, issuing authorities, and expiry dates from uploaded PDFs or sample images.
 * **Countdown Timers**: Visual warning badges for certificates expiring in <90d, <60d, <30d, or already expired.
 * **Renewal Workflow**: Colleges can upload renewed certificates for regional officer verification.
 
 ### Module 6: Colleges & Institutions Directory (`#institutions`)
 * **Jurisdictional Directory**: Complete listing of technical colleges across all 8 AICTE regions.
+* **Compliance Score Formula Explained**: Interactive tooltip (`ℹ`) and sub-text explaining the statutory formula:
+  * **40% Approvals**: Procedural stage fidelity & zero unrectified deficiencies
+  * **30% Documents**: Active land lease, structural PWD, and Fire NOC validity
+  * **30% Undertakings**: Time-bound conditions discharged within 90 days
 * **Institutional Profiles**: AISHE codes, approved seat intake capacity, established year, compliance ratings, and automated risk flags (Low, Medium, High).
 * **Dossier Inspector**: Detailed view showing all active applications, compliance conditions, and documents for that college.
 
 ### Module 7: Approval Rules & Timeline Limits (`#timelines`)
 * **Visual Rule Parameter Matrix (`RuleConfig.jsx`)**: Editable numeric inputs for Scrutiny SLA, Re-Scrutiny SLA, Inspection windows, and Committee review times.
+* **Guaranteed Default SLA Values**: Built-in statutory fallback definitions ensure numeric input boxes are never blank or missing.
 * **Live Day-Simulation Trigger**: One-click **"Simulate +7 Days"** / **"Simulate +15 Days"** button that advances the system clock and displays real-time triggered alert drawers.
 * **Statutory Default Reset**: One-click restore to official AICTE APH handbook settings.
-* **Raw JSON Schema Editor**: Switch to JSON mode to view and edit the underlying configuration.
+* **Raw JSON Schema Editor**: Relabeled **"Advanced: Raw JSON Schema (For Developers)"** for technical customization.
 
 ### Module 8: Official System Activity & Audit Trail (`#audit`)
 * **Event-Sourced Log**: Time-stamped record of every application intake, stage transition, deficiency memo, committee booking, and approval decision.
-* **Multi-Filter Search**: Filter by role persona, action type, application number, or date.
-* **JSON Export**: Download the complete, tamper-evident audit history in 1 click.
+* **Excel & PDF Downloads**:
+  * **Download Excel (.csv)**: Exports clean CSV formatted with UTF-8 BOM encoding for seamless Microsoft Excel compatibility.
+  * **Download PDF Report**: Generates a print-ready audit certificate view with AICTE CompliScan letterhead and digital signature blocks.
+* **Multi-Filter Search**: Filter by role persona, action code, reference entity, regional jurisdiction, and date range (`From Date`, `To Date`).
 
 ---
 
@@ -298,15 +311,17 @@ When viewing any application docket, clicking **"Generate AI Case Brief"** uses 
 
 ## 👥 5 User Personas & Role Isolation (RBAC)
 
-Use the top-right **Role Switcher Dropdown** in the navbar to test the platform from any user's perspective:
+Use the top-right **Role Switcher Dropdown** in the navbar to test the platform from any user's perspective. Each role features an automatic default landing page, filtered notification bell alerts, and a top identification banner:
 
-| Persona | Title in Prototype | Available Tabs | Scope of Access |
+| Persona | Title in Prototype | Default Landing Tab | Scope of Access & Jurisdiction |
 |---|---|---|---|
-| **College / Institute** | Registrar, Sunrise Institute of Technology | Applications, Compliance, Documents | **Isolated View**: Can ONLY see Sunrise Institute's applications, conditions, and certificates. Private college portal banner displayed. |
-| **Regional Officer (RO)** | RO–West, Western Regional Office | Applications, Pendency, EVC, Compliance, Documents, Institutions, Audit | Manage regional scrutiny queues, return files for deficiency, schedule inspections, verify evidence. |
-| **Bureau Officer** | Director, AICTE Approval Bureau (HQ) | Applications, Pendency, EVC, Compliance, Documents, Institutions, Audit | Committee decisions, national pendency tracking, handling Level 3 escalation memos. |
-| **Inspection Committee** | Prof. K. Ramanathan, Committee Head | EVC, Applications, Documents | View inspection queue, schedule visit dates, and upload signed inspection reports. |
-| **Member Secretary / DG** | Director General / Member Secretary | All 8 Tabs (Full Access) | Complete statutory oversight, configure APH rules, handle Level 4 escalations, view full audit log. |
+| **College / Institute** | Registrar, Sunrise Institute of Technology | Compliance (My Deadlines) | **Strict Institution Isolation**: Can ONLY see Sunrise Institute's dockets, conditions, and certificates. Time simulation buttons hidden; college registrar badge displayed. |
+| **Regional Officer (RO)** | RO–West, Western Regional Office | Applications (Review Queue) | **Regional Scoping**: Locked strictly to Western Regional Office applications, pendency, and documents. Region filter locked to Western. |
+| **Bureau Officer** | Director, AICTE Approval Bureau (HQ) | Applications (Escalation Inbox) | National oversight of 7+ days overdue SLA breaches and Standing Appellate Committee (SAC) appeals. |
+| **Inspection Committee** | Prof. K. Ramanathan, Committee Head | EVC (Inspection Calendar) | Limited to assigned inspection visits (`EVC_QUEUE`, `EVC_SCHEDULED`, `EVC_DONE`) and visit report upload. |
+| **Member Secretary / DG** | Director General / Member Secretary | Pendency (National Overview) | **Full Statutory Oversight**: All 8 modules accessible, national bottleneck analytics, APH configurable matrix, Level 4 escalations, and tamper-evident audit logs. |
+
+*Every persona switch immediately reflects an active colored top banner indicating role title, regional jurisdiction, and officer ID.*
 
 ---
 

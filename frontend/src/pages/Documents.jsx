@@ -238,7 +238,7 @@ export default function Documents() {
       {/* Module E Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="kicker-line mb-1">MODULE E · STATUTORY REQUISITES & TIMELINE TRACKING</div>
+          <div className="kicker-line mb-1">MODULE E · STATUTORY REQUISITES & TIMELINE TRACKING · TECH SETU AI</div>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
             College Documents, Leases & Safety Certificates
           </h2>

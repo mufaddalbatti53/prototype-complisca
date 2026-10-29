@@ -50,7 +50,7 @@ export default function Dashboard({ onSelectInspection }) {
           <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200 mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-600"></span>
             <span className="text-[11px] uppercase font-bold tracking-wider text-sky-700">
-              National Legal Metrology Enforcement Cell • Tech Setu AI
+              AICTE Approval Workflow & Compliance Monitoring • TECH SETU AI
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">

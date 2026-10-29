@@ -226,7 +226,7 @@ export default function RuleConfig() {
       <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-xs">
         <div>
           <span className="text-xs font-mono uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-300 font-bold">
-            APH 2024–2027 STATUTORY ENGINE • LIVE CONFIGURABLE MATRIX
+            APH 2024–2027 STATUTORY ENGINE • LIVE CONFIGURABLE MATRIX • TECH SETU AI
           </span>
           <h1 className="text-2xl font-serif font-bold text-slate-900 mt-2">
             Approval Workflow Timelines & Escalation Rules Matrix

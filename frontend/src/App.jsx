@@ -140,6 +140,7 @@ function AppContent() {
           </span>
         </div>
         <div className="flex items-center space-x-2 text-[11px] font-mono opacity-90">
+          <span className="hidden sm:inline">Team: <strong>TECH SETU AI</strong> ·</span>
           <span>Officer ID: <strong>{roleConfig.officerId}</strong></span>
         </div>
       </div>

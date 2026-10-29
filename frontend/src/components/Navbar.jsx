@@ -126,6 +126,8 @@ export default function Navbar({ activeTab, setActiveTab }) {
             <span className="text-amber-400 font-bold tracking-wider">AICTE BUREAU</span>
             <span className="hidden xs:inline text-slate-500">·</span>
             <span className="hidden sm:inline text-slate-400">PS 26262</span>
+            <span className="hidden sm:inline text-slate-500">·</span>
+            <span className="text-emerald-400 font-bold hidden sm:inline">TEAM TECH SETU AI</span>
             <span className="hidden lg:inline text-slate-500">·</span>
             <span className="text-slate-300 hidden lg:inline">C.O.M.P.L.I.S.C.A.N.</span>
           </div>
@@ -224,7 +226,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
                     C.O.M.P.L.I.S.C.A.N.
                   </h1>
                   <span className="hidden md:inline font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold">
-                    AICTE PS 26262
+                    AICTE PS 26262 · TECH SETU AI
                   </span>
                 </div>
                 <p className="text-[10.5px] text-slate-500 font-medium leading-tight hidden sm:block max-w-md lg:max-w-xl truncate">
