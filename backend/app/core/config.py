@@ -12,10 +12,7 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     
-    GEMINI_API_KEY: str = os.getenv(
-        "GEMINI_API_KEY", 
-        "AQ.Ab8RN6LKIYapKpDDcFouJYcl_-iXuzjFMHdkR6uoQe417JJPug"
-    )
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
     
     DATABASE_URL: str = os.getenv(
@@ -23,16 +20,10 @@ class Settings(BaseSettings):
         f"sqlite:///{BASE_DIR}/storage/compliscan.db"
     )
     
-    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://ppqywvzogwuhdnrujrof.supabase.co")
-    SUPABASE_KEY: str = os.getenv(
-        "SUPABASE_KEY", 
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwcXl3dnpvZ3d1aGRucnVqcm9mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDEzNTc3NSwiZXhwIjoyMDk1NzExNzc1fQ.1wQ4bWERyaAbcSo4G5gIsd6OpIsvqg3l6hqWm9lUVog"
-    )
-    SUPABASE_ANON_KEY: str = os.getenv(
-        "SUPABASE_ANON_KEY",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwcXl3dnpvZ3d1aGRucnVqcm9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzU3NzUsImV4cCI6MjA5NTcxMTc3NX0.vMNTbmykiGlTSb2481BIYAZaxS1FZBSiR5yhrfYJd0E"
-    )
-    SUPABASE_PROJECT_ID: str = os.getenv("SUPABASE_PROJECT_ID", "ppqywvzogwuhdnrujrof")
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
+    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
+    SUPABASE_PROJECT_ID: str = os.getenv("SUPABASE_PROJECT_ID", "")
     
     STORAGE_DIR: Path = BASE_DIR / "storage"
     UPLOAD_DIR: Path = BASE_DIR / "storage" / "uploads"

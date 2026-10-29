@@ -30,7 +30,9 @@ htmlcov/
 
 # Environment
 .env
+.env.*
 .env.local
+!.env.example
 
 # Node / Frontend
 node_modules/
