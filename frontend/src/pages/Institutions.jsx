@@ -13,14 +13,15 @@ import {
   X,
   ExternalLink,
   Layers,
-  GraduationCap
+  GraduationCap,
+  Trash2
 } from 'lucide-react';
 import { useAicte } from '../context/AicteContext';
 import { useRole } from '../context/RoleContext';
 
 export default function Institutions() {
-  const { institutions, applications, undertakings, documents } = useAicte();
-  const { role } = useRole();
+  const { institutions, applications, undertakings, documents, deleteInstitution } = useAicte();
+  const { role, roleConfig } = useRole();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [regionFilter, setRegionFilter] = useState('ALL');
@@ -28,6 +29,20 @@ export default function Institutions() {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   const [selectedInst, setSelectedInst] = useState(null);
+
+  //delete handler
+  const handleDeleteInstitution = (inst, e) => {
+    if (e) e.stopPropagation();
+    const confirmed = window.confirm(
+      `Are you sure you want to remove institution "${inst.name}" (${inst.aisheCode}) from the registry?`
+    );
+    if (confirmed) {
+      deleteInstitution(inst.id, role, roleConfig.officerId || roleConfig.shortName);
+      if (selectedInst?.id === inst.id) {
+        setSelectedInst(null);
+      }
+    }
+  };
 
   //role scoping
   const isInstitutionRole = role === 'INSTITUTION';
@@ -314,13 +329,22 @@ export default function Institutions() {
                     </td>
 
                     <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => setSelectedInst(inst)}
-                        className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 text-[11px] font-semibold transition"
-                      >
-                        <Eye className="w-3 h-3" />
-                        <span>Dossier</span>
-                      </button>
+                      <div className="flex items-center justify-end space-x-1.5">
+                        <button
+                          onClick={() => setSelectedInst(inst)}
+                          className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 text-[11px] font-semibold transition"
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span>Dossier</span>
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteInstitution(inst, e)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                          title={`Delete institution ${inst.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -416,13 +440,20 @@ export default function Institutions() {
                     </span>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-end space-x-1.5">
                     <button
                       onClick={() => setSelectedInst(inst)}
                       className="font-bold text-xs inline-flex items-center space-x-1 bg-[#1e3a8a] text-white hover:bg-[#172554] px-3 py-1.5 rounded-xl transition shadow-xs"
                     >
                       <Eye className="w-3.5 h-3.5 text-amber-300" />
                       <span>Dossier</span>
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteInstitution(inst, e)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 rounded-xl transition"
+                      title={`Delete institution ${inst.name}`}
+                    >
+                      <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600" />
                     </button>
                   </div>
                 </div>

@@ -169,7 +169,7 @@ function AppContent() {
       </main>
 
       {/* Bharat Civic Footer */}
-      <footer className="bg-white border-t border-[oklch(0.9_0.01_90)] py-6 px-4 text-xs text-slate-500">
+      <footer className="bg-white border-t border-[oklch(0.9_0.01_90)] pt-6 pb-24 xl:pb-6 px-4 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
             <img src="/logo-icon.png" alt="C.O.M.P.L.I.S.C.A.N. Logo" className="w-5 h-5 object-contain" />

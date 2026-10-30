@@ -20,15 +20,27 @@ import {
   ShieldCheck,
   Building2,
   MapPin,
-  Calendar
+  Calendar,
+  Trash2
 } from 'lucide-react';
 import { useAicte } from '../context/AicteContext';
 import { useRole } from '../context/RoleContext';
 import { api } from '../services/api';
 
 export default function Compliance() {
-  const { undertakings, institutions, simulatedDate, submitUndertakingEvidence, verifyUndertaking } = useAicte();
+  const { undertakings, institutions, simulatedDate, submitUndertakingEvidence, verifyUndertaking, deleteUndertaking } = useAicte();
   const { role, roleConfig } = useRole();
+
+  //delete handler
+  const handleDeleteUndertaking = (ut, e) => {
+    if (e) e.stopPropagation();
+    const confirmed = window.confirm(
+      `Are you sure you want to delete compliance undertaking ${ut.id} for "${ut.institutionName}"?`
+    );
+    if (confirmed) {
+      deleteUndertaking(ut.id, role, roleConfig.officerId || roleConfig.shortName);
+    }
+  };
 
   //filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -575,6 +587,14 @@ export default function Compliance() {
                         <Eye className="w-3 h-3" />
                         <span>Inspect</span>
                       </button>
+
+                      <button
+                        onClick={(e) => handleDeleteUndertaking(ut, e)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        title={`Delete undertaking ${ut.id}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </td>
                   </tr>
                 );
@@ -735,6 +755,14 @@ export default function Compliance() {
                           <span>Verify</span>
                         </button>
                       )}
+
+                    <button
+                      onClick={(e) => handleDeleteUndertaking(ut, e)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 rounded-xl transition"
+                      title={`Delete undertaking ${ut.id}`}
+                    >
+                      <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600" />
+                    </button>
                   </div>
                 </div>
               );

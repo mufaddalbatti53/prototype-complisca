@@ -1066,6 +1066,102 @@ export function AicteProvider({ children }) {
     );
   };
 
+  //delete actions
+  const deleteApplication = (appId, actorRole = 'SYSTEM', actorName = 'Authorized Officer') => {
+    let deletedTarget = null;
+    setApplications((prev) => {
+      deletedTarget = prev.find((a) => a.id === appId);
+      return prev.filter((a) => a.id !== appId);
+    });
+    if (deletedTarget) {
+      logAuditEvent({
+        actorRole,
+        actorName,
+        action: 'APPLICATION_DELETED',
+        refId: deletedTarget.refNo,
+        refType: 'APPLICATION',
+        note: `Application ${deletedTarget.refNo} (${deletedTarget.institutionName}) deleted.`
+      });
+      showToast(`Application ${deletedTarget.refNo} deleted successfully.`, 'info');
+    }
+  };
+
+  const deleteEvcVisit = (visitId, actorRole = 'SYSTEM', actorName = 'Regional Officer') => {
+    let deletedTarget = null;
+    setEvcVisits((prev) => {
+      deletedTarget = prev.find((v) => v.id === visitId);
+      return prev.filter((v) => v.id !== visitId);
+    });
+    if (deletedTarget) {
+      logAuditEvent({
+        actorRole,
+        actorName,
+        action: 'EVC_VISIT_DELETED',
+        refId: deletedTarget.id,
+        refType: 'EVC_VISIT',
+        note: `EVC Inspection visit ${deletedTarget.id} for ${deletedTarget.institutionName} removed.`
+      });
+      showToast(`EVC visit ${deletedTarget.id} deleted.`, 'info');
+    }
+  };
+
+  const deleteUndertaking = (undertakingId, actorRole = 'SYSTEM', actorName = 'Authorized Officer') => {
+    let deletedTarget = null;
+    setUndertakings((prev) => {
+      deletedTarget = prev.find((u) => u.id === undertakingId);
+      return prev.filter((u) => u.id !== undertakingId);
+    });
+    if (deletedTarget) {
+      logAuditEvent({
+        actorRole,
+        actorName,
+        action: 'UNDERTAKING_DELETED',
+        refId: deletedTarget.id,
+        refType: 'UNDERTAKING',
+        note: `Undertaking condition ${deletedTarget.id} (${deletedTarget.conditionTitle}) removed.`
+      });
+      showToast(`Undertaking ${deletedTarget.id} deleted.`, 'info');
+    }
+  };
+
+  const deleteDocument = (docId, actorRole = 'SYSTEM', actorName = 'Authorized Officer') => {
+    let deletedTarget = null;
+    setDocuments((prev) => {
+      deletedTarget = prev.find((d) => d.id === docId);
+      return prev.filter((d) => d.id !== docId);
+    });
+    if (deletedTarget) {
+      logAuditEvent({
+        actorRole,
+        actorName,
+        action: 'DOCUMENT_DELETED',
+        refId: deletedTarget.id,
+        refType: 'DOCUMENT',
+        note: `Document ${deletedTarget.id} (${deletedTarget.docType}) deleted.`
+      });
+      showToast(`Document ${deletedTarget.id} deleted.`, 'info');
+    }
+  };
+
+  const deleteInstitution = (instId, actorRole = 'SYSTEM', actorName = 'Regulatory Admin') => {
+    let deletedTarget = null;
+    setInstitutions((prev) => {
+      deletedTarget = prev.find((i) => i.id === instId);
+      return prev.filter((i) => i.id !== instId);
+    });
+    if (deletedTarget) {
+      logAuditEvent({
+        actorRole,
+        actorName,
+        action: 'INSTITUTION_DELETED',
+        refId: deletedTarget.id,
+        refType: 'INSTITUTION',
+        note: `Institution ${deletedTarget.name} (${deletedTarget.aisheCode}) removed from registry.`
+      });
+      showToast(`Institution ${deletedTarget.name} removed from registry.`, 'info');
+    }
+  };
+
   //config actions
   const updateConfigJson = async (newConfigJson, actorRole, actorName) => {
     try {
@@ -1199,6 +1295,11 @@ export function AicteProvider({ children }) {
         resubmitApplication,
         submitNewApplication,
         decideApplication,
+        deleteApplication,
+        deleteEvcVisit,
+        deleteUndertaking,
+        deleteDocument,
+        deleteInstitution,
         scheduleEvcVisit,
         completeEvcVisit,
         submitUndertakingEvidence,

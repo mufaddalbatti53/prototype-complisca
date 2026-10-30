@@ -15,13 +15,14 @@ import {
   ShieldAlert,
   Search,
   Filter,
-  Building2
+  Building2,
+  Trash2
 } from 'lucide-react';
 import { useAicte } from '../context/AicteContext';
 import { useRole } from '../context/RoleContext';
 
 export default function EvcModule() {
-  const { evcVisits, scheduleEvcVisit, completeEvcVisit, simulatedDate } = useAicte();
+  const { evcVisits, scheduleEvcVisit, completeEvcVisit, deleteEvcVisit, simulatedDate } = useAicte();
   const { role, roleConfig } = useRole();
   const isInstitutionRole = role === 'INSTITUTION';
   const isRegionalOfficer = role === 'REGIONAL_OFFICER';
@@ -29,6 +30,17 @@ export default function EvcModule() {
 
   const [activeTab, setActiveTab] = useState(isCommitteeRole ? 'SCHEDULED' : 'QUEUE'); // 'QUEUE', 'SCHEDULED', 'COMPLETED', 'CALENDAR'
   const [searchQuery, setSearchQuery] = useState('');
+
+  //delete handler
+  const handleDeleteVisit = (visit, e) => {
+    if (e) e.stopPropagation();
+    const confirmed = window.confirm(
+      `Are you sure you want to delete EVC inspection record ${visit.id} for "${visit.institutionName}"?`
+    );
+    if (confirmed) {
+      deleteEvcVisit(visit.id, role, roleConfig.officerId || roleConfig.shortName);
+    }
+  };
 
   //modals
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
@@ -387,30 +399,40 @@ export default function EvcModule() {
                         </td>
 
                         <td className="py-3.5 px-4 text-right">
-                          {v.status === 'QUEUED' && (
-                            <button
-                              onClick={() => handleOpenSchedule(v)}
-                              className="bg-[#1e3a8a] hover:bg-[#172554] text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition"
-                            >
-                              Schedule Visit
-                            </button>
-                          )}
+                          <div className="flex items-center justify-end space-x-1.5">
+                            {v.status === 'QUEUED' && (
+                              <button
+                                onClick={() => handleOpenSchedule(v)}
+                                className="bg-[#1e3a8a] hover:bg-[#172554] text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition"
+                              >
+                                Schedule Visit
+                              </button>
+                            )}
 
-                          {v.status === 'SCHEDULED' && (
-                            <button
-                              onClick={() => handleOpenComplete(v)}
-                              className="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition"
-                            >
-                              Upload EVC Report
-                            </button>
-                          )}
+                            {v.status === 'SCHEDULED' && (
+                              <button
+                                onClick={() => handleOpenComplete(v)}
+                                className="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition"
+                              >
+                                Upload EVC Report
+                              </button>
+                            )}
 
-                          {v.status === 'COMPLETED' && (
-                            <span className="text-emerald-700 font-bold font-mono text-[11px] inline-flex items-center space-x-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Verified</span>
-                            </span>
-                          )}
+                            {v.status === 'COMPLETED' && (
+                              <span className="text-emerald-700 font-bold font-mono text-[11px] inline-flex items-center space-x-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Verified</span>
+                              </span>
+                            )}
+
+                            <button
+                              onClick={(e) => handleDeleteVisit(v, e)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              title={`Delete EVC visit ${v.id}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -499,30 +521,40 @@ export default function EvcModule() {
                         )}
                       </div>
 
-                      {v.status === 'QUEUED' && (
-                        <button
-                          onClick={() => handleOpenSchedule(v)}
-                          className="bg-[#1e3a8a] hover:bg-[#172554] text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition shrink-0"
-                        >
-                          Schedule
-                        </button>
-                      )}
+                      <div className="flex items-center space-x-1.5 shrink-0">
+                        {v.status === 'QUEUED' && (
+                          <button
+                            onClick={() => handleOpenSchedule(v)}
+                            className="bg-[#1e3a8a] hover:bg-[#172554] text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition shrink-0"
+                          >
+                            Schedule
+                          </button>
+                        )}
 
-                      {v.status === 'SCHEDULED' && (
-                        <button
-                          onClick={() => handleOpenComplete(v)}
-                          className="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition shrink-0"
-                        >
-                          Upload Report
-                        </button>
-                      )}
+                        {v.status === 'SCHEDULED' && (
+                          <button
+                            onClick={() => handleOpenComplete(v)}
+                            className="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition shrink-0"
+                          >
+                            Upload Report
+                          </button>
+                        )}
 
-                      {v.status === 'COMPLETED' && (
-                        <span className="text-emerald-700 font-bold font-mono text-[11px] inline-flex items-center space-x-1 shrink-0">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Verified</span>
-                        </span>
-                      )}
+                        {v.status === 'COMPLETED' && (
+                          <span className="text-emerald-700 font-bold font-mono text-[11px] inline-flex items-center space-x-1 shrink-0">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Verified</span>
+                          </span>
+                        )}
+
+                        <button
+                          onClick={(e) => handleDeleteVisit(v, e)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 rounded-lg transition"
+                          title={`Delete EVC visit ${v.id}`}
+                        >
+                          <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

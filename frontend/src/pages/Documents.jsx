@@ -22,7 +22,8 @@ import {
   Stamp,
   ShieldCheck,
   AlertCircle,
-  Mail
+  Mail,
+  Trash2
 } from 'lucide-react';
 import { useAicte } from '../context/AicteContext';
 import { useRole } from '../context/RoleContext';
@@ -36,10 +37,22 @@ export default function Documents() {
     submitDocumentRenewal,
     verifyDocumentRenewal,
     requestDocumentRenewal,
+    deleteDocument,
     addNotification,
     logAuditEvent
   } = useAicte();
   const { role, roleConfig } = useRole();
+
+  //delete handler
+  const handleDeleteDocument = (doc, e) => {
+    if (e) e.stopPropagation();
+    const confirmed = window.confirm(
+      `Are you sure you want to delete document ${doc.id} (${doc.docType}) for "${doc.institutionName}"?`
+    );
+    if (confirmed) {
+      deleteDocument(doc.id, role, roleConfig.officerId || roleConfig.shortName);
+    }
+  };
 
   //filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -570,6 +583,14 @@ export default function Documents() {
                         <Eye className="w-3 h-3" />
                         <span>Inspect</span>
                       </button>
+
+                      <button
+                        onClick={(e) => handleDeleteDocument(doc, e)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        title={`Delete document ${doc.id}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </td>
                   </tr>
                 );
@@ -701,6 +722,14 @@ export default function Documents() {
                         <span>Verify & Renew</span>
                       </button>
                     )}
+
+                    <button
+                      onClick={(e) => handleDeleteDocument(doc, e)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 rounded-xl transition"
+                      title={`Delete document ${doc.id}`}
+                    >
+                      <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600" />
+                    </button>
                   </div>
                 </div>
               );
