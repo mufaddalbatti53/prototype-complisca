@@ -75,7 +75,7 @@ with SessionLocal() as db:
 # app
 app = FastAPI(
     title="C.O.M.P.L.I.S.C.A.N. — Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network",
-    description="Integrated AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System (PS 26262) & Legal Metrology Inspection Engine.",
+    description="Integrated AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System for SIH 26262.",
     version=settings.VERSION,
     docs_url="/docs",
     redoc_url="/redoc"
