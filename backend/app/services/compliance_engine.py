@@ -1,6 +1,10 @@
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Any, Optional
+"""CompliScan SIH 26262 application workflow and compliance rule engine."""
+
+from __future__ import annotations
+
 import copy
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -18,558 +22,235 @@ APH_DEFAULT_CONFIG: Dict[str, Any] = {
         "DECISION": 7,
     },
     "routes": {
-        "ONLY_SCRUTINY": [
-            "SUBMITTED", "SCRUTINY", "DECISION", "ACTIVE_MONITORING", "CLOSED"
-        ],
-        "SCRUTINY_EVC": [
-            "SUBMITTED", "SCRUTINY", "EVC_QUEUE", "EVC_SCHEDULED",
-            "EVC_DONE", "DECISION", "ACTIVE_MONITORING", "CLOSED"
-        ],
-        "EVC_SAC": [
-            "SUBMITTED", "EVC_QUEUE", "EVC_SCHEDULED", "EVC_DONE",
-            "SAC_REVIEW", "DECISION", "ACTIVE_MONITORING", "CLOSED"
-        ],
-        "ONLY_EVC": [
-            "SUBMITTED", "EVC_QUEUE", "EVC_SCHEDULED", "EVC_DONE",
-            "DECISION", "ACTIVE_MONITORING", "CLOSED"
-        ],
-        "SCRUTINY_EVC_SAC": [
-            "SUBMITTED", "SCRUTINY", "EVC_QUEUE", "EVC_SCHEDULED",
-            "EVC_DONE", "SAC_REVIEW", "DECISION", "ACTIVE_MONITORING", "CLOSED"
-        ],
+        "ONLY_SCRUTINY": ["SUBMITTED", "SCRUTINY", "DECISION", "ACTIVE_MONITORING", "CLOSED"],
+        "SCRUTINY_EVC": ["SUBMITTED", "SCRUTINY", "EVC_QUEUE", "EVC_SCHEDULED", "EVC_DONE", "DECISION", "ACTIVE_MONITORING", "CLOSED"],
+        "EVC_SAC": ["SUBMITTED", "EVC_QUEUE", "EVC_SCHEDULED", "EVC_DONE", "SAC_REVIEW", "DECISION", "ACTIVE_MONITORING", "CLOSED"],
+        "ONLY_EVC": ["SUBMITTED", "EVC_QUEUE", "EVC_SCHEDULED", "EVC_DONE", "DECISION", "ACTIVE_MONITORING", "CLOSED"],
+        "SCRUTINY_EVC_SAC": ["SUBMITTED", "SCRUTINY", "EVC_QUEUE", "EVC_SCHEDULED", "EVC_DONE", "SAC_REVIEW", "DECISION", "ACTIVE_MONITORING", "CLOSED"],
     },
     "application_type_route_map": {
-        "NEW_INSTITUTION": "SCRUTINY_EVC",
+        "NEW_INSTITUTION": "SCRUTINY_EVC_SAC",
         "EXTENSION_OF_APPROVAL": "ONLY_SCRUTINY",
         "INCREASE_IN_INTAKE": "SCRUTINY_EVC",
         "NEW_PROGRAM": "SCRUTINY_EVC",
+        "NEW_COURSE_OR_INTAKE": "SCRUTINY_EVC",
         "INFRASTRUCTURE_VERIFICATION": "ONLY_EVC",
         "APPEAL_AGAINST_DEFICIENCY": "SCRUTINY_EVC_SAC",
+        "CLOSURE_OR_MERGER": "EVC_SAC",
         "CLOSURE_OR_NAME_CHANGE": "ONLY_SCRUTINY",
     },
-    "valid_revert_reasons": [
-        "DEFICIENT_DOCUMENTS",
-        "CLARIFICATION_REQUIRED",
-        "FURTHER_VERIFICATION",
-        "LEASE_DEED_MISMATCH",
-        "FACULTY_CADRE_SHORTFALL",
-    ],
+    "valid_revert_reasons": ["DEFICIENT_DOCUMENTS", "CLARIFICATION_REQUIRED", "FURTHER_VERIFICATION", "LEASE_DEED_MISMATCH", "FACULTY_CADRE_SHORTFALL"],
     "doc_expiry_alerts_days": [90, 60, 30, 7],
     "undertaking_default_due_days": 90,
     "aging_buckets_days": [
         {"id": "BUCKET_1", "label": "0–15 Days (Fresh / Due Soon)", "min": 0, "max": 15},
         {"id": "BUCKET_2", "label": "16–30 Days (Awaiting Action)", "min": 16, "max": 30},
         {"id": "BUCKET_3", "label": "31–60 Days (Bureau Escalation)", "min": 31, "max": 60},
-        {"id": "BUCKET_4", "label": "60+ Days (SHC / EoA Withdrawal)", "min": 61, "max": 9999},
+        {"id": "BUCKET_4", "label": "60+ Days (Critical / Revocation Risk)", "min": 61, "max": 9999},
     ],
     "escalation_ladder": [
-        {
-            "days_from_due": -7,
-            "level": 1,
-            "target_role": "INSTITUTION",
-            "severity": "info",
-            "action": "ADVANCE_REMINDER",
-        },
-        {
-            "days_from_due": 0,
-            "level": 2,
-            "target_role": "REGIONAL_OFFICER",
-            "severity": "warning",
-            "action": "SLA_DUE_ALERT",
-        },
-        {
-            "days_from_due": 7,
-            "level": 3,
-            "target_role": "BUREAU_OFFICER",
-            "severity": "critical",
-            "action": "BUREAU_ESCALATION",
-        },
-        {
-            "days_from_due": 15,
-            "level": 4,
-            "target_role": "MEMBER_SECRETARY",
-            "severity": "critical",
-            "action": "DG_SHOW_CAUSE_FLAG",
-        },
+        {"days_from_due": -7, "level": 1, "target_role": "INSTITUTION", "severity": "info", "action": "ADVANCE_REMINDER"},
+        {"days_from_due": 0, "level": 2, "target_role": "REGIONAL_OFFICER", "severity": "warning", "action": "SLA_DUE_ALERT"},
+        {"days_from_due": 7, "level": 3, "target_role": "BUREAU_OFFICER", "severity": "critical", "action": "BUREAU_ESCALATION"},
+        {"days_from_due": 15, "level": 4, "target_role": "MEMBER_SECRETARY", "severity": "critical", "action": "DG_SHOW_CAUSE_FLAG"},
     ],
 }
 
 
 class AICTEWorkflowRuleEngine:
-    """
-    Deterministic APH 2024-27 Workflow, SLA, Undertaking & Document Expiry Engine
-    for CompliScan (SIH26262).
-    """
+    """Deterministic APH workflow, document validity, and daily compliance checker."""
 
     def __init__(self, custom_config: Optional[Dict[str, Any]] = None):
         self.config = copy.deepcopy(APH_DEFAULT_CONFIG)
         if custom_config:
-            self.config.update(custom_config)
+            self._merge(self.config, custom_config)
+
+    @staticmethod
+    def _merge(target: Dict[str, Any], source: Dict[str, Any]) -> None:
+        for key, value in source.items():
+            if isinstance(value, dict) and isinstance(target.get(key), dict):
+                AICTEWorkflowRuleEngine._merge(target[key], value)
+            else:
+                target[key] = value
 
     def now_ist(self) -> datetime:
-        """Returns current IST timestamp plus any simulated day offset for live demos."""
-        offset = int(self.config.get("simulated_day_offset", 0))
-        return datetime.now(IST) + timedelta(days=offset)
+        return datetime.now(IST) + timedelta(days=int(self.config.get("simulated_day_offset", 0)))
 
     def advance_simulated_clock(self, days: int) -> Dict[str, Any]:
-        """Ticks the demo clock forward N days so judges see escalations fire live."""
+        if days < 0:
+            raise ValueError("The simulated clock cannot move backwards.")
         self.config["simulated_day_offset"] = int(self.config.get("simulated_day_offset", 0)) + days
-        return {
-            "simulated_day_offset": self.config["simulated_day_offset"],
-            "effective_ist_time": self.now_ist().isoformat(),
-        }
+        return {"simulated_day_offset": self.config["simulated_day_offset"], "effective_ist_time": self.now_ist().isoformat()}
 
     def reset_defaults(self) -> Dict[str, Any]:
-        """Restores statutory APH defaults (Timelines tab Reset button)."""
         self.config = copy.deepcopy(APH_DEFAULT_CONFIG)
         return self.config
 
-    # module a
     def determine_route(self, app_type: str, override_route: Optional[str] = None) -> Dict[str, Any]:
-        """Determines the prescribed APH route and initial active stage upon intake."""
-        route_map = self.config["application_type_route_map"]
-        route_key = override_route if override_route in self.config["routes"] else route_map.get(app_type, "SCRUTINY_EVC")
-        stages = self.config["routes"][route_key]
-
-        initial_stage = stages[1] if len(stages) > 1 else stages[0]
-        sla_days = self._get_stage_sla_days(initial_stage, app_type, resubmission_count=0)
+        route = override_route if override_route in self.config["routes"] else self.config["application_type_route_map"].get(app_type, "SCRUTINY_EVC")
+        stages = self.config["routes"][route]
+        stage = stages[1] if len(stages) > 1 else stages[0]
         now = self.now_ist()
-
+        sla = self._stage_sla(stage, app_type)
         return {
-            "route": route_key,
+            "route": route,
             "prescribed_stages": stages,
-            "current_stage": initial_stage,
+            "current_stage": stage,
             "status": "IN_PROGRESS",
-            "assigned_officer_role": self._get_responsible_role(initial_stage),
+            "assigned_officer_role": self._responsible_role(stage),
             "stage_entered_at": now.isoformat(),
-            "sla_due_at": (now + timedelta(days=sla_days)).isoformat(),
-            "sla_days_allocated": sla_days,
-            "audit_event": self._build_event(
-                actor_role="SYSTEM_ROUTER",
-                actor_id="APH-AUTO-ROUTER",
-                action="AUTO_ROUTED",
-                from_stage="SUBMITTED",
-                to_stage=initial_stage,
-                reason="Prescribed APH 2024-27 Track Assignment",
-                note=f"Auto-routed via {route_key} based on application type '{app_type}'. SLA: {sla_days}d.",
-            ),
+            "sla_due_at": (now + timedelta(days=sla)).isoformat(),
+            "sla_days_allocated": sla,
+            "audit_event": self._event("SYSTEM_ROUTER", "APH-AUTO-ROUTER", "AUTO_ROUTED", "SUBMITTED", stage, "APH route assignment", f"Routed to {route}; SLA {sla} days."),
         }
 
-    def advance_stage(
-        self,
-        application: Dict[str, Any],
-        actor_role: str,
-        actor_id: str,
-        note: str = "Stage cleared as per APH checklist.",
-        require_sac_appeal: bool = False,
-    ) -> Dict[str, Any]:
-        """
-        Advances an application to the next prescribed stage in its route.
-        Enforces Regulatory Safeguard: only authorised officer roles can trigger transitions.
-        """
-        route_key = application["route"]
-        stages: List[str] = list(self.config["routes"].get(route_key, []))
-        current_stage = application["current_stage"]
-
+    def advance_stage(self, application: Dict[str, Any], actor_role: str, actor_id: str, note: str = "Stage requirements verified.", require_sac_appeal: bool = False) -> Dict[str, Any]:
+        route = application["route"]
+        stages = list(self.config["routes"].get(route, []))
         if require_sac_appeal and "SAC_REVIEW" not in stages and "DECISION" in stages:
-            decision_idx = stages.index("DECISION")
-            stages.insert(decision_idx, "SAC_REVIEW")
-
-        if current_stage not in stages:
-            raise ValueError(f"Current stage '{current_stage}' not in route '{route_key}'.")
-
-        idx = stages.index(current_stage)
-        if idx + 1 >= len(stages):
-            next_stage = "CLOSED"
-            new_status = "COMPLETED"
-        else:
-            next_stage = stages[idx + 1]
-            new_status = "APPROVED_MONITORING" if next_stage == "ACTIVE_MONITORING" else "IN_PROGRESS"
-
-        sla_days = self._get_stage_sla_days(
-            next_stage,
-            application.get("app_type", "EXTENSION_OF_APPROVAL"),
-            application.get("resubmission_count", 0),
-        )
+            stages.insert(stages.index("DECISION"), "SAC_REVIEW")
+        current = application["current_stage"]
+        if current not in stages:
+            raise ValueError(f"Current stage {current!r} is not in route {route!r}.")
+        index = stages.index(current)
+        next_stage = stages[index + 1] if index + 1 < len(stages) else "CLOSED"
+        status = "COMPLETED" if next_stage == "CLOSED" else ("APPROVED_MONITORING" if next_stage == "ACTIVE_MONITORING" else "IN_PROGRESS")
         now = self.now_ist()
-
+        sla = self._stage_sla(next_stage, application.get("app_type", ""))
         return {
             "current_stage": next_stage,
-            "status": new_status,
-            "assigned_officer_role": self._get_responsible_role(next_stage),
+            "status": status,
+            "assigned_officer_role": self._responsible_role(next_stage),
             "stage_entered_at": now.isoformat(),
-            "sla_due_at": (now + timedelta(days=sla_days)).isoformat() if sla_days else None,
+            "sla_due_at": (now + timedelta(days=sla)).isoformat() if sla else None,
             "evc_auto_queued": next_stage == "EVC_QUEUE",
-            "audit_event": self._build_event(
-                actor_role=actor_role,
-                actor_id=actor_id,
-                action="STAGE_ADVANCED",
-                from_stage=current_stage,
-                to_stage=next_stage,
-                reason="Stage Requirements Verified",
-                note=note,
-            ),
+            "audit_event": self._event(actor_role, actor_id, "STAGE_ADVANCED", current, next_stage, "Stage requirements verified", note),
         }
 
-    def revert_for_deficiency(
-        self,
-        application: Dict[str, Any],
-        actor_role: str,
-        actor_id: str,
-        reason_code: str,
-        deficiency_note: str,
-    ) -> Dict[str, Any]:
-        """
-        Reverts an application to the Institution for deficiency rectification.
-        Requires a mandatory reason code and logs an immutable audit event.
-        """
+    def revert_for_deficiency(self, application: Dict[str, Any], actor_role: str, actor_id: str, reason_code: str, deficiency_note: str) -> Dict[str, Any]:
         if reason_code not in self.config["valid_revert_reasons"]:
-            raise ValueError(f"Invalid revert reason. Must be one of {self.config['valid_revert_reasons']}")
+            raise ValueError(f"Invalid deficiency reason code: {reason_code}")
         if not deficiency_note or len(deficiency_note.strip()) < 5:
-            raise ValueError("A detailed deficiency observation note is mandatory for reverting an application.")
-
+            raise ValueError("A detailed deficiency observation note is mandatory.")
         now = self.now_ist()
-        re_scrutiny_sla = self.config["stage_sla_days"].get("RE_SCRUTINY", 10)
-
+        days = int(self.config["stage_sla_days"].get("RE_SCRUTINY", 10))
+        ref = application.get("ref_no")
         return {
-            "current_stage": "REVERTED",
-            "status": "DEFICIENCY_REVERTED",
-            "assigned_officer_role": "INSTITUTION",
-            "stage_entered_at": now.isoformat(),
-            "sla_due_at": (now + timedelta(days=re_scrutiny_sla)).isoformat(),
-            "audit_event": self._build_event(
-                actor_role=actor_role,
-                actor_id=actor_id,
-                action="REVERTED_FOR_DEFICIENCY",
-                from_stage=application["current_stage"],
-                to_stage="REVERTED",
-                reason=reason_code,
-                note=deficiency_note,
-            ),
-            "notification": {
-                "type": "DEFICIENCY_REVERT",
-                "severity": "warning",
-                "audience_role": "INSTITUTION",
-                "ref_id": application.get("ref_no"),
-                "message": f"Application {application.get('ref_no')} reverted ({reason_code}): {deficiency_note}. Resubmit within {re_scrutiny_sla} days.",
-            },
+            "current_stage": "REVERTED", "status": "DEFICIENCY_REVERTED", "assigned_officer_role": "INSTITUTION",
+            "stage_entered_at": now.isoformat(), "sla_due_at": (now + timedelta(days=days)).isoformat(),
+            "audit_event": self._event(actor_role, actor_id, "REVERTED_FOR_DEFICIENCY", application.get("current_stage", ""), "REVERTED", reason_code, deficiency_note),
+            "notification": {"type": "DEFICIENCY_REVERT", "severity": "warning", "audience_role": "INSTITUTION", "ref_id": ref, "message": f"Application {ref} returned for {reason_code}: {deficiency_note}"},
         }
 
-    def resubmit_after_revert(
-        self, application: Dict[str, Any], actor_id: str, note: str
-    ) -> Dict[str, Any]:
-        """Handles institution resubmission -> returns to SCRUTINY and increments resubmission_count."""
-        new_count = int(application.get("resubmission_count", 0)) + 1
-        sla_days = self.config["stage_sla_days"].get("RE_SCRUTINY", 10)
+    def resubmit_after_revert(self, application: Dict[str, Any], actor_id: str, note: str) -> Dict[str, Any]:
+        count = int(application.get("resubmission_count", 0)) + 1
         now = self.now_ist()
+        days = int(self.config["stage_sla_days"].get("RE_SCRUTINY", 10))
+        return {"current_stage": "SCRUTINY", "status": "RE_SCRUTINY", "resubmission_count": count, "assigned_officer_role": "REGIONAL_OFFICER", "stage_entered_at": now.isoformat(), "sla_due_at": (now + timedelta(days=days)).isoformat(), "audit_event": self._event("INSTITUTION", actor_id, "RESUBMITTED_FOR_RE_SCRUTINY", "REVERTED", "SCRUTINY", f"Resubmission {count}", note)}
 
-        return {
-            "current_stage": "SCRUTINY",
-            "status": "RE_SCRUTINY",
-            "resubmission_count": new_count,
-            "assigned_officer_role": "REGIONAL_OFFICER",
-            "stage_entered_at": now.isoformat(),
-            "sla_due_at": (now + timedelta(days=sla_days)).isoformat(),
-            "audit_event": self._build_event(
-                actor_role="INSTITUTION",
-                actor_id=actor_id,
-                action="RESUBMITTED_FOR_RE_SCRUTINY",
-                from_stage="REVERTED",
-                to_stage="SCRUTINY",
-                reason=f"Re-Scrutiny Cycle #{new_count}",
-                note=note,
-            ),
-        }
+    def get_aging_bucket(self, age_days: int) -> str:
+        if age_days <= 15:
+            return "0-15_DAYS"
+        if age_days <= 30:
+            return "16-30_DAYS"
+        if age_days <= 60:
+            return "31-60_DAYS"
+        return "60_PLUS_DAYS"
 
-    # module d and e
-    def evaluate_document_validity(
-        self,
-        document: Dict[str, Any],
-        ocr_extracted_expiry: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """
-        Evaluates Lease Deeds, Fire NOCs, Building Safety Certificates against APH lead windows.
-        Also verifies if OCR-extracted date from uploaded PDF matches user-entered expiry_date.
-        """
+    def evaluate_document_validity(self, document: Dict[str, Any], ocr_extracted_expiry: Optional[str] = None) -> Dict[str, Any]:
         now = self.now_ist()
-        expiry_raw = document.get("expiry_date") or document.get("expiryDate") or now.isoformat()
-        expiry_dt = self._parse_iso(expiry_raw)
-        days_remaining = (expiry_dt.date() - now.date()).days
-        alert_windows = sorted(self.config["doc_expiry_alerts_days"], reverse=True)
-        max_lead = alert_windows[0] if alert_windows else 90
-
-        ocr_mismatch = False
-        if ocr_extracted_expiry:
-            ocr_dt = self._parse_iso(ocr_extracted_expiry)
-            if abs((ocr_dt.date() - expiry_dt.date()).days) > 1:
-                ocr_mismatch = True
-
+        expiry = self._parse_iso(document.get("expiry_date") or document.get("expiryDate") or now.isoformat())
+        remaining = (expiry.date() - now.date()).days
+        windows = sorted(self.config["doc_expiry_alerts_days"])
+        alert = next((f"T-{window}" for window in windows if 0 <= remaining <= window), None)
+        if remaining < 0:
+            alert = f"OVERDUE_+{abs(remaining)}D"
+        mismatch = bool(ocr_extracted_expiry and abs((self._parse_iso(ocr_extracted_expiry).date() - expiry.date()).days) > 1)
         if document.get("renewal_verified") or document.get("status") == "RENEWED":
             status = "RENEWED"
         elif document.get("renewal_submitted") or document.get("status") == "RENEWAL_SUBMITTED":
             status = "RENEWAL_SUBMITTED"
-        elif days_remaining < -7:
+        elif remaining < -7:
             status = "ESCALATED"
-        elif days_remaining < 0:
+        elif remaining < 0:
             status = "EXPIRED"
-        elif days_remaining <= max_lead:
+        elif alert:
             status = "EXPIRING_SOON"
         else:
             status = "ACTIVE"
-
-        triggered_window = None
-        for w in sorted(alert_windows):
-            if 0 <= days_remaining <= w:
-                triggered_window = f"T-{w}"
-                break
-        if days_remaining < 0:
-            triggered_window = f"OVERDUE_+{abs(days_remaining)}D"
-
-        escalation = self._evaluate_escalation_level(days_overdue=-days_remaining)
-
-        return {
-            "doc_id": document.get("id") or document.get("doc_id"),
-            "doc_type": document.get("doc_type") or document.get("docType", "LEASE_DEED"),
-            "status": status,
-            "days_remaining": days_remaining,
-            "triggered_alert_window": triggered_window,
-            "ocr_date_mismatch": ocr_mismatch,
-            "escalation_level": escalation["level"],
-            "escalation_target": escalation["target_role"],
-            "aging_bucket": self.get_aging_bucket(max(0, -days_remaining)),
-        }
+        escalation = self._escalation(-remaining)
+        return {"doc_id": document.get("id") or document.get("doc_id"), "doc_type": document.get("doc_type") or document.get("docType", "INSTITUTIONAL_DOCUMENT"), "status": status, "days_remaining": remaining, "triggered_alert_window": alert, "ocr_date_mismatch": mismatch, "escalation_level": escalation["level"], "escalation_target": escalation["target_role"], "aging_bucket": self.get_aging_bucket(max(0, -remaining))}
 
     def evaluate_undertaking(self, undertaking: Dict[str, Any]) -> Dict[str, Any]:
-        """Evaluates conditional approval undertakings across the 4 aging buckets and L1-L4 ladder."""
         now = self.now_ist()
-        due_raw = undertaking.get("due_date") or undertaking.get("dueDate") or now.isoformat()
-        due_dt = self._parse_iso(due_raw)
-        days_overdue = (now.date() - due_dt.date()).days  # negative = days remaining
+        due = self._parse_iso(undertaking.get("due_date") or undertaking.get("dueDate") or now.isoformat())
+        overdue = (now.date() - due.date()).days
+        status = undertaking.get("status", "OPEN")
+        if status == "VERIFIED":
+            return {**undertaking, "days_overdue": 0, "escalation_level": 0, "aging_bucket": "COMPLIANT", "severity": "info", "escalation_target": "NONE"}
+        escalation = self._escalation(overdue)
+        if status != "SUBMITTED":
+            if overdue >= 7:
+                status = "ESCALATED"
+            elif overdue > 0:
+                status = "OVERDUE"
+        imposed = self._parse_iso(undertaking.get("imposed_at") or undertaking.get("imposedAt") or now.isoformat())
+        age = max(0, (now.date() - imposed.date()).days)
+        return {"undertaking_id": undertaking.get("id"), "status": status, "days_overdue": overdue, "age_days": age, "aging_bucket": self.get_aging_bucket(age), "escalation_level": escalation["level"], "escalation_target": escalation["target_role"], "severity": escalation["severity"]}
 
-        current_status = undertaking.get("status", "OPEN")
-        if current_status == "VERIFIED":
-            return {**undertaking, "days_overdue": 0, "escalation_level": 0, "aging_bucket": "COMPLIANT"}
-
-        escalation = self._evaluate_escalation_level(days_overdue)
-        if current_status != "SUBMITTED":
-            if days_overdue >= 7:
-                current_status = "ESCALATED"
-            elif days_overdue > 0:
-                current_status = "OVERDUE"
-
-        imposed_raw = undertaking.get("imposed_at") or undertaking.get("imposedAt") or now.isoformat()
-        imposed_dt = self._parse_iso(imposed_raw)
-        age_days = max(0, (now.date() - imposed_dt.date()).days)
-
-        return {
-            "undertaking_id": undertaking.get("id"),
-            "status": current_status,
-            "days_overdue": days_overdue,
-            "age_days": age_days,
-            "aging_bucket": self.get_aging_bucket(age_days),
-            "escalation_level": escalation["level"],
-            "escalation_target": escalation["target_role"],
-            "severity": escalation["severity"],
-        }
-
-    # module b and f
-    def get_aging_bucket(self, age_days: int) -> str:
-        """Maps any pending application or undertaking into the 4 statutory aging buckets."""
-        if age_days <= 15:
-            return "0-15_DAYS"
-        elif age_days <= 30:
-            return "16-30_DAYS"
-        elif age_days <= 60:
-            return "31-60_DAYS"
-        return "60_PLUS_DAYS"
-
-    def run_daily_sweep(
-        self,
-        applications: List[Dict[str, Any]],
-        undertakings: List[Dict[str, Any]],
-        documents: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
-        """
-        Evaluates all applications, EVC queues, undertakings, and documents.
-        Called by daily cron OR when the evaluator clicks 'Run Day-Simulation (+N Days)'.
-        """
+    def run_daily_sweep(self, applications: List[Dict[str, Any]], undertakings: List[Dict[str, Any]], documents: List[Dict[str, Any]]) -> Dict[str, Any]:
         now = self.now_ist()
-        emitted_notifications: List[Dict[str, Any]] = []
-
-        app_Evaluations = []
+        notices: List[Dict[str, Any]] = []
+        app_results = []
         for app in applications:
             if app.get("current_stage") in ("CLOSED", "ACTIVE_MONITORING"):
                 continue
-            entered_raw = app.get("stage_entered_at") or app.get("stageEnteredAt") or now.isoformat()
-            due_raw = app.get("sla_due_at") or app.get("slaDueAt") or now.isoformat()
-            entered_dt = self._parse_iso(entered_raw)
-            due_dt = self._parse_iso(due_raw)
-            dwell_days = max(0, (now.date() - entered_dt.date()).days)
-            days_overdue = (now.date() - due_dt.date()).days
+            entered = self._parse_iso(app.get("stage_entered_at") or app.get("stageEnteredAt") or now.isoformat())
+            due = self._parse_iso(app.get("sla_due_at") or app.get("slaDueAt") or now.isoformat())
+            dwell = max(0, (now.date() - entered.date()).days)
+            overdue = (now.date() - due.date()).days
+            escalation = self._escalation(overdue)
+            ref = app.get("ref_no") or app.get("refNo")
+            stage = app.get("current_stage") or app.get("currentStage")
+            app_results.append({"ref_no": ref, "current_stage": stage, "dwell_days": dwell, "days_overdue": overdue, "sla_breached": overdue > 0, "aging_bucket": self.get_aging_bucket(dwell), "escalation_level": escalation["level"]})
+            if escalation["level"] >= 2:
+                notices.append({"type": "EVC_DUE" if "EVC" in str(stage) else "OVERDUE", "severity": escalation["severity"], "audience_role": escalation["target_role"], "ref_type": "APPLICATION", "ref_id": ref, "escalation_level": f"L{escalation['level']}", "message": f"[L{escalation['level']}] Application {ref} in {stage} is {overdue} day(s) past SLA.", "created_at": now.isoformat()})
+        undertaking_results = [self.evaluate_undertaking(item) for item in undertakings]
+        for item in undertaking_results:
+            if item.get("escalation_level", 0) >= 1:
+                notices.append({"type": "ESCALATION" if item["escalation_level"] >= 3 else "REMINDER", "severity": item["severity"], "audience_role": item["escalation_target"], "ref_type": "UNDERTAKING", "ref_id": str(item.get("undertaking_id")), "escalation_level": f"L{item['escalation_level']}", "message": f"[L{item['escalation_level']}] Undertaking {item.get('undertaking_id')} is {item['days_overdue']} day(s) past due.", "created_at": now.isoformat()})
+        document_results = [self.evaluate_document_validity(item) for item in documents]
+        for item in document_results:
+            if item.get("triggered_alert_window"):
+                notices.append({"type": "DOC_EXPIRY", "severity": "critical" if item["days_remaining"] < 0 else "warning", "audience_role": item["escalation_target"] or "INSTITUTION", "ref_type": "DOCUMENT", "ref_id": str(item.get("doc_id")), "escalation_level": f"L{max(1, item['escalation_level'])}", "message": f"Institution document {item['doc_type']} is {item['status']} ({item['triggered_alert_window']}).", "created_at": now.isoformat()})
+        return {"sweep_timestamp_ist": now.isoformat(), "simulated_day_offset": self.config.get("simulated_day_offset", 0), "applications_evaluated": app_results, "undertakings_evaluated": undertaking_results, "documents_evaluated": document_results, "notifications_emitted": notices}
 
-            esc = self._evaluate_escalation_level(days_overdue)
-            bucket = self.get_aging_bucket(dwell_days)
+    def _stage_sla(self, stage: str, app_type: str) -> int:
+        slas = self.config["stage_sla_days"]
+        key = stage.upper()
+        if key in ("REVERTED", "RE_SCRUTINY"):
+            return int(slas.get("RE_SCRUTINY", 10))
+        if key == "EVC_QUEUE":
+            return int(slas.get("EVC_QUEUE_NEW_INSTITUTION", 21) if app_type == "NEW_INSTITUTION" else slas.get("EVC_QUEUE_STANDARD", 30))
+        return int(slas.get(key, 0))
 
-            app_Evaluations.append({
-                "ref_no": app.get("ref_no") or app.get("refNo"),
-                "current_stage": app.get("current_stage") or app.get("currentStage"),
-                "dwell_days": dwell_days,
-                "days_overdue": days_overdue,
-                "sla_breached": days_overdue > 0,
-                "aging_bucket": bucket,
-                "escalation_level": esc["level"],
-            })
+    @staticmethod
+    def _responsible_role(stage: str) -> str:
+        return {"SUBMITTED": "REGIONAL_OFFICER", "SCRUTINY": "REGIONAL_OFFICER", "REVERTED": "INSTITUTION", "EVC_QUEUE": "COMMITTEE_EVC", "EVC_SCHEDULED": "COMMITTEE_EVC", "EVC_DONE": "BUREAU_OFFICER", "SAC_REVIEW": "COMMITTEE_SAC", "DECISION": "BUREAU_OFFICER", "ACTIVE_MONITORING": "REGIONAL_OFFICER", "CLOSED": "BUREAU_OFFICER"}.get(stage, "REGIONAL_OFFICER")
 
-            if esc["level"] >= 2:
-                stage_name = str(app.get("current_stage") or app.get("currentStage") or "")
-                ntype = "EVC_DUE" if "EVC" in stage_name else "OVERDUE"
-                ref_id = app.get("ref_no") or app.get("refNo")
-                emitted_notifications.append({
-                    "type": ntype,
-                    "severity": esc["severity"],
-                    "audience_role": esc["target_role"],
-                    "ref_type": "APPLICATION",
-                    "ref_id": ref_id,
-                    "escalation_level": f"L{esc['level']}",
-                    "message": (
-                        f"[L{esc['level']} {esc['action']}] Application {ref_id} "
-                        f"in stage {stage_name} is {days_overdue}d past SLA."
-                    ),
-                    "created_at": now.isoformat(),
-                })
-
-        undertaking_evals = [self.evaluate_undertaking(u) for u in undertakings]
-        for u_eval in undertaking_evals:
-            if u_eval.get("escalation_level", 0) >= 1:
-                emitted_notifications.append({
-                    "type": "ESCALATION" if u_eval["escalation_level"] >= 3 else "REMINDER",
-                    "severity": u_eval["severity"],
-                    "audience_role": u_eval["escalation_target"],
-                    "ref_type": "UNDERTAKING",
-                    "ref_id": str(u_eval["undertaking_id"]),
-                    "escalation_level": f"L{u_eval['escalation_level']}",
-                    "message": f"[L{u_eval['escalation_level']}] Undertaking #{u_eval['undertaking_id']} status: {u_eval['status']} ({u_eval['days_overdue']}d vs due date).",
-                    "created_at": now.isoformat(),
-                })
-
-        doc_evals = [self.evaluate_document_validity(d) for d in documents]
-        for d_eval in doc_evals:
-            if d_eval["triggered_alert_window"]:
-                emitted_notifications.append({
-                    "type": "DOC_EXPIRY",
-                    "severity": "critical" if d_eval["days_remaining"] < 0 else "warning",
-                    "audience_role": d_eval["escalation_target"] or "INSTITUTION",
-                    "ref_type": "DOCUMENT",
-                    "ref_id": str(d_eval["doc_id"]),
-                    "escalation_level": f"L{max(1, d_eval['escalation_level'])}",
-                    "message": f"Document {d_eval['doc_type']} (#{d_eval['doc_id']}) is {d_eval['status']} ({d_eval['triggered_alert_window']}).",
-                    "created_at": now.isoformat(),
-                })
-
-        return {
-            "sweep_timestamp_ist": now.isoformat(),
-            "simulated_day_offset": self.config.get("simulated_day_offset", 0),
-            "applications_evaluated": app_Evaluations,
-            "undertakings_evaluated": undertaking_evals,
-            "documents_evaluated": doc_evals,
-            "notifications_emitted": emitted_notifications,
-        }
-
-    # helpers
-    def _get_stage_sla_days(self, stage: str, app_type: str, resubmission_count: int = 0) -> int:
-        slas = self.config.get("stage_sla_days", {})
-        s = (stage or "").upper()
-        if (s == "SCRUTINY" and resubmission_count > 0) or s in ("RE_SCRUTINY", "REVERTED"):
-            return slas.get("RE_SCRUTINY", slas.get("re_scrutiny", 10))
-        if s == "EVC_QUEUE":
-            if app_type == "NEW_INSTITUTION":
-                return slas.get("EVC_QUEUE_NEW_INSTITUTION", slas.get("evc_new_institution", 21))
-            return slas.get("EVC_QUEUE_STANDARD", slas.get("evc_queue", slas.get("EVC_QUEUE", 30)))
-        if s == "EVC_SCHEDULED":
-            return slas.get("EVC_SCHEDULED", slas.get("evc_scheduled", 14))
-        if s == "EVC_DONE":
-            return slas.get("EVC_DONE", slas.get("evc_done", 7))
-        if s == "SAC_REVIEW":
-            return slas.get("SAC_REVIEW", slas.get("sac_review", 30))
-        if s == "DECISION":
-            return slas.get("DECISION", slas.get("decision", 7))
-        if s == "SUBMITTED":
-            return slas.get("SUBMITTED", slas.get("submitted", 3))
-        return slas.get(s, slas.get(s.lower(), slas.get(stage, 15)))
-
-    def _get_responsible_role(self, stage: str) -> str:
-        role_map = {
-            "SUBMITTED": "REGIONAL_OFFICER",
-            "SCRUTINY": "REGIONAL_OFFICER",
-            "REVERTED": "INSTITUTION",
-            "EVC_QUEUE": "COMMITTEE_EVC",
-            "EVC_SCHEDULED": "COMMITTEE_EVC",
-            "EVC_DONE": "BUREAU_OFFICER",
-            "SAC_REVIEW": "COMMITTEE_SAC",
-            "DECISION": "BUREAU_OFFICER",
-            "ACTIVE_MONITORING": "REGIONAL_OFFICER",
-            "CLOSED": "BUREAU_OFFICER",
-        }
-        return role_map.get(stage, "REGIONAL_OFFICER")
-
-    def _evaluate_escalation_level(self, days_overdue: int) -> Dict[str, Any]:
-        """Matches days_overdue against the L1 (-7d) -> L2 (0d) -> L3 (+7d) -> L4 (+15d) ladder."""
-        ladder = sorted(self.config["escalation_ladder"], key=lambda x: x["days_from_due"])
-        matched = {
-            "level": 0,
-            "target_role": "NONE",
-            "severity": "info",
-            "action": "WITHIN_SLA",
-        }
-        for rung in ladder:
+    def _escalation(self, days_overdue: int) -> Dict[str, Any]:
+        matched = {"level": 0, "target_role": "NONE", "severity": "info", "action": "WITHIN_SLA"}
+        for rung in sorted(self.config["escalation_ladder"], key=lambda entry: entry["days_from_due"]):
             if days_overdue >= rung["days_from_due"]:
                 matched = rung
         return matched
 
-    def _build_event(
-        self,
-        actor_role: str,
-        actor_id: str,
-        action: str,
-        from_stage: str,
-        to_stage: str,
-        reason: str,
-        note: str,
-    ) -> Dict[str, Any]:
-        return {
-            "actor_role": actor_role,
-            "actor_id": actor_id,
-            "action": action,
-            "from_stage": from_stage,
-            "to_stage": to_stage,
-            "reason": reason,
-            "note": note,
-            "timestamp_ist": self.now_ist().isoformat(),
-        }
+    def _event(self, actor_role: str, actor_id: str, action: str, from_stage: str, to_stage: str, reason: str, note: str) -> Dict[str, Any]:
+        return {"actor_role": actor_role, "actor_id": actor_id, "action": action, "from_stage": from_stage, "to_stage": to_stage, "reason": reason, "note": note, "timestamp_ist": self.now_ist().isoformat()}
 
     @staticmethod
-    def _parse_iso(date_str: str) -> datetime:
-        dt = datetime.fromisoformat(str(date_str).replace("Z", "+00:00"))
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=IST)
-        return dt.astimezone(IST)
-
-
-# legacy adapter
-class LegalMetrologyRuleEngine:
-    """Compatibility adapter for legacy packaging OCR calls."""
-    @classmethod
-    def get_prescribed_font_height(cls, pdp_area_sqcm: float) -> float:
-        if pdp_area_sqcm <= 50.0:
-            return 1.0
-        elif pdp_area_sqcm <= 100.0:
-            return 1.5
-        elif pdp_area_sqcm <= 500.0:
-            return 2.5
-        elif pdp_area_sqcm <= 2500.0:
-            return 4.0
-        return 6.0
-
-    @classmethod
-    def verify_all_declarations(cls, declarations: List[Dict[str, Any]], pdp_area_sqcm: float = 80.0, *args, **kwargs):
-        return declarations, 100.0, "COMPLIANT", 0, 0
+    def _parse_iso(value: str) -> datetime:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=IST)
+        return parsed.astimezone(IST)
