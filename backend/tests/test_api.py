@@ -1,8 +1,30 @@
 import pytest
-from fastapi.testclient import TestClient
-from backend.app.main import app
+import sys
+from pathlib import Path
 
-client = TestClient(app)
+from fastapi.testclient import TestClient
+
+# Ensure the backend package is importable when tests are run from the project root.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from ap3p.main import app
+
+
+
+class Client(TestClient):
+    """Concrete API client with helpers for the endpoints under test."""
+
+    def health(self):
+        return self.get("/api/health")
+
+    def rules(self):
+        return self.get("/api/v1/rules")
+
+    def dashboard_analytics(self):
+        return self.get("/api/v1/analytics/dashboard")
+
+
+client = Client(app)
 
 def test_health():
     response = client.get("/api/health")
