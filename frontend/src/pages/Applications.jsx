@@ -421,6 +421,9 @@ export default function Applications() {
     if (!app) return;
     setIsGeneratingBrief(true);
     const ruleEval = computeDocketRuleConfidence(app, config, institutions, documents, undertakings);
+    const sla = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
+    const isOverdue = app.daysInStage > sla;
+    const overdueDays = Math.max(0, app.daysInStage - sla);
 
     try {
       const summary = await api.getAicteCaseSummary({
@@ -431,21 +434,43 @@ export default function Applications() {
         ? summary.ai_confidence_score
         : ruleEval.score;
 
+      let finalVerdict = summary?.executive_verdict;
+      let finalB4 = summary?.bullet_4_undertakings_risk;
+      let finalB5 = summary?.bullet_5_statutory_recommendation;
+
+      if (app.currentStage === 'REVERTED') {
+        finalVerdict = 'DEFICIENCY NOTICE · RE-SCRUTINY';
+      } else if (isOverdue || finalScore < 70) {
+        finalVerdict = 'HOLD · STATUTORY ESCALATION ACTIVE';
+        if (!finalB5 || finalB5.includes('Move docket forward')) {
+          finalB5 = `Recommended Statutory Action: HOLD DOCKET — Do NOT advance. Docket has breached statutory SLA dwell limits (${overdueDays}d overdue in ${app.currentStage}) and carries active regulatory risk flags (Confidence: ${finalScore}%). Direct officer intervention required before advancing.`;
+        }
+      } else if (finalScore < 82) {
+        finalVerdict = 'ATTENTION · SLA / DOC WARNING';
+      }
+
       setCaseBriefs((prev) => ({
         ...prev,
         [app.refNo]: {
           ...summary,
+          bullet_4_undertakings_risk: isOverdue
+            ? `Time Limits & SLA Status: Application has been in "${app.currentStage}" for ${app.daysInStage} days (Statutory SLA limit: ${sla} days). Overdue by ${overdueDays} days; automated priority escalation ladder active.`
+            : finalB4 || `Time Limits & SLA Status: Application has been in "${app.currentStage}" for ${app.daysInStage} days (Statutory SLA limit: ${sla} days). Dwell time is tracked and within regulatory limits.`,
+          bullet_5_statutory_recommendation: finalB5 || summary?.bullet_5_statutory_recommendation,
+          executive_verdict: finalVerdict || 'READY TO ADVANCE',
           ai_confidence_score: finalScore,
           ruleBreakdown: ruleEval.breakdown
         }
       }));
     } catch (err) {
       console.warn('Backend brief failed, using intelligent client brief fallback:', err);
-      const sla = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
-      const isOverdue = app.daysInStage > sla;
 
       const verdict = app.currentStage === 'REVERTED'
         ? 'DEFICIENCY NOTICE · RE-SCRUTINY'
+        : (isOverdue || ruleEval.score < 70)
+        ? 'HOLD · STATUTORY ESCALATION ACTIVE'
+        : ruleEval.score < 82
+        ? 'ATTENTION · SLA / DOC WARNING'
         : app.currentStage === 'EVC_QUEUE'
         ? 'READY FOR EVC INSPECTION'
         : app.currentStage === 'DECISION'
@@ -464,9 +489,11 @@ export default function Applications() {
           bullet_3_evc_infrastructure: ['SCRUTINY_EVC', 'SCRUTINY_EVC_SAC', 'EVC_SAC'].includes(app.route)
             ? `Campus Inspection (EVC): Expert Visiting Committee inspection required. Reviewing classroom carpet area, instructional computing facilities (180+ terminals), laboratory equipment, and library books as per APH norms.`
             : `Inspection Exemption: This Extension of Approval (EoA) route qualifies for fast-track paperless clearance without physical inspection under statutory self-disclosure regulations.`,
-          bullet_4_undertakings_risk: `Time Limits & SLA Status: Application has been in "${app.currentStage}" for ${app.daysInStage} days (Statutory SLA limit: ${sla} days). ${isOverdue ? 'SLA threshold exceeded; priority escalation active.' : 'Dwell time is well within permitted limits.'}`,
+          bullet_4_undertakings_risk: `Time Limits & SLA Status: Application has been in "${app.currentStage}" for ${app.daysInStage} days (Statutory SLA limit: ${sla} days). ${isOverdue ? `SLA threshold exceeded by ${overdueDays} days; automated priority escalation ladder active.` : 'Dwell time is well within permitted limits.'}`,
           bullet_5_statutory_recommendation: app.currentStage === 'REVERTED'
             ? `Recommended Statutory Action: Awaiting college resubmission. Nodal officer instructed to upload certified renewals through the portal. Evaluated compliance confidence: ${ruleEval.score}%.`
+            : (isOverdue || ruleEval.score < 70)
+            ? `Recommended Statutory Action: HOLD DOCKET — Do NOT advance. Docket has breached statutory SLA dwell limits (${overdueDays}d overdue in ${app.currentStage}) and carries active regulatory escalation risk (Confidence: ${ruleEval.score}%). Direct officer intervention required before progressing.`
             : app.currentStage === 'EVC_QUEUE'
             ? `Recommended Statutory Action: Issue Committee Roster & Schedule EVC Visit. Application docket cleared pre-inspection checks (${ruleEval.score}% rule confidence); recommend convening the 3-member expert panel within 7 working days.`
             : app.currentStage === 'DECISION'
@@ -735,7 +762,18 @@ Route: ${app.route} | Stage: ${app.currentStage} | Recommendation: ${brief.execu
                 <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-white/5 border border-white/10">
                   <div className="flex items-center space-x-2">
                     <span className="text-[10px] font-mono text-slate-400 uppercase">AI Recommendation:</span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider border ${
+                        (brief.executive_verdict || '').includes('HOLD') ||
+                        (brief.executive_verdict || '').includes('DEFICIENCY') ||
+                        (brief.ai_confidence_score || 92) < 70
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                          : (brief.executive_verdict || '').includes('ATTENTION') ||
+                            (brief.ai_confidence_score || 92) < 85
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      }`}
+                    >
                       {brief.executive_verdict || 'READY TO ADVANCE'}
                     </span>
                   </div>
@@ -844,13 +882,37 @@ Route: ${app.route} | Stage: ${app.currentStage} | Recommendation: ${brief.execu
                     </div>
                   </div>
 
-                  <div className="flex items-start space-x-3 p-2.5 rounded-xl bg-white/5 border border-white/5">
-                    <span className="w-6 h-6 rounded-lg bg-amber-400/20 text-amber-300 font-mono font-bold text-[11px] flex items-center justify-center shrink-0 border border-amber-400/30">
+                  <div
+                    className={`flex items-start space-x-3 p-2.5 rounded-xl border ${
+                      (brief.executive_verdict || '').includes('HOLD') || (brief.ai_confidence_score || 92) < 70
+                        ? 'bg-rose-950/40 border-rose-500/30'
+                        : 'bg-white/5 border-white/5'
+                    }`}
+                  >
+                    <span
+                      className={`w-6 h-6 rounded-lg font-mono font-bold text-[11px] flex items-center justify-center shrink-0 border ${
+                        (brief.executive_verdict || '').includes('HOLD') || (brief.ai_confidence_score || 92) < 70
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                          : 'bg-amber-400/20 text-amber-300 border-amber-400/30'
+                      }`}
+                    >
                       5
                     </span>
                     <div>
-                      <span className="font-bold text-amber-300 block mb-0.5">Recommended Final Action</span>
-                      <p className="text-slate-200 leading-relaxed font-medium">{brief.bullet_5_statutory_recommendation}</p>
+                      <span
+                        className={`font-bold block mb-0.5 ${
+                          (brief.executive_verdict || '').includes('HOLD') || (brief.ai_confidence_score || 92) < 70
+                            ? 'text-rose-300'
+                            : 'text-amber-300'
+                        }`}
+                      >
+                        {(brief.executive_verdict || '').includes('HOLD')
+                          ? 'Statutory Escalation / Required Action'
+                          : 'Recommended Final Action'}
+                      </span>
+                      <p className="text-slate-200 leading-relaxed font-medium">
+                        {brief.bullet_5_statutory_recommendation}
+                      </p>
                     </div>
                   </div>
                 </div>

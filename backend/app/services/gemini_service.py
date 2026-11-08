@@ -133,19 +133,31 @@ Do not authenticate the file, validate an invoice, geolocation, signature, or se
         app_type = (app_data.get("appType") or "Approval").replace("_", " ")
         route = app_data.get("route") or "SCRUTINY_EVC"
         stage = app_data.get("currentStage") or "SCRUTINY"
-        days = app_data.get("daysInStage", 0)
+        days = int(app_data.get("daysInStage", 0) or 0)
         cycles = app_data.get("resubmissionCount", 0)
         deficiency = app_data.get("deficiencyReason") or "Pending Scrutiny Verification"
+        is_breached = bool(app_data.get("isBreached", False))
 
         rule_conf = cls._calculate_rule_confidence(app_data)
 
-        verdict = (
-            "DEFICIENCY NOTICE · RE-SCRUTINY" if stage == "REVERTED"
-            else "READY FOR EVC INSPECTION" if stage == "EVC_QUEUE"
-            else "RECOMMENDED FOR APPROVAL" if stage == "DECISION"
-            else "FINAL DECISION ISSUED" if stage == "CLOSED"
-            else "READY TO ADVANCE"
-        )
+        sla_limit = 15 if stage == "SCRUTINY" else 21 if "EVC" in stage else 30
+        is_overdue = is_breached or (days > sla_limit and stage != "CLOSED")
+        overdue_days = max(0, days - sla_limit) if is_overdue else 0
+
+        if stage == "REVERTED":
+            verdict = "DEFICIENCY NOTICE · RE-SCRUTINY"
+        elif is_overdue or rule_conf < 70:
+            verdict = "HOLD · STATUTORY ESCALATION ACTIVE"
+        elif rule_conf < 82:
+            verdict = "ATTENTION · SLA / DOC WARNING"
+        elif stage == "EVC_QUEUE":
+            verdict = "READY FOR EVC INSPECTION"
+        elif stage == "DECISION":
+            verdict = "RECOMMENDED FOR APPROVAL"
+        elif stage == "CLOSED":
+            verdict = "FINAL DECISION ISSUED"
+        else:
+            verdict = "READY TO ADVANCE"
 
         b1 = f"College Profile: {inst_name} located in {region}. Applied for {app_type}. Formally mapped to statutory route \"{route}\" under Chapter I of the AICTE Approval Process Handbook (APH 2024–2027)."
         b2 = (
@@ -158,15 +170,21 @@ Do not authenticate the file, validate an invoice, geolocation, signature, or se
             if any(k in route for k in ["EVC", "SCRUTINY_EVC", "SAC"])
             else "Inspection Exemption: This Extension of Approval (EoA) route qualifies for fast-track paperless clearance without physical inspection under statutory self-disclosure regulations."
         )
-        b4 = f"Time Limits & SLA Status: Application has been in \"{stage}\" for {days} days. Dwell time is tracked against regulatory SLA limits with automated alerts active."
+        b4 = (
+            f"Time Limits & SLA Status: Application has been in \"{stage}\" for {days} days (Statutory SLA limit: {sla_limit} days). Overdue by {overdue_days} days; automated priority escalation ladder active."
+            if is_overdue
+            else f"Time Limits & SLA Status: Application has been in \"{stage}\" for {days} days (Statutory SLA limit: {sla_limit} days). Dwell time is tracked and within regulatory limits."
+        )
         b5 = (
             f"Recommended Statutory Action: Awaiting college resubmission. Nodal officer instructed to upload certified renewals through the portal. Evaluated compliance confidence: {rule_conf}%."
             if stage == "REVERTED"
+            else f"Recommended Statutory Action: HOLD DOCKET — Do NOT advance. Docket has breached statutory SLA dwell limits ({overdue_days}d overdue) and carries active regulatory escalation risk (Confidence: {rule_conf}%). Regional Officer intervention required before advancing."
+            if is_overdue or rule_conf < 70
             else f"Recommended Statutory Action: Issue Committee Roster & Schedule EVC Visit. Application docket is fully compliant with pre-inspection norms; recommend convening the 3-member expert panel within 7 working days ({rule_conf}% confidence)."
             if stage == "EVC_QUEUE"
             else f"Recommended Final Action: Grant Formal Approval. All mandatory criteria, affidavits, and undertakings verified compliant ({rule_conf}% confidence); recommend issuing official Approval Letter."
             if stage == "DECISION"
-            else f"Recommended Statutory Action: Move docket forward to next milestone. All statutory prerequisites evaluated with {rule_conf}% AICTE Rule Engine confidence."
+            else f"Recommended Statutory Action: Move docket forward to next milestone. All statutory prerequisites evaluated compliant with {rule_conf}% AICTE Rule Engine confidence."
         )
 
         fallback_result = {
