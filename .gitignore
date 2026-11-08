@@ -39,8 +39,12 @@ node_modules/
 dist/
 .vite/
 
-# Compliscan local storage uploads & reports (keep directories, ignore runtime generated files)
-backend/storage/uploads/insp_*
-backend/storage/uploads/ecom_*
-backend/storage/processed/insp_*
-backend/storage/reports/LM-*
+# Compliscan local storage runtime files (keep directories, ignore runtime uploads & reports)
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+backend/storage/processed/*
+!backend/storage/processed/.gitkeep
+backend/storage/reports/*
+!backend/storage/reports/.gitkeep
+backend/storage/samples/*
+!backend/storage/samples/.gitkeep
