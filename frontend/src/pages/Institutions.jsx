@@ -450,10 +450,10 @@ export default function Institutions() {
                     </button>
                     <button
                       onClick={(e) => handleDeleteInstitution(inst, e)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 rounded-xl transition"
+                      className="p-1.5 text-rose-600 hover:text-rose-700 bg-rose-50/70 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-xl transition"
                       title={`Delete institution ${inst.name}`}
                     >
-                      <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600" />
+                      <Trash2 className="w-4 h-4 text-rose-600" />
                     </button>
                   </div>
                 </div>
@@ -590,7 +590,15 @@ export default function Institutions() {
               )}
             </div>
 
-            <div className="flex items-center justify-end pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <button
+                onClick={(e) => handleDeleteInstitution(selectedInst, e)}
+                className="px-3.5 py-2 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition flex items-center space-x-1.5"
+                title={`Delete ${selectedInst.name} from registry`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Institution</span>
+              </button>
               <button
                 onClick={() => setSelectedInst(null)}
                 className="px-5 py-2 text-xs font-bold text-white bg-[#1e3a8a] hover:bg-[#172554] rounded-xl transition shadow-xs"

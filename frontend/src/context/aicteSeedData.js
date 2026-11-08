@@ -1,5 +1,24 @@
 //seed data
 
+//dynamic date helper functions
+export const getTodayIso = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+export const addDaysToIso = (isoStr, days) => {
+  if (!isoStr) return getTodayIso();
+  const parts = isoStr.split('-').map(Number);
+  const date = new Date(parts[0], parts[1] - 1, parts[2]);
+  date.setDate(date.getDate() + days);
+  const resY = date.getFullYear();
+  const resM = String(date.getMonth() + 1).padStart(2, '0');
+  const resD = String(date.getDate()).padStart(2, '0');
+  return `${resY}-${resM}-${resD}`;
+};
 export const initialInstitutions = [
   {
     id: 'inst_sunrise',
@@ -171,7 +190,7 @@ export const initialInstitutions = [
   }
 ];
 
-export const initialApplications = [
+export const createInitialApplications = (baseDate = getTodayIso()) => [
   {
     id: 'app_101',
     refNo: 'APH-2026-1041',
@@ -186,8 +205,8 @@ export const initialApplications = [
     currentStage: 'SCRUTINY',
     status: 'IN_PROGRESS',
     assignedOfficer: 'RO-WEST-041',
-    createdAt: '2026-10-18',
-    stageEnteredAt: '2026-10-18',
+    createdAt: addDaysToIso(baseDate, -10),
+    stageEnteredAt: addDaysToIso(baseDate, -10),
     daysInStage: 10,
     isBreached: false,
     resubmissionCount: 0,
@@ -208,13 +227,13 @@ export const initialApplications = [
     currentStage: 'REVERTED',
     status: 'REVERTED',
     assignedOfficer: 'RO-NORTH-018',
-    createdAt: '2026-10-02',
-    stageEnteredAt: '2026-10-14',
+    createdAt: addDaysToIso(baseDate, -26),
+    stageEnteredAt: addDaysToIso(baseDate, -14),
     daysInStage: 14,
     isBreached: false,
     resubmissionCount: 1,
     deficiencyReason: 'Land Lease Deed / Building Safety NOC Discrepancy',
-    deficiencyNote: 'Building safety certificate expired on 30 Sept 2026. Certified renewal by Competent PWD Authority required.',
+    deficiencyNote: 'Building safety certificate expired. Certified renewal by Competent PWD Authority required.',
     decision: null,
     courseDetails: 'Extension of Approval (EoA) for Academic Year 2026–27'
   },
@@ -232,8 +251,8 @@ export const initialApplications = [
     currentStage: 'EVC_QUEUE',
     status: 'IN_PROGRESS',
     assignedOfficer: 'RO-SW-088',
-    createdAt: '2026-09-12',
-    stageEnteredAt: '2026-10-05',
+    createdAt: addDaysToIso(baseDate, -46),
+    stageEnteredAt: addDaysToIso(baseDate, -23),
     daysInStage: 23,
     isBreached: true,
     resubmissionCount: 0,
@@ -254,8 +273,8 @@ export const initialApplications = [
     currentStage: 'EVC_SCHEDULED',
     status: 'IN_PROGRESS',
     assignedOfficer: 'RO-SC-012',
-    createdAt: '2026-09-20',
-    stageEnteredAt: '2026-10-16',
+    createdAt: addDaysToIso(baseDate, -38),
+    stageEnteredAt: addDaysToIso(baseDate, -12),
     daysInStage: 12,
     isBreached: false,
     resubmissionCount: 0,
@@ -276,8 +295,8 @@ export const initialApplications = [
     currentStage: 'SCRUTINY',
     status: 'IN_PROGRESS',
     assignedOfficer: 'RO-EAST-004',
-    createdAt: '2026-09-25',
-    stageEnteredAt: '2026-09-25',
+    createdAt: addDaysToIso(baseDate, -52),
+    stageEnteredAt: addDaysToIso(baseDate, -33),
     daysInStage: 33,
     isBreached: true,
     resubmissionCount: 0,
@@ -298,8 +317,8 @@ export const initialApplications = [
     currentStage: 'SAC_REVIEW',
     status: 'IN_PROGRESS',
     assignedOfficer: 'HQ-DIR-APPR-01',
-    createdAt: '2026-08-30',
-    stageEnteredAt: '2026-10-10',
+    createdAt: addDaysToIso(baseDate, -20),
+    stageEnteredAt: addDaysToIso(baseDate, -18),
     daysInStage: 18,
     isBreached: false,
     resubmissionCount: 0,
@@ -320,12 +339,12 @@ export const initialApplications = [
     currentStage: 'CLOSED',
     status: 'APPROVED',
     assignedOfficer: 'RO-CENTRAL-09',
-    createdAt: '2026-08-15',
-    stageEnteredAt: '2026-09-02',
+    createdAt: addDaysToIso(baseDate, -74),
+    stageEnteredAt: addDaysToIso(baseDate, -60),
     daysInStage: 0,
     isBreached: false,
     resubmissionCount: 0,
-    closedAt: '2026-09-05',
+    closedAt: addDaysToIso(baseDate, -57),
     decision: 'APPROVED',
     courseDetails: 'Annual EoA for all 6 Undergraduate Engineering Branches'
   },
@@ -343,18 +362,21 @@ export const initialApplications = [
     currentStage: 'CLOSED',
     status: 'CONDITIONAL',
     assignedOfficer: 'RO-NW-022',
-    createdAt: '2026-07-20',
-    stageEnteredAt: '2026-08-25',
+    createdAt: addDaysToIso(baseDate, -100),
+    stageEnteredAt: addDaysToIso(baseDate, -75),
     daysInStage: 0,
     isBreached: false,
     resubmissionCount: 0,
-    closedAt: '2026-09-01',
+    closedAt: addDaysToIso(baseDate, -70),
     decision: 'CONDITIONAL',
     courseDetails: 'B.Arch 120 Seats Approved subject to 90-day CAD Lab Undertaking'
   }
 ];
 
-export const initialEvcVisits = [
+export const initialApplications = createInitialApplications();
+
+
+export const createInitialEvcVisits = (baseDate = getTodayIso()) => [
   {
     id: 'EVC-8801',
     applicationId: 'app_104',
@@ -364,10 +386,10 @@ export const initialEvcVisits = [
     status: 'SCHEDULED',
     urgencyWindowDays: 30,
     daysWaiting: 12,
-    deadline: '2026-11-15',
+    deadline: addDaysToIso(baseDate, 18),
     convener: 'Prof. K. Ramanathan (IIT Hyderabad)',
     members: ['Dr. Meera Swaminathan (NIT Warangal)', 'Shri V. Rao (RO-SC Representative)'],
-    scheduledDate: '2026-11-04',
+    scheduledDate: addDaysToIso(baseDate, 7),
     mode: 'PHYSICAL',
     observations: null,
     reportUrl: null
@@ -381,7 +403,7 @@ export const initialEvcVisits = [
     status: 'QUEUED',
     urgencyWindowDays: 21,
     daysWaiting: 23,
-    deadline: '2026-10-26',
+    deadline: addDaysToIso(baseDate, -2),
     convener: null,
     members: [],
     scheduledDate: null,
@@ -398,18 +420,21 @@ export const initialEvcVisits = [
     status: 'COMPLETED',
     urgencyWindowDays: 30,
     daysWaiting: 0,
-    deadline: '2026-10-10',
+    deadline: addDaysToIso(baseDate, -18),
     convener: 'Dr. S. Sundaram (Anna University)',
     members: ['Prof. L. Natarajan', 'Shri R. Krishnan (RO-S Representative)'],
-    scheduledDate: '2026-10-08',
+    scheduledDate: addDaysToIso(baseDate, -20),
     mode: 'HYBRID',
     observations: 'Physical infrastructure audit verified progressive reduction in student strength. Equipment disposal plan conforms to AICTE guidelines. No pending student liabilities.',
     reportUrl: '/reports/EVC_Final_Report_APH1046.pdf',
-    completedAt: '2026-10-09'
+    completedAt: addDaysToIso(baseDate, -19)
   }
 ];
 
-export const initialUndertakings = [
+export const initialEvcVisits = createInitialEvcVisits();
+
+
+export const createInitialUndertakings = (baseDate = getTodayIso()) => [
   {
     id: 'UT-2026-085',
     applicationId: 'app_101',
@@ -420,8 +445,8 @@ export const initialUndertakings = [
     conditionTitle: 'Ph.D. Faculty & GPU AI Lab Setup',
     conditionText: 'Recruitment of 3 Ph.D. Faculty Members in AI & Data Science and setup of GPU AI Computing Lab (30 Workstations) within 90 days.',
     evidenceRequired: 'Faculty appointment letters, joining reports, and hardware tax invoices with geo-tagged lab photos.',
-    imposedAt: '2026-10-18',
-    dueDate: '2026-12-18',
+    imposedAt: addDaysToIso(baseDate, -10),
+    dueDate: addDaysToIso(baseDate, 51),
     daysRemaining: 51,
     status: 'OPEN',
     escalationLevel: 1,
@@ -442,8 +467,8 @@ export const initialUndertakings = [
     conditionTitle: 'Faculty Cadre & Licensed BIM Lab',
     conditionText: 'Recruitment of 2 Qualified Associate Professors (Ph.D.) and procurement of 40 Licensed BIM/CAD Workstations within 90 days.',
     evidenceRequired: 'Board of Governors Appointment Letters, P.F. Registration proof, and Equipment Invoices with Geo-Tagged Lab Photos.',
-    imposedAt: '2026-09-01',
-    dueDate: '2026-11-30',
+    imposedAt: addDaysToIso(baseDate, -57),
+    dueDate: addDaysToIso(baseDate, 33),
     daysRemaining: 33,
     status: 'OPEN',
     escalationLevel: 1,
@@ -464,8 +489,8 @@ export const initialUndertakings = [
     conditionTitle: 'CPCSEA Animal House & Fire NOC',
     conditionText: 'Rectification of Central Animal House air-handling unit (AHU) as per CPCSEA norms and submission of Fire NOC renewal.',
     evidenceRequired: 'HVAC Calibration Certificate and Divisional Fire Officer Clearance Certificate.',
-    imposedAt: '2026-07-15',
-    dueDate: '2026-10-15',
+    imposedAt: addDaysToIso(baseDate, -103),
+    dueDate: addDaysToIso(baseDate, -13),
     daysRemaining: -13,
     status: 'ESCALATED',
     escalationLevel: 3,
@@ -486,30 +511,33 @@ export const initialUndertakings = [
     conditionTitle: 'STP Plant 50 KLD & MPPCB Clearance',
     conditionText: 'Installation of Sewage Treatment Plant (STP) of 50 KLD capacity with State Pollution Control Board clearance.',
     evidenceRequired: 'Consent to Operate (CTO) from MPPCB and commissioning report with geo-tagged images.',
-    imposedAt: '2026-06-10',
-    dueDate: '2026-09-10',
+    imposedAt: addDaysToIso(baseDate, -140),
+    dueDate: addDaysToIso(baseDate, -48),
     daysRemaining: 0,
     status: 'VERIFIED',
     escalationLevel: 1,
     evidenceUrl: '/evidence/MPPCB_CTO_Certificate_STP.pdf',
     evidenceNote: 'Uploaded copy of valid MPPCB consent order valid till 2031 along with engineer commissioning certificate.',
-    evidenceUploadedAt: '2026-09-05',
+    evidenceUploadedAt: addDaysToIso(baseDate, -53),
     evidenceUploadedBy: 'Registrar, Central India Institute',
-    verifiedAt: '2026-09-08',
+    verifiedAt: addDaysToIso(baseDate, -50),
     verifiedBy: 'RO-CENTRAL-09 (Regional Officer)',
     verificationResult: 'VERIFIED & FULFILLED'
   }
 ];
 
-export const initialDocuments = [
+export const initialUndertakings = createInitialUndertakings();
+
+
+export const createInitialDocuments = (baseDate = getTodayIso()) => [
   {
     id: 'DOC-901',
     institutionId: 'inst_sunrise',
     institutionName: 'Sunrise Institute of Technology',
     docType: 'Land Lease Deed (30-Year Registered)',
     issuingAuthority: 'Sub-Registrar Haveli, Pune',
-    issuedOn: '2008-04-12',
-    expiryDate: '2038-04-11',
+    issuedOn: addDaysToIso(baseDate, -6770),
+    expiryDate: addDaysToIso(baseDate, 4180),
     renewalLeadDays: 90,
     daysToExpiry: 4180,
     status: 'ACTIVE',
@@ -521,12 +549,12 @@ export const initialDocuments = [
     institutionName: 'Delhi Institute of Polytechnic & Technology',
     docType: 'Building Safety Certificate',
     issuingAuthority: 'PWD Executive Engineer, Division III Delhi',
-    issuedOn: '2023-09-30',
-    expiryDate: '2026-09-30',
+    issuedOn: addDaysToIso(baseDate, -1128),
+    expiryDate: addDaysToIso(baseDate, -28),
     renewalLeadDays: 60,
     daysToExpiry: -28,
     status: 'EXPIRED',
-    renewalRequestedAt: '2026-10-20',
+    renewalRequestedAt: addDaysToIso(baseDate, -8),
     renewalRequestedBy: 'RO-North (UP/Delhi)',
     fileUrl: '/docs/Delhi_Poly_Building_Safety_2023.pdf'
   },
@@ -536,8 +564,8 @@ export const initialDocuments = [
     institutionName: 'Bengal College of Pharmacy & Allied Sciences',
     docType: 'Fire Safety NOC',
     issuingAuthority: 'West Bengal Fire & Emergency Services',
-    issuedOn: '2025-11-18',
-    expiryDate: '2026-11-17',
+    issuedOn: addDaysToIso(baseDate, -345),
+    expiryDate: addDaysToIso(baseDate, 20),
     renewalLeadDays: 30,
     daysToExpiry: 20,
     status: 'EXPIRING_SOON',
@@ -549,8 +577,8 @@ export const initialDocuments = [
     institutionName: 'Silicon Valley School of Management',
     docType: 'Registered Educational Trust Deed',
     issuingAuthority: 'Registrar of Societies & Trusts, Karnataka',
-    issuedOn: '2010-02-14',
-    expiryDate: '2030-02-13',
+    issuedOn: addDaysToIso(baseDate, -6100),
+    expiryDate: addDaysToIso(baseDate, 1200),
     renewalLeadDays: 90,
     daysToExpiry: 1200,
     status: 'ACTIVE',
@@ -562,8 +590,8 @@ export const initialDocuments = [
     institutionName: 'Awadh Polytechnic Institute',
     docType: 'Land Title & Ownership Certificate',
     issuingAuthority: 'District Magistrate Lucknow',
-    issuedOn: '2012-05-10',
-    expiryDate: '2026-10-10',
+    issuedOn: addDaysToIso(baseDate, -5280),
+    expiryDate: addDaysToIso(baseDate, -18),
     renewalLeadDays: 60,
     daysToExpiry: -18,
     status: 'EXPIRED',
@@ -575,14 +603,17 @@ export const initialDocuments = [
     institutionName: 'Sunrise Institute of Technology',
     docType: 'Building Safety Certificate & Fire NOC',
     issuingAuthority: 'Chief Fire Officer & PWD Pune Division',
-    issuedOn: '2023-11-15',
-    expiryDate: '2026-11-14',
+    issuedOn: addDaysToIso(baseDate, -348),
+    expiryDate: addDaysToIso(baseDate, 17),
     renewalLeadDays: 45,
     daysToExpiry: 17,
     status: 'EXPIRING_SOON',
     fileUrl: '/docs/Sunrise_Tech_Fire_NOC_2023.pdf'
   }
 ];
+
+export const initialDocuments = createInitialDocuments();
+
 
 export const initialConfig = {
   rule_version: 'APH-2024-2027-v1.0',
@@ -630,11 +661,11 @@ export const initialConfig = {
   ]
 };
 
-export const initialAuditLog = [
+export const createInitialAuditLog = (baseDate = getTodayIso()) => [
   {
     id: 'EVT-900812',
-    timestamp: '2026-10-28T10:15:00+05:30',
-    simulatedDate: '2026-10-28',
+    timestamp: `${baseDate}T10:15:00+05:30`,
+    simulatedDate: baseDate,
     actorRole: 'BUREAU_OFFICER',
     actorName: 'Director, AICTE Approval Bureau',
     action: 'ESCALATION_L3_REVIEWED',
@@ -644,8 +675,8 @@ export const initialAuditLog = [
   },
   {
     id: 'EVT-900811',
-    timestamp: '2026-10-28T09:30:00+05:30',
-    simulatedDate: '2026-10-28',
+    timestamp: `${baseDate}T09:30:00+05:30`,
+    simulatedDate: baseDate,
     actorRole: 'REGIONAL_OFFICER',
     actorName: 'RO–West, Western Regional Office',
     action: 'SCRUTINY_CHECKLIST_VERIFIED',
@@ -657,8 +688,8 @@ export const initialAuditLog = [
   },
   {
     id: 'EVT-900810',
-    timestamp: '2026-10-27T16:45:00+05:30',
-    simulatedDate: '2026-10-27',
+    timestamp: `${addDaysToIso(baseDate, -1)}T16:45:00+05:30`,
+    simulatedDate: addDaysToIso(baseDate, -1),
     actorRole: 'COMMITTEE',
     actorName: 'Prof. K. Ramanathan, EVC Convener',
     action: 'EVC_DATE_CONFIRMED',
@@ -666,12 +697,12 @@ export const initialAuditLog = [
     refType: 'EVC_VISIT',
     fromStage: 'EVC_QUEUE',
     toStage: 'EVC_SCHEDULED',
-    note: 'Inspection committee visit confirmed for 04 Nov 2026 at Deccan Institute of Engineering. Modality: Physical.'
+    note: 'Inspection committee visit confirmed for Deccan Institute of Engineering. Modality: Physical.'
   },
   {
     id: 'EVT-900809',
-    timestamp: '2026-10-14T11:20:00+05:30',
-    simulatedDate: '2026-10-14',
+    timestamp: `${addDaysToIso(baseDate, -14)}T11:20:00+05:30`,
+    simulatedDate: addDaysToIso(baseDate, -14),
     actorRole: 'REGIONAL_OFFICER',
     actorName: 'RO-North, Northern Regional Office',
     action: 'REVERTED_FOR_DEFICIENCY',
@@ -680,11 +711,14 @@ export const initialAuditLog = [
     fromStage: 'SCRUTINY',
     toStage: 'REVERTED',
     reason: 'Building Safety Certificate Expired',
-    note: 'Returned for deficiency: PWD structural stability certificate expired 30 Sept 2026. Awaiting resubmission.'
+    note: 'Returned for deficiency: PWD structural stability certificate expired. Awaiting resubmission.'
   }
 ];
 
-export const initialNotifications = [
+export const initialAuditLog = createInitialAuditLog();
+
+
+export const createInitialNotifications = (baseDate = getTodayIso()) => [
   {
     id: 'NOTIF-101',
     type: 'ESCALATION',
@@ -693,7 +727,7 @@ export const initialNotifications = [
     refType: 'UNDERTAKING',
     refId: 'UT-2026-079',
     message: 'L3 Bureau Escalation: Bengal College of Pharmacy has exceeded the 90-day undertaking deadline by 13 days without submitting CPCSEA clearance.',
-    createdAt: '2026-10-28',
+    createdAt: baseDate,
     acknowledged: false
   },
   {
@@ -705,7 +739,7 @@ export const initialNotifications = [
     refType: 'APPLICATION',
     refId: 'APH-2026-1041',
     message: 'Western RO Review Queue: Sunrise Institute of Technology (APH-2026-1041) completed scrutiny; ready for EVC inspection recommendation.',
-    createdAt: '2026-10-28',
+    createdAt: baseDate,
     acknowledged: false
   },
   {
@@ -717,7 +751,7 @@ export const initialNotifications = [
     refType: 'DOCUMENT',
     refId: 'DOC-906',
     message: 'Western RO Alert: Building Safety & Fire NOC for Sunrise Institute of Technology expires in 17 days. Renewal notice recommended.',
-    createdAt: '2026-10-28',
+    createdAt: baseDate,
     acknowledged: false
   },
   {
@@ -728,7 +762,7 @@ export const initialNotifications = [
     refType: 'EVC_VISIT',
     refId: 'EVC-8802',
     message: 'Urgent Scheduling Required: New Institution application APH-2026-1043 is pending EVC scheduling for 23 days (exceeding 21-day statutory window).',
-    createdAt: '2026-10-27',
+    createdAt: addDaysToIso(baseDate, -1),
     acknowledged: false
   },
   {
@@ -739,8 +773,8 @@ export const initialNotifications = [
     institutionId: 'inst_sunrise',
     refType: 'DOCUMENT',
     refId: 'DOC-906',
-    message: 'Statutory Renewal Notice: Your Building Safety Certificate & Fire NOC expires on 14 Nov 2026 (17 days remaining). Please upload certified copy.',
-    createdAt: '2026-10-28',
+    message: 'Statutory Renewal Notice: Your Building Safety Certificate & Fire NOC expires soon (17 days remaining). Please upload certified copy.',
+    createdAt: baseDate,
     acknowledged: false
   },
   {
@@ -752,7 +786,10 @@ export const initialNotifications = [
     refType: 'UNDERTAKING',
     refId: 'UT-2026-085',
     message: 'Undertaking Compliance: 51 days remaining to submit appointment letters for 3 Ph.D. Faculty & GPU AI lab purchase invoices.',
-    createdAt: '2026-10-28',
+    createdAt: baseDate,
     acknowledged: false
   }
 ];
+
+export const initialNotifications = createInitialNotifications();
+
