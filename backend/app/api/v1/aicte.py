@@ -1,9 +1,12 @@
 import logging
 import base64
+import uuid
+from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from backend.app.core.database import get_db
+from backend.app.core.config import settings
 from backend.app.models.aicte import (
     Institution,
     Application,
@@ -15,23 +18,71 @@ from backend.app.models.aicte import (
 )
 from backend.app.services.gemini_service import GeminiService
 from backend.app.services.compliance_engine import AICTEWorkflowRuleEngine
+from backend.app.services import supabase_storage
 
 logger = logging.getLogger("compliscan.aicte")
 
 router = APIRouter(prefix="/aicte", tags=["AICTE Approval Workflow (PS 26262)"])
 rule_engine = AICTEWorkflowRuleEngine()
+ALLOWED_UPLOAD_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+
+
+async def _read_valid_upload(file: UploadFile) -> bytes:
+    mime_type = (file.content_type or "").lower()
+    if mime_type not in ALLOWED_UPLOAD_TYPES:
+        raise HTTPException(status_code=415, detail="Upload a JPEG, PNG, WebP, or PDF file.")
+    content = await file.read(settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024 + 1)
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    if len(content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+        raise HTTPException(status_code=413, detail=f"File exceeds the {settings.MAX_UPLOAD_SIZE_MB} MB upload limit.")
+    signatures = {
+        "image/jpeg": content.startswith(b"\xff\xd8\xff"),
+        "image/png": content.startswith(b"\x89PNG\r\n\x1a\n"),
+        "image/webp": content.startswith(b"RIFF") and content[8:12] == b"WEBP",
+        "application/pdf": content.startswith(b"%PDF-"),
+    }
+    if not signatures.get(mime_type, False):
+        raise HTTPException(status_code=415, detail="The file contents do not match the declared upload type.")
+    return content
+
+
+def _store_upload(content: bytes, filename: str, mime_type: str) -> str:
+    suffix = Path(filename or "upload").suffix.lower()
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp", ".pdf"}:
+        suffix = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "application/pdf": ".pdf"}[mime_type]
+    object_name = f"{uuid.uuid4().hex}{suffix}"
+    if supabase_storage.is_configured():
+        return supabase_storage.upload_bytes(f"evidence/{object_name}", content, mime_type)
+    local_path = settings.UPLOAD_DIR / object_name
+    local_path.write_bytes(content)
+    return f"/storage/uploads/{object_name}"
+
+
+def _disclose_assessment(result: Dict[str, Any], *, synthetic: bool = False) -> Dict[str, Any]:
+    result.update({
+        "assessment_type": "illustrative_ai_assessment",
+        "human_review_required": True,
+        "confidence_source": "not provided",
+        "data_status": "synthetic_demo_data" if synthetic or result.get("data_status") == "synthetic_demo_data" else "unverified_extraction",
+        "notice": "AI output is an illustrative extraction or assessment. It does not authenticate a document, establish compliance or legal validity, or constitute an authorized decision.",
+    })
+    for field in ("authenticity_score", "ai_confidence_score", "confidence_score", "confidence", "tampering_risk"):
+        result.pop(field, None)
+    return result
 
 @router.post("/scan-document", summary="AI Multimodal Vision Extraction for Statutory Legal Documents")
 async def scan_aicte_document(
     file: Optional[UploadFile] = File(None),
     doc_hint: Optional[str] = Form(""),
-    sample_id: Optional[str] = Form(None)
+    sample_id: Optional[str] = Form(None),
+    document_id: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
 ):
     """
     Scans a Land Lease Deed, Building Safety Certificate, Fire Safety NOC, or Trust Deed
     using Google Gemini Multimodal Vision + OCR.
-    Extracts registration number, issuing authority, issued date, expiry date, validity period,
-    authenticity score, and statutory clauses.
+    Extracts apparent text markers and dates for human review. The scan does not authenticate a document.
     """
     try:
         if sample_id:
@@ -46,15 +97,15 @@ async def scan_aicte_document(
                     "validity_years": 30,
                     "lessor_party": "Maharashtra Industrial Development Corporation (MIDC)",
                     "lessee_party": "Sunrise Educational & Charitable Trust, Pune",
-                    "legibility_score": 98,
-                    "tampering_risk": "LOW",
+                    "legibility_score": None,
+                    "tampering_risk": "not assessed",
                     "key_clauses": [
                         "Irrevocable 30-year statutory lease period valid up to 11 April 2038",
                         "Continuous unencumbered possession granted for Technical Education campus",
                         "Total demarcated land parcel area: 7.50 Acres (exceeds AICTE Western Region norm of 5.0 Acres)",
-                        "Government revenue e-Challan registration verified (GRN-MH-992104)"
+                        "Sample text contains a government revenue e-Challan reference (GRN-MH-992104); not checked."
                     ],
-                    "ai_summary": "Official 30-year registered lease deed authenticated via Gemini Vision. Unencumbered land area (7.5 acres) fully satisfies AICTE Approval Process Handbook norms for Western Region."
+                    "ai_summary": "Synthetic sample: a 30-year lease and 7.50-acre parcel are mentioned. Source records and applicable requirements require human review."
                 },
                 "sample_building_safety": {
                     "doc_type": "Building Safety & Structural Stability Certificate",
@@ -65,14 +116,14 @@ async def scan_aicte_document(
                     "validity_years": 3,
                     "lessor_party": "Executive Engineer, PWD Division III",
                     "lessee_party": "Delhi Institute of Polytechnic & Technology",
-                    "legibility_score": 93,
-                    "tampering_risk": "LOW",
+                    "legibility_score": None,
+                    "tampering_risk": "not assessed",
                     "key_clauses": [
-                        "Structural stability assessed in compliance with National Building Code (NBC-2016)",
-                        "Seismic Zone IV earthquake resistance load-bearing capacity certified",
-                        "Mandatory structural renewal due on 30 Sept 2026"
+                        "Sample text refers to the National Building Code (NBC-2016); not validated",
+                        "Sample text mentions Seismic Zone IV; not validated",
+                        "Sample text shows an expiry date of 30 September 2026; confirm against the source"
                     ],
-                    "ai_summary": "PWD Structural stability certificate inspected. Visual stamps match PWD Division III seal; document expired on 30 Sept 2026 requiring fresh triennial renewal."
+                    "ai_summary": "Synthetic sample: a 30 September 2026 expiry date is shown. Confirm the date and renewal requirements against source records."
                 },
                 "sample_fire_noc": {
                     "doc_type": "Fire & Life Safety Clearance Certificate (NOC)",
@@ -83,45 +134,52 @@ async def scan_aicte_document(
                     "validity_years": 1,
                     "lessor_party": "Divisional Fire Officer, Kolkata South Division",
                     "lessee_party": "Bengal College of Pharmacy & Allied Sciences",
-                    "legibility_score": 95,
-                    "tampering_risk": "LOW",
+                    "legibility_score": None,
+                    "tampering_risk": "not assessed",
                     "key_clauses": [
-                        "Automated wet-riser hydrant and down-comer fire fighting systems functional",
-                        "Emergency fire escape stairways (width 2.0m) clear of encroachments",
-                        "Annual renewal required before 17 Nov 2026 (T-20 days advance alert active)"
+                        "Sample text describes fire suppression systems; not independently inspected",
+                        "Sample text describes fire escape routes; not independently inspected",
+                        "Sample text lists 17 November 2026; confirm the applicable renewal window manually"
                     ],
-                    "ai_summary": "Fire NOC verified authentic with active QR code and divisional seal. Certificate enters mandatory 30-day renewal window on 18 Oct 2026."
+                    "ai_summary": "Synthetic sample: a certificate expiry date is shown. Confirm the document, date, and applicable renewal window manually."
                 }
             }
             if sample_id in sample_catalog:
-                return sample_catalog[sample_id]
+                return _disclose_assessment(sample_catalog[sample_id], synthetic=True)
 
         if not file:
             raise HTTPException(status_code=400, detail="Either a file upload or a sample_id must be provided.")
 
-        contents = await file.read()
-        if not contents:
-            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
-
-        mime_type = file.content_type or "image/jpeg"
+        contents = await _read_valid_upload(file)
+        mime_type = file.content_type or ""
         result = GeminiService.extract_aicte_document(
             image_bytes=contents,
             mime_type=mime_type,
             doc_hint=doc_hint or file.filename or ""
         )
-        return result
+        stored_url = _store_upload(contents, file.filename or "upload", mime_type)
+        if document_id:
+            document = db.query(Document).filter(Document.id == document_id).first()
+            if not document:
+                raise HTTPException(status_code=404, detail="Document record was not found.")
+            document.file_url = stored_url
+            db.commit()
+        result["storage_url"] = stored_url
+        return _disclose_assessment(result)
 
     except HTTPException:
         raise
     except Exception as e:
         logger.exception("AICTE document scan failed: %s", e)
-        raise HTTPException(status_code=500, detail=f"Gemini Document Vision failed: {str(e)}")
+        raise HTTPException(status_code=502, detail="Document analysis or storage is temporarily unavailable.")
 
 @router.post("/scan-evidence", summary="AI Vision Verification for Compliance Undertaking Evidence")
 async def scan_undertaking_evidence(
     file: Optional[UploadFile] = File(None),
     condition_text: Optional[str] = Form(""),
-    sample_id: Optional[str] = Form(None)
+    sample_id: Optional[str] = Form(None),
+    undertaking_id: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
 ):
     """
     Inspects geo-tagged photos, equipment invoices, or pollution clearance certificates
@@ -132,56 +190,91 @@ async def scan_undertaking_evidence(
             sample_evidence = {
                 "sample_cad_lab": {
                     "evidence_type": "GEO_TAGGED_LAB_PHOTO_AND_GST_INVOICE",
-                    "geo_tagged": True,
-                    "verified_count_or_spec": "40 Licensed BIM/CAD HP Workstations + 1 Server R750 verified",
-                    "authenticity_score": 97,
-                    "recommendation": "VERIFY_COMPLIANT",
-                    "ai_observations": "Geo-coordinates (Lat 30.7046° N, Long 76.7179° E) authenticate on-campus CAD laboratory in Mohali. GST tax invoice (INV-HP-99120) matches OEM hardware serials."
+                    "geo_tagged": None,
+                    "verified_count_or_spec": "Sample description: 40 CAD workstations and one server (unverified)",
+                    "authenticity_score": None,
+                    "recommendation": "HUMAN_REVIEW_REQUIRED",
+                    "ai_observations": "Illustrative sample text mentions coordinates and an invoice reference. These details are not independently checked."
                 },
                 "sample_stp_plant": {
                     "evidence_type": "POLLUTION_CONTROL_BOARD_CLEARANCE_AND_PHOTO",
-                    "geo_tagged": True,
-                    "verified_count_or_spec": "50 KLD Sewage Treatment Plant with Consent to Operate (CTO)",
-                    "authenticity_score": 96,
-                    "recommendation": "VERIFY_COMPLIANT",
-                    "ai_observations": "MPPCB Consent Order #CTO-5591 verified authentic valid through 2031. Geo-tagged aeration tank photos match campus utilities layout."
+                    "geo_tagged": None,
+                    "verified_count_or_spec": "Sample description: 50 KLD sewage treatment plant (unverified)",
+                    "authenticity_score": None,
+                    "recommendation": "HUMAN_REVIEW_REQUIRED",
+                    "ai_observations": "Illustrative sample text mentions an order reference and treatment plant. These details are not independently checked."
                 }
             }
             if sample_id in sample_evidence:
-                return sample_evidence[sample_id]
+                return _disclose_assessment(sample_evidence[sample_id], synthetic=True)
 
         if not file:
             raise HTTPException(status_code=400, detail="Either a file upload or a sample_id must be provided.")
 
-        contents = await file.read()
-        mime_type = file.content_type or "image/jpeg"
+        contents = await _read_valid_upload(file)
+        mime_type = file.content_type or ""
         result = GeminiService.extract_undertaking_evidence(
             image_bytes=contents,
             mime_type=mime_type,
             condition_text=condition_text or ""
         )
-        return result
+        stored_url = _store_upload(contents, file.filename or "upload", mime_type)
+        if undertaking_id:
+            undertaking = db.query(Undertaking).filter(Undertaking.id == undertaking_id).first()
+            if not undertaking:
+                raise HTTPException(status_code=404, detail="Undertaking record was not found.")
+            undertaking.evidence_url = stored_url
+            db.commit()
+        result["storage_url"] = stored_url
+        return _disclose_assessment(result)
 
     except HTTPException:
         raise
     except Exception as e:
         logger.exception("Undertaking evidence verification failed: %s", e)
-        raise HTTPException(status_code=500, detail=f"Gemini Evidence Vision failed: {str(e)}")
+        raise HTTPException(status_code=502, detail="Evidence analysis or storage is temporarily unavailable.")
 
 @router.post("/case-summary", summary="AI Executive Case Brief (Module A Requirement)")
 async def get_case_summary(app_data: Dict[str, Any]):
     """
     Generates a high-authority 5-bullet AI Executive Case Brief for the
     Standing Appellate Committee (SAC) and Regional Officer reviewing an application.
-    Fulfills official PS 26262 Module A:
-    'Automate routine administrative activities, standardised communications and electronic case summaries.'
+    Prototype support for the administrative case-summary workflow described in
+    PS 26262 Module A. This endpoint is not an official AICTE service or decision.
     """
     try:
         result = GeminiService.generate_aicte_case_summary(app_data)
-        return result
+        return _disclose_assessment(result)
     except Exception as e:
         logger.exception("AI case summary generation failed: %s", e)
-        raise HTTPException(status_code=500, detail=f"Case brief generation failed: {str(e)}")
+        raise HTTPException(status_code=502, detail="Case summary generation is temporarily unavailable.")
+
+
+@router.post("/documents/{document_id}/upload", summary="Store a document file for human review")
+async def upload_document_file(document_id: str, file: UploadFile = File(...), renewal: bool = Form(False), db: Session = Depends(get_db)):
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document record was not found.")
+    content = await _read_valid_upload(file)
+    url = _store_upload(content, file.filename or "upload", file.content_type or "")
+    if renewal:
+        document.renewal_file_url = url
+    else:
+        document.file_url = url
+    db.commit()
+    return {"storage_url": url, "data_status": "unverified_upload", "human_review_required": True}
+
+
+@router.post("/undertakings/{undertaking_id}/evidence", summary="Store undertaking evidence for human review")
+async def upload_undertaking_file(undertaking_id: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    undertaking = db.query(Undertaking).filter(Undertaking.id == undertaking_id).first()
+    if not undertaking:
+        raise HTTPException(status_code=404, detail="Undertaking record was not found.")
+    content = await _read_valid_upload(file)
+    url = _store_upload(content, file.filename or "upload", file.content_type or "")
+    undertaking.evidence_url = url
+    db.commit()
+    return {"storage_url": url, "data_status": "unverified_upload", "human_review_required": True}
 
 
 @router.get("/institutions", summary="List All Approved & Monitored Institutions")

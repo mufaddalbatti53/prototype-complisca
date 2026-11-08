@@ -52,7 +52,7 @@ export default function Compliance() {
   const [evidenceNotes, setEvidenceNotes] = useState('');
 
   const [selectedUtForVerification, setSelectedUtForVerification] = useState(null);
-  const [verificationVerdict, setVerificationVerdict] = useState('VERIFIED');
+  const [verificationVerdict, setVerificationVerdict] = useState('');
   const [verificationNotes, setVerificationNotes] = useState('');
 
   const [aiVerifierOpen, setAiVerifierOpen] = useState(false);
@@ -112,7 +112,7 @@ export default function Compliance() {
     submitUndertakingEvidence(
       selectedUtForEvidence.id,
       '/evidence/Uploaded_Proof_Document.pdf',
-      evidenceNotes || 'Submitted compliance evidence with geo-tagged proof and invoices.',
+      evidenceNotes || 'Submitted evidence for human review.',
       role,
       roleConfig.title
     );
@@ -121,12 +121,20 @@ export default function Compliance() {
 
   const handleOpenVerificationModal = (ut) => {
     setSelectedUtForVerification(ut);
-    setVerificationVerdict('VERIFIED');
-    setVerificationNotes('All conditions verified and corroborated with campus infrastructure audit.');
+    setVerificationVerdict('');
+    setVerificationNotes('');
   };
 
   const handleConfirmVerification = () => {
     if (!selectedUtForVerification) return;
+    if (!['VERIFIED', 'REJECTED'].includes(verificationVerdict)) {
+      window.alert('Choose an officer review outcome before saving this prototype status.');
+      return;
+    }
+    if (verificationNotes.trim().length < 10) {
+      window.alert('Record the human review findings before saving this prototype status.');
+      return;
+    }
     verifyUndertaking(
       selectedUtForVerification.id,
       verificationVerdict,
@@ -160,20 +168,18 @@ export default function Compliance() {
       if (selectedSampleEvidence === 'sample_stp_plant') {
         setEvidenceAnalysisResult({
           evidence_type: 'POLLUTION_CONTROL_BOARD_CLEARANCE_AND_PHOTO',
-          geo_tagged: true,
-          verified_count_or_spec: '50 KLD Sewage Treatment Plant with Consent to Operate (CTO)',
-          authenticity_score: 96,
-          recommendation: 'VERIFY_COMPLIANT',
-          ai_observations: 'MPPCB Consent Order #CTO-5591 verified authentic valid through 2031. Geo-tagged aeration tank photos match campus utilities layout.'
+          geo_tagged: null,
+          verified_count_or_spec: 'Sample text describes a 50 KLD treatment plant; not independently checked',
+          recommendation: 'HUMAN_REVIEW_REQUIRED',
+          ai_observations: 'Illustrative sample text mentions an order reference and treatment plant. These details are not independently checked.'
         });
       } else {
         setEvidenceAnalysisResult({
           evidence_type: 'GEO_TAGGED_LAB_PHOTO_AND_GST_INVOICE',
-          geo_tagged: true,
-          verified_count_or_spec: '40 Licensed BIM/CAD HP Workstations + 1 Server R750 verified',
-          authenticity_score: 97,
-          recommendation: 'VERIFY_COMPLIANT',
-          ai_observations: 'Geo-coordinates (Lat 30.7046° N, Long 76.7179° E) authenticate on-campus CAD laboratory in Mohali. GST tax invoice (INV-HP-99120) matches OEM hardware serials.'
+          geo_tagged: null,
+          verified_count_or_spec: 'Sample text describes CAD workstations and a server; not independently checked',
+          recommendation: 'HUMAN_REVIEW_REQUIRED',
+          ai_observations: 'Illustrative sample text mentions coordinates and an invoice reference. These details are not independently checked.'
         });
       }
     } finally {
@@ -192,7 +198,7 @@ export default function Compliance() {
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
             Statutory registry of conditions given during conditional approvals (e.g. hiring Ph.D. faculty, setting up CAD/computer labs,
-            or pollution clearances). Tracks strict 90-day deadlines, automatic 4-level reminder notices, and AI proof verification.
+            or pollution clearances). Tracks strict 90-day deadlines, automatic 4-level reminder notices, and AI-assisted evidence description for human review.
           </p>
         </div>
 
@@ -268,7 +274,7 @@ export default function Compliance() {
 
         <div className="civic-card p-4 rounded-2xl bg-white border border-slate-200">
           <span className="text-[10px] font-mono font-bold text-emerald-700 uppercase tracking-wider block">
-            COMPLIANCE VERIFIED
+            PROTOTYPE REVIEWS RECORDED
           </span>
           <span className="text-2xl font-serif font-bold text-emerald-600 mt-1 block">{verifiedCount}</span>
           <span className="text-[11px] text-emerald-700 mt-0.5 block">Proof approved & clear</span>
@@ -367,7 +373,7 @@ export default function Compliance() {
             <option value="SUBMITTED">Submitted (Pending Review)</option>
             <option value="OVERDUE">Overdue (Past Deadline)</option>
             <option value="ESCALATED">⚠️ Escalated (L3/L4)</option>
-            <option value="VERIFIED">Verified Compliant</option>
+            <option value="VERIFIED">Officer review recorded</option>
           </select>
         </div>
 
@@ -823,7 +829,7 @@ export default function Compliance() {
                   }`}
                 >
                   <span className="font-bold text-slate-900 block truncate">1. 40 CAD Lab Workstations & Invoices</span>
-                  <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">Mohali Campus (Geo-Tagged + Dell GSTIN)</span>
+                  <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">Synthetic sample: location and invoice markers are not checked</span>
                 </button>
 
                 <button
@@ -877,7 +883,7 @@ export default function Compliance() {
               ) : (
                 <>
                   <Scan className="w-4 h-4 text-amber-300" />
-                  <span>Verify Evidence Authenticity & Corroborate Undertaking</span>
+                  <span>Describe Evidence for Human Review</span>
                 </>
               )}
             </button>
@@ -888,14 +894,14 @@ export default function Compliance() {
                 <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                   <div className="flex items-center space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span className="font-serif font-bold text-sm text-white">AI Evidence Verification Completed</span>
+                    <span className="font-serif font-bold text-sm text-white">Illustrative AI Assessment — Human Review Required</span>
                   </div>
                   <div className="flex items-center space-x-2 text-[11px] font-mono">
-                    <span className="text-slate-400">Authenticity:</span>
-                    <strong className="text-emerald-300">{evidenceAnalysisResult.authenticity_score}%</strong>
+                    <span className="text-slate-400">Authenticity assessment:</span>
+                    <strong className="text-emerald-300">Not provided</strong>
                     <span className="text-slate-600">•</span>
                     <span className="text-slate-400">Geo-Tagged:</span>
-                    <strong className="text-amber-300">VERIFIED</strong>
+                    <strong className="text-amber-300">Not established</strong>
                   </div>
                 </div>
 
@@ -904,14 +910,14 @@ export default function Compliance() {
                     <span className="text-[10px] font-mono text-slate-400 uppercase">EVIDENCE TYPE</span>
                     <p className="font-bold text-white text-xs">{evidenceAnalysisResult.evidence_type}</p>
                     <span className="font-mono text-[11px] text-amber-300 block">
-                      {evidenceAnalysisResult.verified_count_or_spec}
+                      {evidenceAnalysisResult.apparent_evidence_summary || evidenceAnalysisResult.verified_count_or_spec || 'Not provided'}
                     </span>
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 space-y-1">
-                    <span className="text-[10px] font-mono text-emerald-300 uppercase">AI OFFICER RECOMMENDATION</span>
+                    <span className="text-[10px] font-mono text-emerald-300 uppercase">PROTOTYPE SUGGESTION — NOT A DECISION</span>
                     <p className="font-bold text-emerald-300 text-sm">{evidenceAnalysisResult.recommendation}</p>
-                    <span className="text-[10px] text-emerald-200">Meets APH Chapter VII Laboratory Norms</span>
+                    <span className="text-[10px] text-emerald-200">Prototype assessment only; applicable requirements need source validation.</span>
                   </div>
                 </div>
 
@@ -920,26 +926,16 @@ export default function Compliance() {
                     TECHNICAL OBSERVATIONS
                   </span>
                   <p>{evidenceAnalysisResult.ai_observations}</p>
+                  <p className="mt-2 text-amber-200">{evidenceAnalysisResult.notice || 'Synthetic sample or unverified assessment. Human review is required.'}</p>
                 </div>
 
                 <div className="pt-2 flex items-center justify-end space-x-2">
                   <button
-                    onClick={() => {
-                      if (undertakings.length > 0) {
-                        verifyUndertaking(
-                          undertakings[0].id,
-                          'VERIFIED',
-                          `AI Evidence Vision verified: ${evidenceAnalysisResult.verified_count_or_spec}`,
-                          role,
-                          roleConfig.title
-                        );
-                        setAiVerifierOpen(false);
-                      }
-                    }}
+                    onClick={() => setAiVerifierOpen(false)}
                     className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-xs transition"
                   >
-                    <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-                    <span>Accept AI Recommendation & Mark Undertaking Verified</span>
+                    <X className="w-4 h-4 text-emerald-200" />
+                    <span>Close Assessment; Review Source in the Undertakings List</span>
                   </button>
                 </div>
               </div>
@@ -1030,6 +1026,10 @@ export default function Compliance() {
               <p className="text-slate-700">{selectedUtForVerification.conditionText}</p>
             </div>
 
+            <p className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+              AI output is not proof of authenticity or compliance. Review the source evidence and applicable requirements before recording an officer finding in this prototype.
+            </p>
+
             <div className="space-y-3 text-xs">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Regulatory Officer Verdict</label>
@@ -1085,7 +1085,7 @@ export default function Compliance() {
                 onClick={handleConfirmVerification}
                 className="px-5 py-2 text-xs font-bold text-white bg-[#1e3a8a] hover:bg-[#172554] rounded-xl transition shadow-xs"
               >
-                Record Statutory Verdict
+                Record Officer Review
               </button>
             </div>
           </div>

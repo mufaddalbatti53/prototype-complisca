@@ -1003,7 +1003,7 @@ export function AicteProvider({ children }) {
           pendingRenewal: {
             issuedOn: effectiveIssued,
             expiryDate: effectiveExpiry,
-            fileUrl: payload.fileUrl || '/docs/renewal_certificate.pdf',
+            fileUrl: payload.fileUrl || null,
             note: payload.note || '',
             submittedAt: simulatedDate
           }

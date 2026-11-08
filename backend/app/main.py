@@ -1,87 +1,38 @@
-import os
+"""CompliScan FastAPI service for SIH 26262 AICTE workflows."""
+
 import logging
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+
 from backend.app.core.config import settings
-from backend.app.core.database import engine, Base, SessionLocal
-from backend.app import models
-from backend.app.api.v1 import scan, inspections, reports, rules, analytics, parties, aicte
+from backend.app.core.database import Base, SessionLocal, engine
+from backend.app import models  # noqa: F401 - register AICTE SQLAlchemy models
+from backend.app.api.v1 import aicte, rules
 from backend.app.api.v1.rules import seed_default_rules
-from backend.app.api.v1.parties import seed_default_parties
 from backend.app.core.seed_aicte import seed_default_aicte_data
+from backend.app.core.security import deployment_api_key_middleware
 
 logger = logging.getLogger("compliscan")
 
-# storage
-for directory in [
-    settings.STORAGE_DIR,
-    settings.UPLOAD_DIR,
-    settings.PROCESSED_DIR,
-    settings.REPORT_DIR,
-    settings.SAMPLES_DIR,
-]:
+for directory in (settings.STORAGE_DIR, settings.UPLOAD_DIR, settings.PROCESSED_DIR, settings.REPORT_DIR, settings.SAMPLES_DIR):
     directory.mkdir(parents=True, exist_ok=True)
 
-# database
 Base.metadata.create_all(bind=engine)
 
-def auto_migrate_schema():
-    needed_cols = [
-        ("party_id", "VARCHAR(50)"),
-        ("notice_due_date", "DATETIME"),
-        ("notice_status", "VARCHAR(50) DEFAULT 'SHOW_CAUSE_ISSUED'"),
-        ("party_reply", "TEXT"),
-        ("party_reply_date", "DATETIME"),
-    ]
-    try:
-        db_path = settings.STORAGE_DIR / "compliscan.db"
-        if db_path.exists():
-            import sqlite3
-            conn = sqlite3.connect(str(db_path))
-            cur = conn.cursor()
-            cur.execute("PRAGMA table_info(inspections)")
-            existing_cols = {row[1] for row in cur.fetchall()}
-            for col_name, col_type in needed_cols:
-                if col_name not in existing_cols:
-                    cur.execute(f"ALTER TABLE inspections ADD COLUMN {col_name} {col_type}")
-                    logger.info(f"Direct SQLite migration: added column {col_name} to inspections")
-            conn.commit()
-            conn.close()
-    except Exception as e:
-        logger.warning(f"Direct SQLite migration notice: {e}")
-
-    try:
-        with engine.begin() as conn:
-            result = conn.exec_driver_sql("PRAGMA table_info(inspections)")
-            existing_cols = {row[1] for row in result.fetchall()}
-            for col_name, col_type in needed_cols:
-                if col_name not in existing_cols:
-                    conn.exec_driver_sql(f"ALTER TABLE inspections ADD COLUMN {col_name} {col_type}")
-                    logger.info(f"Engine migration: added column {col_name} to inspections")
-    except Exception as e:
-        logger.warning(f"Engine migration notice: {e}")
-
-if engine.dialect.name == "sqlite":
-    auto_migrate_schema()
-
-# seed
 with SessionLocal() as db:
     seed_default_rules(db)
-    seed_default_parties(db)
     seed_default_aicte_data(db)
 
-# app
 app = FastAPI(
-    title="C.O.M.P.L.I.S.C.A.N. — Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network",
-    description="Integrated AICTE Approval Workflow Automation, Compliance Monitoring & Alert Management System (PS 26262) & Legal Metrology Inspection Engine.",
+    title="C.O.M.P.L.I.S.C.A.N. — Synthetic AICTE Workflow Prototype",
+    description="Synthetic SIH 26262 workflow demonstration. AI output is illustrative, rules require source validation, and human review is required.",
     version=settings.VERSION,
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
-# middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -89,64 +40,38 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
+app.middleware("http")(deployment_api_key_middleware)
 
-# exceptions
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    origin = request.headers.get("origin") or "*"
+    origin = request.headers.get("origin", "*")
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},
-        headers={
-            "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Methods": "*",
-            "Access-Control-Allow-Headers": "*",
-        }
+        headers={"Access-Control-Allow-Origin": origin, "Access-Control-Allow-Credentials": "true"},
     )
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    logger.exception("Unhandled server exception on %s %s: %s", request.method, request.url, exc)
-    origin = request.headers.get("origin") or "*"
-    return JSONResponse(
-        status_code=500,
-        content={"detail": f"Internal Server Error: {str(exc)}"},
-        headers={
-            "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Methods": "*",
-            "Access-Control-Allow-Headers": "*",
-        }
-    )
+    logger.exception("Unhandled server exception on %s %s", request.method, request.url)
+    return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
 
-# static and routes
 app.mount("/storage", StaticFiles(directory=str(settings.STORAGE_DIR)), name="storage")
-
-app.include_router(scan.router, prefix=settings.API_V1_STR)
-app.include_router(inspections.router, prefix=settings.API_V1_STR)
-app.include_router(reports.router, prefix=settings.API_V1_STR)
 app.include_router(rules.router, prefix=settings.API_V1_STR)
-app.include_router(analytics.router, prefix=settings.API_V1_STR)
-app.include_router(parties.router, prefix=settings.API_V1_STR)
 app.include_router(aicte.router, prefix=settings.API_V1_STR)
 
 @app.get("/api/health", tags=["Health"])
 async def health_check():
     return {
         "status": "healthy",
-        "service": "CompliScan Backend Engine",
+        "service": "CompliScan SIH 26262 Backend",
         "version": settings.VERSION,
-        "database": "connected",
-        "gemini_configured": bool(settings.GEMINI_API_KEY)
+        "database": engine.dialect.name,
+        "gemini_configured": bool(settings.GEMINI_API_KEY),
+        "supabase_configured": bool(settings.SUPABASE_URL),
     }
 
 @app.get("/", tags=["Root"])
 async def root():
-    return {
-        "message": "Welcome to CompliScan API",
-        "docs": "/docs",
-        "version": settings.VERSION
-    }
+    return {"message": "Welcome to CompliScan SIH 26262 API", "docs": "/docs", "version": settings.VERSION}

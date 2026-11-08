@@ -131,8 +131,8 @@ export default function Navbar({ activeTab, setActiveTab }) {
         {/* Top Gazette Bar: Authority Identification & Simulated Clock */}
         <div className="bg-[#1e293b] text-white px-2.5 sm:px-6 py-1.5 text-xs flex items-center justify-between gap-1.5 sm:gap-2 border-b border-slate-700 flex-nowrap w-full max-w-full overflow-x-hidden">
           <div className="flex items-center space-x-1 sm:space-x-1.5 font-mono text-[10px] sm:text-[11px] text-slate-300 shrink-0 whitespace-nowrap">
-            <span className="text-amber-400 font-bold tracking-wider">AICTE</span>
-            <span className="hidden sm:inline text-amber-400 font-bold tracking-wider"> BUREAU</span>
+            <span className="text-amber-400 font-bold tracking-wider">WORKFLOW DEMO</span>
+            <span className="hidden sm:inline text-amber-400 font-bold tracking-wider"> PROTOTYPE</span>
             <span className="text-slate-500">·</span>
             <span className="text-emerald-400 font-bold">TECH SETU AI</span>
             <span className="hidden md:inline text-slate-500">·</span>
@@ -253,7 +253,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
                     C.O.M.P.L.I.S.C.A.N.
                   </h1>
                   <span className="hidden md:inline font-mono text-[9px] uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold">
-                    AICTE PS 26262 · TECH SETU AI
+                    SYNTHETIC PROTOTYPE · SIH PS 26262
                   </span>
                 </div>
                 <p className="text-[10.5px] text-slate-500 font-medium leading-tight hidden sm:block max-w-md lg:max-w-xl truncate">

@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: prototype-complisca-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: compliance-evidence
+      - key: API_AUTH_REQUIRED
+        value: "false"
+      - key: API_KEY
+        sync: false
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "10"
+
+  - type: cron
+    name: prototype-complisca-daily-check
+    runtime: python
+    schedule: "0 2 * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m backend.app.jobs.daily_check
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: compliance-evidence
+

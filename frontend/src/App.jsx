@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
+import SyntheticDataBanner from './components/SyntheticDataBanner';
 import Applications from './pages/Applications';
 import Pendency from './pages/Pendency';
 import EvcModule from './pages/EvcModule';
@@ -114,6 +115,7 @@ function AppContent() {
 
       {/* Navigation Header */}
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <SyntheticDataBanner />
 
       {/* Colored Role Context Banner (Strict zero horizontal overflow) */}
       <div
@@ -184,8 +186,7 @@ function AppContent() {
             </span>
           </div>
           <p className="text-[11px] text-slate-500 max-w-xl">
-            Centralized Oversight & Monitoring Platform for Legal Institutional Scrutiny, Compliance, Approvals & Alert Network.
-            Engineered under the Approval Process Handbook (APH) Regulations.
+            Synthetic demonstration prototype for institutional workflow review. Not an AICTE system, endorsement, or official record.
           </p>
         </div>
       </footer>
