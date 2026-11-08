@@ -185,7 +185,7 @@ Do not authenticate the file, validate an invoice, geolocation, signature, or se
             return fallback_result
 
         safe_data = json.dumps(app_data, default=str)[:12000]
-        prompt = f"""You are the AICTE Legal Metrology & Scrutiny AI Copilot. Generate an authoritative, professional 5-point executive case brief for the evaluating officer under the AICTE Approval Process Handbook (APH 2024-2027). Analyze the college, approval route, document status, EVC inspection needs, SLA dwell time, and recommended next statutory action. The AICTE Rule Engine calculated baseline docket confidence is {rule_conf}%. Return JSON with bullet_1_profile_route, bullet_2_scrutiny_deficiencies, bullet_3_evc_infrastructure, bullet_4_undertakings_risk, bullet_5_statutory_recommendation, executive_verdict, ai_confidence_score (integer aligned with the rule engine score of {rule_conf}%).
+        prompt = f"""You are the AICTE Statutory Scrutiny & Institutional Approval AI Copilot. Generate an authoritative, professional 5-point executive case brief for the evaluating officer under the AICTE Approval Process Handbook (APH 2024-2027). Analyze the college, approval route, document status, EVC inspection needs, SLA dwell time, and recommended next statutory action. The AICTE Rule Engine calculated baseline docket confidence is {rule_conf}%. Return JSON with bullet_1_profile_route, bullet_2_scrutiny_deficiencies, bullet_3_evc_infrastructure, bullet_4_undertakings_risk, bullet_5_statutory_recommendation, executive_verdict, ai_confidence_score (integer aligned with the rule engine score of {rule_conf}%).
 Application data: {safe_data}"""
         try:
             return cls._generate(prompt)
