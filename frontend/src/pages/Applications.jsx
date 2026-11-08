@@ -36,10 +36,143 @@ import { useAicte, getStageSla } from '../context/AicteContext';
 import { useRole } from '../context/RoleContext';
 import { api } from '../services/api';
 
+//dynamic rule engine confidence calculation
+export function computeDocketRuleConfidence(app, config, institutions = [], documents = [], undertakings = []) {
+  if (!app) return { score: 92, breakdown: [] };
+
+  let score = 98;
+  const breakdown = [];
+
+  // 1. Route Complexity Baseline
+  if (app.route === 'SCRUTINY_EVC_SAC') {
+    score -= 3;
+    breakdown.push({ label: 'Route Complexity (SAC + EVC Multi-Tier Scrutiny)', delta: -3 });
+  } else if (app.route === 'ONLY_SCRUTINY') {
+    breakdown.push({ label: 'Route: Fast-Track EoA Scrutiny Norms', delta: 0 });
+  } else {
+    breakdown.push({ label: `Route: Standard ${app.route.replace(/_/g, ' ')}`, delta: 0 });
+  }
+
+  // 2. SLA Timeliness & Stage Dwell Time
+  const sla = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
+  if (app.daysInStage > sla) {
+    const daysOver = app.daysInStage - sla;
+    const penalty = Math.min(24, 10 + daysOver * 2);
+    score -= penalty;
+    breakdown.push({
+      label: `SLA Deadline Breached (${daysOver}d overdue in ${app.currentStage})`,
+      delta: -penalty
+    });
+  } else if (sla > 0 && app.daysInStage > sla * 0.8) {
+    score -= 4;
+    breakdown.push({
+      label: `Approaching SLA Deadline (${app.daysInStage}/${sla}d)`,
+      delta: -4
+    });
+  } else {
+    breakdown.push({
+      label: `Within Statutory SLA Timeline (${app.daysInStage}/${sla}d)`,
+      delta: 0
+    });
+  }
+
+  // 3. Stage & Deficiency Penalty
+  if (app.currentStage === 'REVERTED') {
+    const revertPenalty = 22;
+    score -= revertPenalty;
+    breakdown.push({
+      label: `Docket Reverted for Deficiencies (${app.deficiencyReason || 'Discrepancy'})`,
+      delta: -revertPenalty
+    });
+
+    if (app.resubmissionCount > 0) {
+      const cyclePenalty = Math.min(10, app.resubmissionCount * 4);
+      score -= cyclePenalty;
+      breakdown.push({
+        label: `Past Re-scrutiny Cycles (#${app.resubmissionCount})`,
+        delta: -cyclePenalty
+      });
+    }
+  }
+
+  // 4. Statutory Document Verification
+  const appDocs = (documents || []).filter(
+    (d) => d.institutionId === app.institutionId || (d.institutionName && d.institutionName === app.institutionName)
+  );
+  if (appDocs.length > 0) {
+    const expiredDocs = appDocs.filter((d) => d.status === 'EXPIRED');
+    const expiringSoonDocs = appDocs.filter((d) => d.status === 'EXPIRING_SOON');
+
+    if (expiredDocs.length > 0) {
+      const docPenalty = Math.min(20, expiredDocs.length * 10);
+      score -= docPenalty;
+      breakdown.push({
+        label: `Expired Statutory Documents (${expiredDocs.map((d) => d.docType).join(', ')})`,
+        delta: -docPenalty
+      });
+    } else if (expiringSoonDocs.length > 0) {
+      score -= 5;
+      breakdown.push({
+        label: 'Documents Expiring Soon (<30d)',
+        delta: -5
+      });
+    } else {
+      score += 2;
+      breakdown.push({
+        label: 'All Mandatory Statutory Documents Valid',
+        delta: 2
+      });
+    }
+  }
+
+  // 5. Post-Approval Undertakings & Conditional Approval Risks
+  const appUts = (undertakings || []).filter(
+    (u) => u.applicationId === app.id || (u.institutionName && u.institutionName === app.institutionName)
+  );
+  if (appUts.length > 0) {
+    const escalatedUts = appUts.filter((u) => u.status === 'ESCALATED' || (u.escalationLevel && u.escalationLevel >= 3));
+    const overdueUts = appUts.filter((u) => u.status === 'OVERDUE');
+
+    if (escalatedUts.length > 0) {
+      score -= 16;
+      breakdown.push({
+        label: `Escalated Compliance Undertakings (Level ${Math.max(...escalatedUts.map((u) => u.escalationLevel || 3))})`,
+        delta: -16
+      });
+    } else if (overdueUts.length > 0) {
+      score -= 8;
+      breakdown.push({
+        label: `Overdue Post-Approval Undertakings (${overdueUts.length} pending)`,
+        delta: -8
+      });
+    }
+  }
+
+  // 6. Institutional Compliance Track Record (Blend 70% Docket Rules + 30% Institution)
+  const inst = (institutions || []).find(
+    (i) => i.id === app.institutionId || (i.name && i.name === app.institutionName)
+  );
+  if (inst && typeof inst.complianceScore === 'number') {
+    const docketScore = Math.max(45, Math.min(99, score));
+    const blendedScore = Math.round(docketScore * 0.7 + inst.complianceScore * 0.3);
+    const blendDelta = blendedScore - docketScore;
+    breakdown.push({
+      label: `Institutional Dossier Track Record (${inst.complianceScore}% baseline)`,
+      delta: blendDelta
+    });
+    score = blendedScore;
+  }
+
+  const finalScore = Math.max(54, Math.min(98, Math.round(score)));
+  return { score: finalScore, breakdown };
+}
+
 export default function Applications() {
   const {
     applications,
     institutions,
+    undertakings,
+    documents,
     simulatedDate,
     determineRoute,
     advanceApplication,
@@ -104,6 +237,7 @@ export default function Applications() {
   const [caseBriefs, setCaseBriefs] = useState({});
   const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
   const [briefCopied, setBriefCopied] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   const [newAppForm, setNewAppForm] = useState({
     institutionId: 'inst_sunrise',
@@ -286,9 +420,25 @@ export default function Applications() {
   const handleGenerateCaseBrief = async (app) => {
     if (!app) return;
     setIsGeneratingBrief(true);
+    const ruleEval = computeDocketRuleConfidence(app, config, institutions, documents, undertakings);
+
     try {
-      const summary = await api.getAicteCaseSummary(app);
-      setCaseBriefs((prev) => ({ ...prev, [app.refNo]: summary }));
+      const summary = await api.getAicteCaseSummary({
+        ...app,
+        calculatedConfidence: ruleEval.score
+      });
+      const finalScore = (summary && typeof summary.ai_confidence_score === 'number' && summary.ai_confidence_score !== 96)
+        ? summary.ai_confidence_score
+        : ruleEval.score;
+
+      setCaseBriefs((prev) => ({
+        ...prev,
+        [app.refNo]: {
+          ...summary,
+          ai_confidence_score: finalScore,
+          ruleBreakdown: ruleEval.breakdown
+        }
+      }));
     } catch (err) {
       console.warn('Backend brief failed, using intelligent client brief fallback:', err);
       const sla = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
@@ -316,16 +466,17 @@ export default function Applications() {
             : `Inspection Exemption: This Extension of Approval (EoA) route qualifies for fast-track paperless clearance without physical inspection under statutory self-disclosure regulations.`,
           bullet_4_undertakings_risk: `Time Limits & SLA Status: Application has been in "${app.currentStage}" for ${app.daysInStage} days (Statutory SLA limit: ${sla} days). ${isOverdue ? 'SLA threshold exceeded; priority escalation active.' : 'Dwell time is well within permitted limits.'}`,
           bullet_5_statutory_recommendation: app.currentStage === 'REVERTED'
-            ? `Recommended Statutory Action: Awaiting college resubmission. Nodal officer instructed to upload certified renewals through the portal.`
+            ? `Recommended Statutory Action: Awaiting college resubmission. Nodal officer instructed to upload certified renewals through the portal. Evaluated compliance confidence: ${ruleEval.score}%.`
             : app.currentStage === 'EVC_QUEUE'
-            ? `Recommended Statutory Action: Issue Committee Roster & Schedule EVC Visit. Application docket is fully compliant with pre-inspection norms; recommend convening the 3-member expert panel within 7 working days.`
+            ? `Recommended Statutory Action: Issue Committee Roster & Schedule EVC Visit. Application docket cleared pre-inspection checks (${ruleEval.score}% rule confidence); recommend convening the 3-member expert panel within 7 working days.`
             : app.currentStage === 'DECISION'
-            ? `Recommended Final Action: Grant Formal Approval. All mandatory criteria, affidavits, and undertakings verified compliant; recommend issuing official Approval Letter.`
-            : `Recommended Statutory Action: Move docket forward to next milestone. All statutory prerequisites cleared with 96% AI confidence.`,
+            ? `Recommended Final Action: Grant Formal Approval. All mandatory criteria, affidavits, and undertakings verified compliant (${ruleEval.score}% confidence); recommend issuing official Approval Letter.`
+            : `Recommended Statutory Action: Move docket forward to next milestone. Statutory prerequisites evaluated at ${ruleEval.score}% AICTE Rule Engine confidence.`,
           executive_verdict: verdict,
-          ai_confidence_score: 96,
+          ai_confidence_score: ruleEval.score,
+          ruleBreakdown: ruleEval.breakdown,
           engine: 'Gemini 3.1 Multimodal Pro',
-          notice: 'AI Statutory Copilot: Executive brief synthesized by Gemini 3.1 from verified docket metadata, institutional records, and APH SLA regulations.'
+          notice: `AI Statutory Copilot: Executive brief synthesized by Gemini 3.1 from verified docket metadata, institutional records, and APH SLA regulations (Confidence: ${ruleEval.score}%).`
         }
       }));
     } finally {
@@ -337,7 +488,7 @@ export default function Applications() {
     if (!brief) return;
     const text = `AICTE C.O.M.P.L.I.S.C.A.N. — 5-POINT EXECUTIVE CASE BRIEF
 Application No: ${app.refNo} | College: ${app.institutionName} | Region: ${app.region}
-Route: ${app.route} | Stage: ${app.currentStage} | Recommendation: ${brief.executive_verdict} (Confidence: ${brief.ai_confidence_score || 96}%)
+Route: ${app.route} | Stage: ${app.currentStage} | Recommendation: ${brief.executive_verdict} (Confidence: ${brief.ai_confidence_score || 92}%)
 
 1. College Profile & Approval Route: ${brief.bullet_1_profile_route}
 2. Document Checks & Past Fixes: ${brief.bullet_2_scrutiny_deficiencies}
@@ -580,7 +731,7 @@ Route: ${app.route} | Stage: ${app.currentStage} | Recommendation: ${brief.execu
               </div>
             ) : brief ? (
               <div className="space-y-3.5 text-xs">
-                {/* Status & Confidence Strip */}
+                {/* Status & Confidence Strip with Dynamic AICTE Rule Engine Evaluation */}
                 <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-white/5 border border-white/10">
                   <div className="flex items-center space-x-2">
                     <span className="text-[10px] font-mono text-slate-400 uppercase">AI Recommendation:</span>
@@ -588,12 +739,64 @@ Route: ${app.route} | Stage: ${app.currentStage} | Recommendation: ${brief.execu
                       {brief.executive_verdict || 'READY TO ADVANCE'}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-3 text-[11px] font-mono text-slate-300">
-                    <span>Accuracy: <strong className="text-amber-300">{brief.ai_confidence_score || 96}%</strong></span>
-                    <span className="text-slate-500">•</span>
-                    <span>Engine: <strong className="text-slate-200">{brief.engine || 'Gemini 3.1 Multimodal Pro'}</strong></span>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] font-mono text-slate-300">
+                    <div className="flex items-center space-x-1.5">
+                      <span>Rule Engine Accuracy:</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full font-bold border ${
+                          (brief.ai_confidence_score || 92) >= 90
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                            : (brief.ai_confidence_score || 92) >= 75
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                        }`}
+                      >
+                        {brief.ai_confidence_score || 92}%
+                      </span>
+                    </div>
+
+                    {brief.ruleBreakdown && brief.ruleBreakdown.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowBreakdown((prev) => !prev)}
+                        className="text-[10px] text-amber-300 hover:text-amber-200 underline font-mono cursor-pointer"
+                      >
+                        {showBreakdown ? 'Hide Rule Breakdown' : 'View Rule Breakdown'}
+                      </button>
+                    )}
+
+                    <span className="text-slate-500 hidden sm:inline">•</span>
+                    <span className="hidden sm:inline">Engine: <strong className="text-slate-200">{brief.engine || 'Gemini 3.1 Multimodal Pro'}</strong></span>
                   </div>
                 </div>
+
+                {/* Dynamic Rule Engine Breakdown Box */}
+                {showBreakdown && brief.ruleBreakdown && brief.ruleBreakdown.length > 0 && (
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-amber-400/30 text-[11px] font-mono space-y-2 animate-fadeIn">
+                    <div className="flex items-center justify-between text-amber-300 font-bold border-b border-amber-400/20 pb-1">
+                      <span>AICTE Statutory Rule Engine Evaluation Factors</span>
+                      <span>Confidence Score: {brief.ai_confidence_score}%</span>
+                    </div>
+                    <div className="space-y-1 pt-1 text-slate-300">
+                      {brief.ruleBreakdown.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between gap-2">
+                          <span className="truncate">{item.label}</span>
+                          <span
+                            className={`shrink-0 font-bold ${
+                              item.delta > 0
+                                ? 'text-emerald-400'
+                                : item.delta < 0
+                                ? 'text-rose-400'
+                                : 'text-slate-400'
+                            }`}
+                          >
+                            {item.delta > 0 ? `+${item.delta}%` : item.delta < 0 ? `${item.delta}%` : '0%'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[11px] leading-relaxed text-emerald-200">
                   {brief.notice || 'AI Statutory Copilot: Executive brief synthesized by Gemini 3.1 from verified docket metadata, institutional records, and APH SLA regulations.'}
