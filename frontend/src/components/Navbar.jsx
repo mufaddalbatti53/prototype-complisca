@@ -35,6 +35,8 @@ export default function Navbar({ activeTab, setActiveTab }) {
     clearAllDemoData,
     notifications,
     acknowledgeNotification,
+    deleteNotification,
+    clearAllNotifications,
     runOneClickDemo
   } = useAicte();
 
@@ -44,7 +46,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
 
   const handleClearDemoData = () => {
     clearAllDemoData();
-    window.alert('All demo data has been cleared! System restored to initial statutory baseline (28 Oct 2026).');
+    window.alert('All demo data has been cleared! System restored to baseline state.');
   };
 
   const handleSelectRole = (newRoleId) => {
@@ -176,7 +178,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
                 <button
                   onClick={resetClock}
                   className="bg-slate-700 hover:bg-slate-600 text-slate-300 px-1.5 py-0.5 rounded text-[9.5px] sm:text-[10.5px] font-mono transition flex items-center space-x-1 shrink-0"
-                  title="Reset clock to 28 Oct 2026 and return step days to normal"
+                  title="Reset clock to current date and return all step days to normal"
                 >
                   <RotateCcw className="w-2.5 h-2.5" />
                   <span className="hidden xl:inline">Reset</span>
@@ -472,7 +474,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
                 <button
                   onClick={resetClock}
                   className="py-1.5 text-center bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-slate-800 transition flex items-center justify-center space-x-1"
-                  title="Reset clock to 28 Oct 2026 and return step days to normal"
+                  title="Reset clock to current date and return all step days to normal"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Reset</span>
@@ -577,12 +579,28 @@ export default function Navbar({ activeTab, setActiveTab }) {
                   Notification & Escalation Center
                 </h3>
               </div>
-              <button
-                onClick={() => setNotifDrawerOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center space-x-1.5">
+                {roleNotifs.length > 0 && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Clear all notifications in inbox?')) {
+                        clearAllNotifications();
+                      }
+                    }}
+                    className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition text-xs flex items-center space-x-1"
+                    title="Clear all notifications"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                    <span className="text-[11px] font-semibold text-rose-600">Clear All</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setNotifDrawerOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="p-3 bg-amber-50 border-b border-amber-200 text-xs text-amber-900 flex items-start space-x-2">
@@ -622,14 +640,23 @@ export default function Navbar({ activeTab, setActiveTab }) {
                     <p className="text-xs leading-relaxed font-medium">{n.message}</p>
                     <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
                       <span className="font-mono text-slate-500">Ref: {n.refId}</span>
-                      {!n.acknowledged && (
+                      <div className="flex items-center space-x-2">
+                        {!n.acknowledged && (
+                          <button
+                            onClick={() => acknowledgeNotification(n.id)}
+                            className="font-semibold text-[#1e3a8a] hover:underline"
+                          >
+                            Mark Acknowledged
+                          </button>
+                        )}
                         <button
-                          onClick={() => acknowledgeNotification(n.id)}
-                          className="font-semibold text-[#1e3a8a] hover:underline"
+                          onClick={() => deleteNotification(n.id)}
+                          className="p-1 text-slate-400 hover:text-rose-600 rounded transition"
+                          title="Dismiss notification"
                         >
-                          Mark Acknowledged
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 ))

@@ -1,5 +1,22 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { initialInstitutions, initialApplications, initialEvcVisits, initialUndertakings, initialDocuments, initialConfig, initialAuditLog, initialNotifications } from './aicteSeedData';
+import {
+  initialInstitutions,
+  initialApplications,
+  initialEvcVisits,
+  initialUndertakings,
+  initialDocuments,
+  initialConfig,
+  initialAuditLog,
+  initialNotifications,
+  getTodayIso,
+  addDaysToIso,
+  createInitialApplications,
+  createInitialEvcVisits,
+  createInitialUndertakings,
+  createInitialDocuments,
+  createInitialAuditLog,
+  createInitialNotifications
+} from './aicteSeedData';
 import { api } from '../services/api';
 
 //sla lookup
@@ -63,7 +80,12 @@ const AicteContext = createContext(null);
 export function AicteProvider({ children }) {
   //state
   const [simulatedDate, setSimulatedDate] = useState(() => {
-    return localStorage.getItem('compliscan_sim_date') || '2026-10-28';
+    const saved = localStorage.getItem('compliscan_sim_date');
+    const today = getTodayIso();
+    if (!saved || saved === '2026-10-28') {
+      return today;
+    }
+    return saved;
   });
 
   const [institutions, setInstitutions] = useState(() => {
@@ -220,20 +242,34 @@ export function AicteProvider({ children }) {
   };
 
   const resetClock = () => {
-    const today = '2026-10-28';
+    const today = getTodayIso();
     setSimulatedDate(today);
+
+    // Intended baseline days in stage for standard demo applications
+    const baselineDaysMap = {
+      app_101: 10,
+      app_102: 14,
+      app_103: 23,
+      app_104: 12,
+      app_105: 33,
+      app_106: 18
+    };
 
     setApplications((prev) =>
       prev.map((app) => {
         if (app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED') {
           return { ...app, daysInStage: 0, isBreached: false };
         }
-        const resetDays = calculateDaysInStage(today, app.stageEnteredAt, app.daysInStage);
+        const targetDays = baselineDaysMap[app.id] ?? calculateDaysInStage(today, app.stageEnteredAt, app.daysInStage);
+        const refreshedStageEnteredAt = baselineDaysMap[app.id]
+          ? addDaysToIso(today, -targetDays)
+          : app.stageEnteredAt;
         const slaMax = getStageSla(config, app.currentStage, app.appType, app.resubmissionCount);
         return {
           ...app,
-          daysInStage: resetDays,
-          isBreached: resetDays > slaMax
+          stageEnteredAt: refreshedStageEnteredAt,
+          daysInStage: targetDays,
+          isBreached: targetDays > slaMax
         };
       })
     );
@@ -275,7 +311,7 @@ export function AicteProvider({ children }) {
       })
     );
 
-    showToast('Simulated clock reset to 28 Oct 2026. All step days returned to normal.', 'info');
+    showToast(`Clock reset to current date (${today}). All step days returned to normal (e.g. 14d / max 15d).`, 'info');
   };
 
   //clear demo data
@@ -297,17 +333,18 @@ export function AicteProvider({ children }) {
       console.error('Failed to clear demo data from localStorage', e);
     }
 
-    setSimulatedDate('2026-10-28');
+    const today = getTodayIso();
+    setSimulatedDate(today);
     setInstitutions(initialInstitutions);
-    setApplications(initialApplications);
-    setEvcVisits(initialEvcVisits);
-    setUndertakings(initialUndertakings);
-    setDocuments(initialDocuments);
+    setApplications(createInitialApplications(today));
+    setEvcVisits(createInitialEvcVisits(today));
+    setUndertakings(createInitialUndertakings(today));
+    setDocuments(createInitialDocuments(today));
     setConfig(initialConfig);
-    setAuditLog(initialAuditLog);
-    setNotifications(initialNotifications);
+    setAuditLog(createInitialAuditLog(today));
+    setNotifications(createInitialNotifications(today));
 
-    showToast('All demo data cleared. Baseline state restored.', 'success');
+    showToast(`All demo data cleared. Baseline state restored to current date (${today}).`, 'success');
   };
 
   const evaluateDeadlinesOnClockTick = (currentSimDate, daysAdded) => {
@@ -1162,6 +1199,26 @@ export function AicteProvider({ children }) {
     }
   };
 
+  const deleteNotification = (notifId) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+    showToast('Notification removed.', 'info');
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    showToast('All notifications cleared.', 'info');
+  };
+
+  const deleteAuditEvent = (eventId) => {
+    setAuditLog((prev) => prev.filter((e) => e.id !== eventId));
+    showToast('Audit event removed.', 'info');
+  };
+
+  const clearAuditLog = () => {
+    setAuditLog([]);
+    showToast('Audit trail cleared.', 'info');
+  };
+
   //config actions
   const updateConfigJson = async (newConfigJson, actorRole, actorName) => {
     try {
@@ -1300,6 +1357,10 @@ export function AicteProvider({ children }) {
         deleteUndertaking,
         deleteDocument,
         deleteInstitution,
+        deleteNotification,
+        clearAllNotifications,
+        deleteAuditEvent,
+        clearAuditLog,
         scheduleEvcVisit,
         completeEvcVisit,
         submitUndertakingEvidence,

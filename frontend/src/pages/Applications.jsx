@@ -1318,10 +1318,11 @@ Route: ${app.route} | Stage: ${app.currentStage} | Recommendation: ${brief.execu
                       <button
                         type="button"
                         onClick={(e) => handleDeleteApplication(app, e)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:bg-rose-100 rounded-lg transition"
+                        className="p-1.5 text-rose-600 hover:text-rose-700 bg-rose-50/70 hover:bg-rose-100 active:bg-rose-200 border border-rose-200 rounded-lg transition shrink-0"
                         title={`Delete application ${app.refNo}`}
+                        aria-label={`Delete application ${app.refNo}`}
                       >
-                        <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600" />
+                        <Trash2 className="w-4 h-4 text-rose-600" />
                       </button>
 
                       <button
