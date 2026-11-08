@@ -102,13 +102,25 @@ Do not authenticate the file, validate an invoice, geolocation, signature, or se
         score = 98
         stage = str(app_data.get("currentStage") or "").upper()
         route = str(app_data.get("route") or "").upper()
+        decision = str(app_data.get("decision") or app_data.get("status") or "").upper()
+        is_closed = stage == "CLOSED" or decision in ["APPROVED", "REJECTED", "CONDITIONAL"]
+
+        calc_conf = app_data.get("calculatedConfidence")
+        if calc_conf and isinstance(calc_conf, (int, float)):
+            return int(calc_conf)
+
+        if is_closed:
+            if decision == "APPROVED":
+                return 96
+            elif decision == "CONDITIONAL":
+                return 90
+            elif decision == "REJECTED":
+                return 62
+            return 92
+
         days = int(app_data.get("daysInStage", 0) or 0)
         cycles = int(app_data.get("resubmissionCount", 0) or 0)
         is_breached = bool(app_data.get("isBreached", False))
-        calc_conf = app_data.get("calculatedConfidence")
-
-        if calc_conf and isinstance(calc_conf, (int, float)):
-            return int(calc_conf)
 
         if stage == "REVERTED":
             score -= 24
@@ -133,18 +145,42 @@ Do not authenticate the file, validate an invoice, geolocation, signature, or se
         app_type = (app_data.get("appType") or "Approval").replace("_", " ")
         route = app_data.get("route") or "SCRUTINY_EVC"
         stage = app_data.get("currentStage") or "SCRUTINY"
-        days = int(app_data.get("daysInStage", 0) or 0)
+        decision = str(app_data.get("decision") or app_data.get("status") or "").upper()
+        is_closed = stage == "CLOSED" or decision in ["APPROVED", "REJECTED", "CONDITIONAL"]
+
+        days = 0 if is_closed else int(app_data.get("daysInStage", 0) or 0)
         cycles = app_data.get("resubmissionCount", 0)
         deficiency = app_data.get("deficiencyReason") or "Pending Scrutiny Verification"
-        is_breached = bool(app_data.get("isBreached", False))
+        is_breached = False if is_closed else bool(app_data.get("isBreached", False))
 
         rule_conf = cls._calculate_rule_confidence(app_data)
 
         sla_limit = 15 if stage == "SCRUTINY" else 21 if "EVC" in stage else 30
-        is_overdue = is_breached or (days > sla_limit and stage != "CLOSED")
+        is_overdue = False if is_closed else (is_breached or (days > sla_limit and stage != "CLOSED"))
         overdue_days = max(0, days - sla_limit) if is_overdue else 0
 
-        if stage == "REVERTED":
+        if is_closed:
+            if decision == "CONDITIONAL":
+                verdict = "CASE CLOSED · CONDITIONAL APPROVAL ISSUED"
+                b3 = "Campus Inspection (EVC): Expert Visiting Committee inspection completed. Infrastructure and instructional norms verified compliant with post-approval undertaking stipulations."
+                b4 = "Time Limits & Status: Application process concluded. Formal Decision: CONDITIONAL. Post-approval compliance undertakings active under 90-day statutory window; no pending stage dwell SLA."
+                b5 = "Statutory Disposition: Formal Conditional Approval issued. Institution is authorized to operate subject to fulfilling stipulated undertakings within 90 days. Case closed in active approval registry."
+            elif decision == "APPROVED":
+                verdict = "CASE CLOSED · FORMAL APPROVAL ISSUED"
+                b3 = "Campus Inspection (EVC): Completed and verified. Infrastructure, instructional area, and laboratory equipment meet all APH minimum statutory norms."
+                b4 = "Time Limits & Status: Application process concluded. Formal Decision: APPROVED. Docket closed with 0 days pending in review."
+                b5 = "Statutory Disposition: Full Approval granted. Formal AICTE Approval Order dispatched. Docket officially closed and archived in the institutional registry."
+            elif decision == "REJECTED":
+                verdict = "CASE CLOSED · REJECTED"
+                b3 = "Campus Inspection (EVC): Procedural inspection review concluded."
+                b4 = "Time Limits & Status: Application process concluded. Final Decision: REJECTED. Case officially closed."
+                b5 = "Statutory Disposition: Application Rejected. Standing Appellate Committee appeal window concluded. Docket archived."
+            else:
+                verdict = "CASE CLOSED · FINAL DECISION ISSUED"
+                b3 = "Campus Inspection (EVC): Inspection completed & evaluated."
+                b4 = "Time Limits & Status: Application process concluded. Case officially closed."
+                b5 = f"Statutory Disposition: Final Decision recorded: {decision}. Case closed."
+        elif stage == "REVERTED":
             verdict = "DEFICIENCY NOTICE · RE-SCRUTINY"
         elif is_overdue or rule_conf < 70:
             verdict = "HOLD · STATUTORY ESCALATION ACTIVE"
@@ -165,27 +201,28 @@ Do not authenticate the file, validate an invoice, geolocation, signature, or se
             if stage == "REVERTED"
             else "Document Verification: Mandatory statutory documents (Registered Trust Deed, Building Safety Certificate, Fire Safety NOC, and Land Title Deeds) scrutinized with 0 fatal discrepancies. Land parcel & built-up area satisfy AICTE minimum norms."
         )
-        b3 = (
-            "Campus Inspection (EVC): Expert Visiting Committee inspection required. Reviewing classroom carpet area, instructional computing facilities (180+ terminals), laboratory equipment, and library books as per APH norms."
-            if any(k in route for k in ["EVC", "SCRUTINY_EVC", "SAC"])
-            else "Inspection Exemption: This Extension of Approval (EoA) route qualifies for fast-track paperless clearance without physical inspection under statutory self-disclosure regulations."
-        )
-        b4 = (
-            f"Time Limits & SLA Status: Application has been in \"{stage}\" for {days} days (Statutory SLA limit: {sla_limit} days). Overdue by {overdue_days} days; automated priority escalation ladder active."
-            if is_overdue
-            else f"Time Limits & SLA Status: Application has been in \"{stage}\" for {days} days (Statutory SLA limit: {sla_limit} days). Dwell time is tracked and within regulatory limits."
-        )
-        b5 = (
-            f"Recommended Statutory Action: Awaiting college resubmission. Nodal officer instructed to upload certified renewals through the portal. Evaluated compliance confidence: {rule_conf}%."
-            if stage == "REVERTED"
-            else f"Recommended Statutory Action: HOLD DOCKET — Do NOT advance. Docket has breached statutory SLA dwell limits ({overdue_days}d overdue) and carries active regulatory escalation risk (Confidence: {rule_conf}%). Regional Officer intervention required before advancing."
-            if is_overdue or rule_conf < 70
-            else f"Recommended Statutory Action: Issue Committee Roster & Schedule EVC Visit. Application docket is fully compliant with pre-inspection norms; recommend convening the 3-member expert panel within 7 working days ({rule_conf}% confidence)."
-            if stage == "EVC_QUEUE"
-            else f"Recommended Final Action: Grant Formal Approval. All mandatory criteria, affidavits, and undertakings verified compliant ({rule_conf}% confidence); recommend issuing official Approval Letter."
-            if stage == "DECISION"
-            else f"Recommended Statutory Action: Move docket forward to next milestone. All statutory prerequisites evaluated compliant with {rule_conf}% AICTE Rule Engine confidence."
-        )
+        if not is_closed:
+            b3 = (
+                "Campus Inspection (EVC): Expert Visiting Committee inspection required. Reviewing classroom carpet area, instructional computing facilities (180+ terminals), laboratory equipment, and library books as per APH norms."
+                if any(k in route for k in ["EVC", "SCRUTINY_EVC", "SAC"])
+                else "Inspection Exemption: This Extension of Approval (EoA) route qualifies for fast-track paperless clearance without physical inspection under statutory self-disclosure regulations."
+            )
+            b4 = (
+                f"Time Limits & SLA Status: Application has been in \"{stage}\" for {days} days (Statutory SLA limit: {sla_limit} days). Overdue by {overdue_days} days; automated priority escalation ladder active."
+                if is_overdue
+                else f"Time Limits & SLA Status: Application has been in \"{stage}\" for {days} days (Statutory SLA limit: {sla_limit} days). Dwell time is tracked and within regulatory limits."
+            )
+            b5 = (
+                f"Recommended Statutory Action: Awaiting college resubmission. Nodal officer instructed to upload certified renewals through the portal. Evaluated compliance confidence: {rule_conf}%."
+                if stage == "REVERTED"
+                else f"Recommended Statutory Action: HOLD DOCKET — Do NOT advance. Docket has breached statutory SLA dwell limits ({overdue_days}d overdue) and carries active regulatory escalation risk (Confidence: {rule_conf}%). Regional Officer intervention required before advancing."
+                if is_overdue or rule_conf < 70
+                else f"Recommended Statutory Action: Issue Committee Roster & Schedule EVC Visit. Application docket is fully compliant with pre-inspection norms; recommend convening the 3-member expert panel within 7 working days ({rule_conf}% confidence)."
+                if stage == "EVC_QUEUE"
+                else f"Recommended Final Action: Grant Formal Approval. All mandatory criteria, affidavits, and undertakings verified compliant ({rule_conf}% confidence); recommend issuing official Approval Letter."
+                if stage == "DECISION"
+                else f"Recommended Statutory Action: Move docket forward to next milestone. All statutory prerequisites evaluated compliant with {rule_conf}% AICTE Rule Engine confidence."
+            )
 
         fallback_result = {
             "bullet_1_profile_route": b1,

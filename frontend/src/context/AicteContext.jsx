@@ -95,7 +95,18 @@ export function AicteProvider({ children }) {
 
   const [applications, setApplications] = useState(() => {
     const saved = localStorage.getItem('compliscan_applications');
-    return saved ? JSON.parse(saved) : initialApplications;
+    if (!saved) return initialApplications;
+    try {
+      const parsed = JSON.parse(saved);
+      return parsed.map((app) => {
+        if (app.currentStage === 'CLOSED' || ['APPROVED', 'REJECTED', 'CONDITIONAL'].includes(app.status) || !!app.decision) {
+          return { ...app, daysInStage: 0, isBreached: false };
+        }
+        return app;
+      });
+    } catch {
+      return initialApplications;
+    }
   });
 
   const [evcVisits, setEvcVisits] = useState(() => {
@@ -257,7 +268,8 @@ export function AicteProvider({ children }) {
 
     setApplications((prev) =>
       prev.map((app) => {
-        if (app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED') {
+        const isClosed = app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED' || app.status === 'CONDITIONAL' || app.currentStage === 'CLOSED' || !!app.decision;
+        if (isClosed) {
           return { ...app, daysInStage: 0, isBreached: false };
         }
         const targetDays = baselineDaysMap[app.id] ?? calculateDaysInStage(today, app.stageEnteredAt, app.daysInStage);
@@ -352,8 +364,9 @@ export function AicteProvider({ children }) {
 
     setApplications((prev) =>
       prev.map((app) => {
-        if (app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED') {
-          return app;
+        const isClosed = app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED' || app.status === 'CONDITIONAL' || app.currentStage === 'CLOSED' || !!app.decision;
+        if (isClosed) {
+          return { ...app, daysInStage: 0, isBreached: false };
         }
 
         const newDaysInStage = calculateDaysInStage(currentSimDate, app.stageEnteredAt, app.daysInStage + daysAdded);
@@ -488,7 +501,8 @@ export function AicteProvider({ children }) {
 
     setApplications((prev) =>
       prev.map((app) => {
-        if (app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED') {
+        const isClosed = app.status === 'CLOSED' || app.status === 'APPROVED' || app.status === 'REJECTED' || app.status === 'CONDITIONAL' || app.currentStage === 'CLOSED' || !!app.decision;
+        if (isClosed) {
           if (app.daysInStage !== 0 || app.isBreached !== false) {
             return { ...app, daysInStage: 0, isBreached: false };
           }
@@ -804,6 +818,8 @@ export function AicteProvider({ children }) {
           currentStage: 'CLOSED',
           status: decision,
           decision,
+          daysInStage: 0,
+          isBreached: false,
           closedAt: simulatedDate
         };
       })
