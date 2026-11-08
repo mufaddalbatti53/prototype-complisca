@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
     SUPABASE_PROJECT_ID: str = os.getenv("SUPABASE_PROJECT_ID", "")
     SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "compliance-evidence")
+
+    API_AUTH_REQUIRED: bool = os.getenv("API_AUTH_REQUIRED", "false").lower() in {"1", "true", "yes"}
+    API_KEY: str = os.getenv("API_KEY", "")
+    MAX_UPLOAD_SIZE_MB: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "10"))
 
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://prototype-complisca.vercel.app")
     BACKEND_URL: str = os.getenv("BACKEND_URL", "https://prototype-complisca.onrender.com")

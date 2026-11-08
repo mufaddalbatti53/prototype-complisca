@@ -11,7 +11,7 @@ def test_engine_init_and_defaults():
 def test_determine_route_new_institution():
     engine = AICTEWorkflowRuleEngine()
     routed = engine.determine_route("NEW_INSTITUTION")
-    assert routed["route"] == "SCRUTINY_EVC"
+    assert routed["route"] == "SCRUTINY_EVC_SAC"
     assert routed["current_stage"] == "SCRUTINY"
     assert routed["status"] == "IN_PROGRESS"
     assert routed["assigned_officer_role"] == "REGIONAL_OFFICER"

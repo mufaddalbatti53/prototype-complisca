@@ -77,7 +77,7 @@ export default function RuleConfig() {
     try {
       await resetConfigDefaults(role, roleConfig?.title || "Regulatory Officer");
       setSimResult(null);
-      setStatusMsg("Restored statutory APH 2024–27 default parameters across all modules.");
+      setStatusMsg("Restored prototype workflow parameters. Validate all sources before operational use.");
     } catch (e) {
       setStatusMsg(`Reset warning: ${e.message}`);
     } finally {
@@ -222,13 +222,13 @@ export default function RuleConfig() {
       <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-xs">
         <div>
           <span className="text-xs font-mono uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-300 font-bold">
-            APH 2024–2027 STATUTORY ENGINE • LIVE CONFIGURABLE MATRIX • TECH SETU AI
+            PROTOTYPE ADMINISTRATIVE PARAMETERS • HUMAN REVIEW REQUIRED
           </span>
           <h1 className="text-2xl font-serif font-bold text-slate-900 mt-2">
             Approval Workflow Timelines & Escalation Rules Matrix
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Adjust stage SLA windows, document expiry alert lead-times, and L1–L4 escalation thresholds. Changes synchronize live across every tab and the FastAPI engine.
+            These timelines and escalations are prototype administrative parameters, not verified statutory requirements. Validate each source and clause with an authorized human reviewer before operational use.
           </p>
         </div>
 
@@ -259,6 +259,8 @@ export default function RuleConfig() {
           </button>
         </div>
       </div>
+
+      <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-950">Rule source: {localConfig?.governance?.source?.title || "AICTE Approval Process Handbook reference requires validation"}. Configuration version: {localConfig?.governance?.configuration_version || localConfig?.rule_version || "not provided"}. Source-by-source validation and human review are required; configured timelines are not represented as verified statutory requirements.</div>
 
       {statusMsg && (
         <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 animate-fadeIn">

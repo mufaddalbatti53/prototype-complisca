@@ -586,6 +586,11 @@ export const initialDocuments = [
 
 export const initialConfig = {
   rule_version: 'APH-2024-2027-v1.0',
+  provenance: {
+    data_status: 'synthetic_demo_data',
+    source: 'prototype_seed_data',
+    human_review_required: true,
+  },
   protected: true,
   simulated_day_offset: 0,
   stage_sla_days: {

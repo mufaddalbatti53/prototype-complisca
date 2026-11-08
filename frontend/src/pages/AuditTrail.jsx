@@ -102,7 +102,8 @@ export default function AuditTrail() {
       'Reference Docket ID',
       'From Stage',
       'To Stage',
-      'Audit Memo / Reason'
+      'Audit Memo / Reason',
+      'Record Status'
     ];
 
     const rows = filteredLog.map((evt) => [
@@ -117,7 +118,8 @@ export default function AuditTrail() {
       evt.refId,
       evt.fromStage || '—',
       evt.toStage || '—',
-      `"${(evt.note || evt.reason || '').replace(/"/g, '""')}"`
+      `"${(evt.note || evt.reason || '').replace(/"/g, '""')}"`,
+      'Synthetic prototype; browser-side state; not an official record'
     ]);
 
     const csvContent =
@@ -128,7 +130,7 @@ export default function AuditTrail() {
     const url = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
     downloadAnchor.href = url;
-    downloadAnchor.setAttribute('download', `AICTE_APH_Statutory_Audit_Trail_${simulatedDate}.csv`);
+    downloadAnchor.setAttribute('download', `Synthetic_Prototype_Audit_Export_${simulatedDate}.csv`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -139,7 +141,7 @@ export default function AuditTrail() {
   const handleDownloadPdfReport = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert('Please allow popups to generate print-ready PDF certificate.');
+      alert('Allow popups to open the synthetic prototype export for printing.');
       return;
     }
 
@@ -147,7 +149,7 @@ export default function AuditTrail() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>AICTE Statutory Audit Trail Report - ${simulatedDate}</title>
+        <title>Synthetic Prototype Audit Export - ${simulatedDate}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 30px; color: #0f172a; line-height: 1.4; }
           .header { border-bottom: 2.5px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 18px; }
@@ -165,7 +167,7 @@ export default function AuditTrail() {
       <body>
         <div class="header">
           <div class="title">ALL INDIA COUNCIL FOR TECHNICAL EDUCATION · C.O.M.P.L.I.S.C.A.N.</div>
-          <div class="subtitle">Official Statutory Audit Trail & Regulatory Action Registry (APH 2024–2027)</div>
+          <div class="subtitle">Synthetic prototype activity export (not an official or statutory record)</div>
           <div class="meta">
             <span><strong>System Date:</strong> ${simulatedDate}</span>
             <span><strong>Auditor Role:</strong> ${role} (${roleConfig?.title || 'System Auditor'})</span>
@@ -178,7 +180,7 @@ export default function AuditTrail() {
               <th>Event ID</th>
               <th>Date</th>
               <th>Region</th>
-              <th>Actor & Authority</th>
+              <th>Actor & Role (prototype entry)</th>
               <th>Action Code</th>
               <th>Ref Docket</th>
               <th>Transition</th>
@@ -206,7 +208,7 @@ export default function AuditTrail() {
         </table>
         <div class="footer">
           <span>CompliScan Legal & Institutional Scrutiny Network • TECH SETU AI</span>
-          <span>Cryptographically Verified Log • Print-Ready Statutory Certificate</span>
+          <span>Browser-side prototype state; permanence and tamper resistance are not established</span>
         </div>
         <script>
           window.onload = function() { window.print(); }
@@ -224,13 +226,12 @@ export default function AuditTrail() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="kicker-line mb-1">MODULE F · AUDIT INTEGRITY & STATUTORY TRACEABILITY · TECH SETU AI</div>
+          <div className="kicker-line mb-1">MODULE F · SYNTHETIC PROTOTYPE ACTIVITY · BROWSER-SIDE STATE</div>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
-            Official System Activity & Audit Trail
+            Synthetic Prototype Activity Export
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Time-stamped record of every official action, step change, document check, inspection booking,
-            and deadline reminder. Provides complete transparency and traceability for every application.
+            Browser-side prototype activity log for demonstration. Its permanence and tamper resistance are not established, and it is not an official record.
           </p>
         </div>
 
@@ -241,16 +242,16 @@ export default function AuditTrail() {
             title="Download formatted CSV spreadsheet for Microsoft Excel"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" />
-            <span>Download Excel (.csv)</span>
+            <span>Download Synthetic Prototype CSV</span>
           </button>
 
           <button
             onClick={handleDownloadPdfReport}
             className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-[#1e3a8a] hover:bg-[#172554] text-white text-xs font-bold transition shadow-xs"
-            title="Open official print-ready certificate view to save as PDF"
+            title="Open a synthetic prototype export view to save as PDF"
           >
             <Printer className="w-3.5 h-3.5 text-amber-300" />
-            <span>Download PDF Report</span>
+            <span>Print Synthetic Prototype Export</span>
           </button>
         </div>
       </div>
@@ -396,7 +397,7 @@ export default function AuditTrail() {
               {filteredLog.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-500">
-                    No official audit logs found matching your filters.
+                    No prototype audit entries found matching your filters.
                   </td>
                 </tr>
               ) : (

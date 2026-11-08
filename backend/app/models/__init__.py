@@ -7,6 +7,7 @@ from backend.app.models.aicte import (
     Document,
     Notification,
 )
+from backend.app.models.governance import RuleConfiguration
 
 __all__ = [
     "Institution",
@@ -16,4 +17,5 @@ __all__ = [
     "Undertaking",
     "Document",
     "Notification",
+    "RuleConfiguration",
 ]

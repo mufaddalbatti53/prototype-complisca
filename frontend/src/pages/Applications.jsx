@@ -294,19 +294,24 @@ export default function Applications() {
       setCaseBriefs((prev) => ({
         ...prev,
         [app.refNo]: {
-          bullet_1_profile_route: `College Profile: ${app.institutionName} located in ${app.region} submitted for ${app.appType.replace(/_/g, ' ')}. Automatically assigned route "${app.route}" according to AICTE handbook rules.`,
+          bullet_1_profile_route: `College Profile: ${app.institutionName} located in ${app.region} submitted for ${app.appType.replace(/_/g, ' ')}. Automatically assigned route "${app.route}" using prototype route parameters; confirm the applicable source rule manually.`,
           bullet_2_scrutiny_deficiencies: app.currentStage === 'REVERTED'
-            ? `Document Check: Documents currently returned to college. Issue: "${app.deficiencyReason}". Correction cycle: #${app.resubmissionCount || 1}.`
-            : `Document Check: Land records, building safety certificate, and ownership affidavits passed scrutiny checks without discrepancies.`,
+            ? `Document Check: Prototype record is returned for review. Note: "${app.deficiencyReason}". Correction cycle: #${app.resubmissionCount || 1}.`
+            : `Document Check: Land records, building safety certificate, and ownership affidavits were not independently checked by this prototype.`,
           bullet_3_evc_infrastructure: ['SCRUTINY_EVC', 'SCRUTINY_EVC_SAC', 'EVC_SAC'].includes(app.route)
-            ? `Campus Inspection (EVC): An expert committee visit is required to inspect classroom space, laboratories, and computer equipment.`
-            : `Inspection Exemption: This extension of approval route (${app.route}) qualifies for fast paperless review without a physical visit.`,
-          bullet_4_undertakings_risk: `Time Limits & Status: Application has been in "${app.currentStage}" for ${app.daysInStage} days. Dwell time is within permitted limits.`,
+            ? `Campus Inspection (EVC): If applicable, an expert visit may be needed; a human reviewer must confirm the requirements.`
+            : `Inspection Exemption: This extension of approval route (${app.route}) is a prototype route only; confirm any inspection requirements manually.`,
+          bullet_4_undertakings_risk: `Time Limits & Status: Application has been in "${app.currentStage}" for ${app.daysInStage} days. SLA parameters are prototype settings and need confirmation.`,
           bullet_5_statutory_recommendation: app.currentStage === 'REVERTED'
             ? `Next Step: Awaiting the college registrar to upload corrected certificates before moving forward.`
-            : `Next Step: Application is in good order and ready to advance to the next step or final approval.`,
-          executive_verdict: app.currentStage === 'REVERTED' ? 'WAITING FOR CORRECTED DOCUMENTS' : 'READY TO PROCEED TO NEXT STEP',
-          ai_confidence_score: 96
+            : `Next Step: This prototype cannot determine whether the application is ready to advance or be approved.`,
+          executive_verdict: 'REVIEW_REQUIRED',
+          assessment_type: 'illustrative_ai_assessment',
+          human_review_required: true,
+          confidence_source: 'not provided',
+          data_status: 'synthetic_demo_data',
+          notice: 'This summary is illustrative and does not establish compliance or an authorized decision. Human review is required.',
+
         }
       }));
     } finally {
@@ -316,15 +321,15 @@ export default function Applications() {
 
   const handleCopyCaseBrief = (brief, app) => {
     if (!brief) return;
-    const text = `AICTE APPROVAL BUREAU — AI EXECUTIVE CASE BRIEF
+    const text = `COMPLISCAN SYNTHETIC PROTOTYPE — ILLUSTRATIVE CASE SUMMARY
 Application No: ${app.refNo} | College: ${app.institutionName} | Region: ${app.region}
-Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.executive_verdict} (Confidence: ${brief.ai_confidence_score}%)
+Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.executive_verdict} (Confidence: not provided)
 
 1. College Profile & Route: ${brief.bullet_1_profile_route}
 2. Document Checks & Past Fixes: ${brief.bullet_2_scrutiny_deficiencies}
 3. Campus Inspection (EVC): ${brief.bullet_3_evc_infrastructure}
 4. Time Limits & Pending Conditions: ${brief.bullet_4_undertakings_risk}
-5. Recommended Final Action: ${brief.bullet_5_statutory_recommendation}`;
+5. Items for Human Review: ${brief.bullet_5_statutory_recommendation}`;
 
     navigator.clipboard?.writeText(text);
     setBriefCopied(true);
@@ -453,7 +458,7 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 space-y-1">
           <div className="flex items-center space-x-2 font-bold text-xs text-amber-900">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>OFFICIAL DEFICIENCY NOTICE — CORRECTION REQUIRED</span>
+            <span>SIMULATED DEFICIENCY NOTICE — REVIEW REQUIRED</span>
           </div>
           <p className="text-xs font-semibold mt-1">Reason: {app.deficiencyReason}</p>
           <p className="text-xs text-slate-700 leading-relaxed">{app.deficiencyNote}</p>
@@ -564,17 +569,21 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
                 {/* Status & Confidence Strip */}
                 <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-white/5 border border-white/10">
                   <div className="flex items-center space-x-2">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase">AI Recommendation:</span>
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Illustrative summary:</span>
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                      {brief.executive_verdict || 'READY TO PROCEED TO NEXT STEP'}
+                      {brief.executive_verdict || 'HUMAN REVIEW REQUIRED'}
                     </span>
                   </div>
                   <div className="flex items-center space-x-3 text-[11px] font-mono text-slate-300">
-                    <span>Accuracy: <strong className="text-amber-300">{brief.ai_confidence_score || 96}%</strong></span>
+                    <span>Confidence: <strong className="text-amber-300">Not provided</strong></span>
                     <span className="text-slate-500">•</span>
-                    <span>Engine: <strong className="text-slate-200">Gemini 3.1 Multimodal</strong></span>
+                    <span>Provider: <strong className="text-slate-200">Gemini when configured</strong></span>
                   </div>
                 </div>
+
+                <p className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
+                  {brief.notice || 'Illustrative summary only. Human review is required; this is not a compliance finding or authorized decision.'}
+                </p>
 
                 {/* 5 Numbered Statutory Bullets in Simple English */}
                 <div className="grid grid-cols-1 gap-2.5">
@@ -662,8 +671,7 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
         <div className="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200">
           <span className="font-bold text-slate-800 block mb-1">Responsible Human Officer</span>
           <p className="text-slate-600 leading-relaxed">
-            AI provides real-time summaries and watches deadlines; all decisions, document returns,
-            and inspection visits are approved by official human officers.
+            This prototype simulates summaries and deadlines. It is not an AICTE system and cannot make official decisions; source requirements and all findings require human review.
           </p>
         </div>
       </div>
@@ -680,8 +688,7 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
             College Approval Applications
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Track and manage college applications through every approval step. The system automatically routes cases,
-            tracks time limits, highlights delays, and lets officers review documents, schedule inspections, and give decisions.
+            Review synthetic applications through simulated workflow stages. Route and time parameters are prototype settings; this demonstration does not make official decisions or establish compliance.
           </p>
         </div>
 
@@ -708,7 +715,7 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
                 College Portal View: Sunrise Institute of Technology
               </span>
               <span className="text-slate-700">
-                AISHE Code: <strong>C-41208</strong> · Western Regional Office (Pune, Maharashtra). Only your college's official applications and AI case summaries are shown below.
+                AISHE Code: <strong>C-41208</strong> · Western Regional Office (Pune, Maharashtra). Prototype demonstration records and illustrative AI summaries are shown below.
               </span>
             </div>
           </div>
@@ -1102,7 +1109,7 @@ Route: ${app.route} | Current Step: ${app.currentStage} | Verdict: ${brief.execu
               </div>
 
               <p className="text-xs text-slate-600 leading-relaxed">
-                Returning this application pauses the time limit clock and sends an official deficiency notice to{' '}
+                Returning this application pauses the time limit clock and sends a prototype deficiency notice to{' '}
                 <strong>{target.institutionName}</strong> ({target.refNo}) so they can upload fixed files.
               </p>
 

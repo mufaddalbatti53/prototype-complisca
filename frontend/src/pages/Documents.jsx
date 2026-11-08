@@ -138,7 +138,7 @@ export default function Documents() {
   };
 
   const handleVerifyRenewal = (docId) => {
-    verifyDocumentRenewal(docId, 'VERIFIED', 'Certified genuine after physical seal comparison.', role, roleConfig.title);
+    verifyDocumentRenewal(docId, 'VERIFIED', 'Officer review outcome recorded in this prototype; confirm the source document and applicable requirements.', role, roleConfig.title);
   };
 
   //ai vision
@@ -171,14 +171,14 @@ export default function Documents() {
           validity_years: 3,
           lessor_party: 'Executive Engineer, PWD Division III',
           lessee_party: 'Delhi Institute of Polytechnic & Technology',
-          legibility_score: 94,
-          tampering_risk: 'LOW',
+          legibility_score: null,
+          tampering_risk: 'Not assessed',
           key_clauses: [
-            'Structural stability assessed in compliance with National Building Code (NBC-2016)',
-            'Seismic Zone IV earthquake resistance load-bearing capacity certified',
-            'Mandatory structural renewal due on 30 Sept 2026 (EXPIRED)'
+            'Sample text states that the certificate refers to the National Building Code (NBC-2016); not validated',
+            'Sample text mentions Seismic Zone IV; not validated',
+            'Sample text shows an expiry date of 30 September 2026; confirm against the source'
           ],
-          ai_summary: 'PWD Structural stability certificate inspected. Visual stamps match PWD Division III seal; document expired on 30 Sept 2026 requiring fresh triennial renewal.'
+          ai_summary: 'Synthetic sample: a 30 September 2026 expiry date is shown. Confirm the date and renewal requirements against source records.'
         });
       } else if (selectedSample === 'sample_fire_noc') {
         setScanResult({
@@ -190,14 +190,14 @@ export default function Documents() {
           validity_years: 1,
           lessor_party: 'Divisional Fire Officer, Kolkata South Division',
           lessee_party: 'Bengal College of Pharmacy & Allied Sciences',
-          legibility_score: 95,
-          tampering_risk: 'LOW',
+          legibility_score: null,
+          tampering_risk: 'Not assessed',
           key_clauses: [
-            'Automated wet-riser hydrant and down-comer fire fighting systems functional',
-            'Emergency fire escape stairways (width 2.0m) clear of encroachments',
-            'Annual renewal required before 17 Nov 2026 (T-20 days advance alert active)'
+            'Sample text describes wet-riser and down-comer systems; not independently inspected',
+            'Sample text describes fire escape stairways; not independently inspected',
+            'Sample text lists 17 November 2026; confirm applicable renewal timing manually'
           ],
-          ai_summary: 'Fire NOC verified authentic with active QR code and divisional seal. Certificate enters mandatory 30-day renewal window on 18 Oct 2026.'
+          ai_summary: 'Illustrative sample: a certificate expiry date is shown. Confirm the document, date, and applicable renewal window manually.'
         });
       } else {
         setScanResult({
@@ -209,15 +209,15 @@ export default function Documents() {
           validity_years: 30,
           lessor_party: 'Maharashtra Industrial Development Corporation (MIDC)',
           lessee_party: 'Sunrise Educational & Charitable Trust, Pune',
-          legibility_score: 98,
-          tampering_risk: 'LOW',
+          legibility_score: null,
+          tampering_risk: 'Not assessed',
           key_clauses: [
-            'Irrevocable 30-year statutory lease period valid up to 11 April 2038',
-            'Continuous unencumbered possession granted for Technical Education campus',
-            'Total demarcated land parcel area: 7.50 Acres (exceeds AICTE Western Region norm of 5.0 Acres)',
-            'Government revenue e-Challan registration verified (GRN-MH-992104)'
+            'Sample text states a 30-year lease ending 11 April 2038; confirm against source',
+            'Sample text describes possession for a technical education campus; not validated',
+            'Sample text lists 7.50 acres; applicable area requirements need source validation',
+            'Sample text contains a government revenue e-Challan reference (GRN-MH-992104); not checked.'
           ],
-          ai_summary: 'Official 30-year registered lease deed authenticated via Gemini Vision. Unencumbered land area (7.5 acres) fully satisfies AICTE Approval Process Handbook norms for Western Region.'
+          ai_summary: 'Synthetic sample: a 30-year lease and 7.50-acre parcel are mentioned. Source records and applicable requirements require human review.'
         });
       }
     } finally {
@@ -225,14 +225,24 @@ export default function Documents() {
     }
   };
 
-  const handleApplyScanToDoc = (targetDoc) => {
+  const handleApplyScanToDoc = async (targetDoc) => {
     if (!scanResult || !targetDoc) return;
+    let storedUrl = scanResult.storage_url || '';
+    if (customFile) {
+      try {
+        const uploadResult = await api.uploadAicteDocument(targetDoc.id, customFile, true);
+        storedUrl = uploadResult.storage_url;
+      } catch {
+        window.alert('The file could not be stored. The extracted values were not added to the prototype record.');
+        return;
+      }
+    }
     submitDocumentRenewal(
       targetDoc.id,
-      '/docs/Ai_Scanned_Verified_Certificate.pdf',
+      storedUrl,
       scanResult.issued_on,
       scanResult.expiry_date,
-      `AI Vision Extraction Verified: ${scanResult.registration_no} from ${scanResult.issuing_authority}`,
+      `Illustrative extraction for human review: ${scanResult.registration_no || 'identifier not provided'}. Confirm all fields against the source document.`,
       role,
       roleConfig.title
     );
@@ -298,7 +308,7 @@ export default function Documents() {
             TOTAL CERTIFICATES
           </span>
           <span className="text-2xl font-serif font-bold text-slate-900 mt-1 block">{totalCount}</span>
-          <span className="text-[11px] text-slate-500 mt-0.5 block">Official records</span>
+          <span className="text-[11px] text-slate-500 mt-0.5 block">Prototype records</span>
         </div>
 
         <div className="civic-card p-4 rounded-2xl bg-white border border-slate-200">
@@ -546,7 +556,7 @@ export default function Documents() {
                             <button
                               onClick={() => requestDocumentRenewal(doc.id, role, roleConfig.title)}
                               className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold shadow-xs transition"
-                              title="Send official renewal notice to institution"
+                              title="Send prototype renewal reminder to institution"
                             >
                               <Mail className="w-3 h-3 text-amber-200" />
                               <span>Request Renewal</span>
@@ -769,8 +779,8 @@ export default function Documents() {
 
             <p className="text-xs text-slate-600 leading-relaxed">
               Every other tool relies on manual date inputs. CompliScan automatically reads scanned
-              Lease Deeds, Building Safety Certificates, and Fire NOCs directly through AI Vision to verify
-              stamp paper registration IDs, issuing seals, validity clauses, and auto-calculates the countdown expiry timer.
+              Lease Deeds, Building Safety Certificates, and Fire NOCs to extract apparent text markers.
+              AI output does not authenticate stamps or seals; review extracted dates and applicable requirements manually.
             </p>
 
             {/* Document Selection / Demo Samples */}
@@ -861,7 +871,7 @@ export default function Documents() {
                 ) : (
                   <>
                     <Scan className="w-4 h-4 text-amber-300" />
-                    <span>Extract Dates & Verify Stamp Paper Authenticity with Gemini Vision</span>
+                    <span>Extract Dates & Verify Document Markers with Gemini Vision</span>
                   </>
                 )}
               </button>
@@ -873,14 +883,14 @@ export default function Documents() {
                 <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                   <div className="flex items-center space-x-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span className="font-serif font-bold text-sm text-white">AI Extraction Verified</span>
+                    <span className="font-serif font-bold text-sm text-white">Illustrative Extraction — Human Review Required</span>
                   </div>
                   <div className="flex items-center space-x-2 text-[11px] font-mono">
                     <span className="text-slate-400">Visual Legibility:</span>
-                    <strong className="text-emerald-300">{scanResult.legibility_score}%</strong>
+                    <strong className="text-emerald-300">{scanResult.legibility_score ?? 'Not provided'}</strong>
                     <span className="text-slate-600">•</span>
                     <span className="text-slate-400">Risk:</span>
-                    <strong className="text-amber-300">{scanResult.tampering_risk}</strong>
+                    <strong className="text-amber-300">{scanResult.tampering_risk || 'Not assessed'}</strong>
                   </div>
                 </div>
 
@@ -906,16 +916,16 @@ export default function Documents() {
                   <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 space-y-1">
                     <span className="text-[10px] font-mono text-emerald-300 uppercase">AUTO-EXTRACTED EXPIRY DATE</span>
                     <p className="font-mono font-bold text-emerald-300 text-sm">{scanResult.expiry_date}</p>
-                    <span className="text-[10px] text-emerald-200">Countdown timer auto-configured</span>
+                    <span className="text-[10px] text-emerald-200">Prototype timer only; verify expiry date manually</span>
                   </div>
                 </div>
 
-                {/* Verified Clauses */}
-                {scanResult.key_clauses && (
+                {/* Extracted Text */}
+                {(scanResult.apparent_markers || scanResult.key_clauses) && (
                   <div className="space-y-1.5 pt-1 text-xs">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase block">VERIFIED STATUTORY CLAUSES</span>
+                    <span className="text-[10px] font-mono text-slate-400 uppercase block">EXTRACTED TEXT — VERIFY AGAINST THE SOURCE</span>
                     <ul className="space-y-1">
-                      {scanResult.key_clauses.map((clause, idx) => (
+                      {(scanResult.apparent_markers || scanResult.key_clauses).map((clause, idx) => (
                         <li key={idx} className="flex items-start space-x-2 text-[11px] text-slate-300">
                           <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
                           <span>{clause}</span>
@@ -928,6 +938,7 @@ export default function Documents() {
                 {/* AI Summary */}
                 <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-xs text-slate-300 leading-relaxed">
                   <p>{scanResult.ai_summary}</p>
+                  <p className="mt-2 text-amber-200">{scanResult.notice || 'Synthetic sample or unverified extraction. Human review is required.'}</p>
                 </div>
 
                 {/* Apply Button */}
@@ -944,7 +955,7 @@ export default function Documents() {
                     className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-xs transition"
                   >
                     <Stamp className="w-4 h-4 text-emerald-200" />
-                    <span>Auto-Populate Expiry Timer & Commit to AICTE Registry</span>
+                    <span>Auto-Populate Expiry Timer & Use in Prototype Record for Review</span>
                   </button>
                 </div>
               </div>
@@ -1077,7 +1088,7 @@ export default function Documents() {
               {activeInspectorDoc.renewalRequestedAt && (
                 <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-950 space-y-1">
                   <span className="text-[10px] font-mono uppercase block font-bold text-amber-800">STATUTORY RENEWAL NOTICE RECORD</span>
-                  <p className="font-semibold text-xs">Official Renewal Demand Notice Dispatched on {activeInspectorDoc.renewalRequestedAt}</p>
+                  <p className="font-semibold text-xs">Prototype renewal reminder sent on {activeInspectorDoc.renewalRequestedAt}</p>
                   <p className="text-[11px] text-amber-800">Issued by: {activeInspectorDoc.renewalRequestedBy || 'Regional Officer'}</p>
                 </div>
               )}

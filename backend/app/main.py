@@ -12,6 +12,7 @@ from backend.app import models  # noqa: F401 - register AICTE SQLAlchemy models
 from backend.app.api.v1 import aicte, rules
 from backend.app.api.v1.rules import seed_default_rules
 from backend.app.core.seed_aicte import seed_default_aicte_data
+from backend.app.core.security import deployment_api_key_middleware
 
 logger = logging.getLogger("compliscan")
 
@@ -25,8 +26,8 @@ with SessionLocal() as db:
     seed_default_aicte_data(db)
 
 app = FastAPI(
-    title="C.O.M.P.L.I.S.C.A.N. — AICTE Approval Workflow and Compliance Platform",
-    description="SIH 26262 institutional approval workflow automation, compliance monitoring, AI document review, and escalation management.",
+    title="C.O.M.P.L.I.S.C.A.N. — Synthetic AICTE Workflow Prototype",
+    description="Synthetic SIH 26262 workflow demonstration. AI output is illustrative, rules require source validation, and human review is required.",
     version=settings.VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -40,6 +41,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.middleware("http")(deployment_api_key_middleware)
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):

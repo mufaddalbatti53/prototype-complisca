@@ -5,9 +5,9 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 # Ensure the backend package is importable when tests are run from the project root.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ap3p.main import app
+from backend.app.main import app
 
 
 
@@ -19,10 +19,6 @@ class Client(TestClient):
 
     def rules(self):
         return self.get("/api/v1/rules")
-
-    def dashboard_analytics(self):
-        return self.get("/api/v1/analytics/dashboard")
-
 
 client = Client(app)
 
@@ -40,10 +36,31 @@ def test_get_rules():
     assert "stage_sla_days" in config
     assert "routes" in config
     assert "escalation_ladder" in config
+    assert config["governance"]["human_review_required"] is True
+    assert config["governance"]["statutory_determination"] is False
 
-def test_get_dashboard_analytics():
-    response = client.get("/api/v1/analytics/dashboard")
+def test_get_aicte_documents():
+    response = client.get("/api/v1/aicte/documents")
     assert response.status_code == 200
-    data = response.json()
-    assert "total_inspections" in data
-    assert "overall_compliance_rate" in data
+    assert isinstance(response.json(), list)
+
+
+def test_rule_configuration_is_persistent_and_workflow_is_traceable():
+    updated = client.put("/api/v1/rules/config", json={"stage_sla_days": {"SCRUTINY": 12}})
+    assert updated.status_code == 200
+    assert updated.json()["human_review_required"] is True
+
+    config = client.get("/api/v1/rules/config")
+    assert config.status_code == 200
+    assert config.json()["stage_sla_days"]["SCRUTINY"] == 12
+
+    routed = client.post("/api/v1/rules/workflow/route", json={"app_type": "NEW_INSTITUTION"})
+    assert routed.status_code == 200
+    trace = routed.json()["decision_trace"]
+    assert trace["event"] == "ROUTE_DETERMINED"
+    assert trace["rule_classification"] == "configured_administrative"
+    assert trace["human_authorization_required"] is True
+
+    reset = client.post("/api/v1/rules/config/reset")
+    assert reset.status_code == 200
+    assert reset.json()["stage_sla_days"]["SCRUTINY"] == 15

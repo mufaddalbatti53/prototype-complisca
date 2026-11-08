@@ -1,177 +1,76 @@
-# CompliScan
+# CompliScan SIH 26262 prototype
 
-CompliScan is an AI-assisted regulatory compliance platform for institutional approval workflows. It helps institutions, reviewers, and officials track applications, route files through the correct process, review evidence, and surface escalations before deadlines are missed.
+CompliScan is a synthetic demonstration of an AICTE institutional approval workflow. It models application stages, undertakings, document renewal windows, notifications, and officer review for Smart India Hackathon problem statement 26262.
 
-Built for the SIH 2026 problem statement and aligned to the approved workflow architecture:
-- Frontend: React + Vite + Tailwind CSS
-- Backend: Python + FastAPI
-- API layer: REST APIs + daily checker
-- Workflow AI: rule engine (file router), Gemini AI + OCR
-- Database: Supabase (Postgres, role-based login, file storage)
-- Hosting: Vercel (web), Render (API)
+## Trust and pilot boundary
 
-## Tech stack
+- All seeded institutions, applications, documents, dates, notifications, and audit entries are synthetic demonstration data.
+- This prototype is not an AICTE system or endorsement and does not create official records, determinations, or decisions.
+- AI output is an illustrative extraction or summary. It does not authenticate a document or establish compliance, legal validity, or an authorized decision.
+- Workflow timelines and escalation settings are prototype administrative parameters. Validate each source and clause with an authorized human reviewer before operational use.
+- The audit view is browser-side prototype state. Its permanence and tamper resistance have not been established.
 
-### Frontend
-- React 19
-- Vite
-- Tailwind CSS
-- Role-based UI for different user personas
-- Live workflow panels and dashboard modules
+## Architecture
+
+- Frontend: React, Vite, Tailwind CSS
+- Backend: FastAPI, SQLAlchemy, PostgreSQL or SQLite
+- AI: Gemini multimodal extraction and case summaries
+- Optional file storage: Supabase Storage, with local storage fallback
+- Deployment: Render web service and daily cron job; frontend can be hosted separately
+
+## Local development
 
 ### Backend
-- Python 3.10+
-- FastAPI
-- REST API endpoints for workflow, documents, analytics, and admin configuration
-- Daily checker / scheduled compliance sweep
-- File upload and processing pipeline
 
-### AI and workflow engine
-- Rule engine / router for app classification and workflow progression
-- Gemini AI integration for case summaries and document analysis
-- OCR for uploaded files and documents
-- File-based workflow orchestration
+From the repository root, create `backend/.env` from `.env.example`, then install dependencies and start FastAPI:
 
-### Data layer
-- Supabase PostgreSQL
-- Row-level or role-based access patterns
-- File storage for uploads and processed artifacts
-
-### Deployment
-- Vercel for web frontend
-- Render for FastAPI backend
-
-## Architecture overview
-
-```text
-Frontend (React + Vite + Tailwind)
-        |
-        v
-FastAPI backend
-        |
-        +--> Rule engine / file router
-        +--> Gemini AI + OCR
-        +--> REST API endpoints
-        +--> Daily compliance checker
-        |
-        v
-Supabase Postgres
-        |
-        +--> role login / user management
-        +--> file storage
-        +--> application records and workflow state
+```powershell
+Copy-Item .env.example backend/.env
+python -m pip install -r backend/requirements.txt
+python -m uvicorn backend.app.main:app --reload
 ```
 
-## Key product capabilities
+The API is available at `http://localhost:8000`; health is at `/api/health` and interactive docs at `/docs`.
 
-- Institution/application intake and tracking
-- Workflow routing based on submission type
-- SLA and escalation monitoring
-- Daily checker for pending tasks and compliance deadlines
-- AI-generated summaries and recommendations
-- OCR-powered document extraction and validation
-- Role-based access for institutional and review users
-- File storage integration with Supabase
+### Frontend
 
-## Repository structure
+Create `frontend/.env.local` with:
 
-```text
-prototype-complisca/
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── core/
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   └── services/
-│   ├── storage/
-│   ├── tests/
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   ├── vite.config.js
-│   └── tailwind.config.js
-├── .env.example
-├── README.md
-└── requirements.txt
+```env
+VITE_BACKEND_URL=http://localhost:8000
+VITE_API_KEY=
 ```
 
-## Local environment setup
+Then start Vite:
 
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/mufaddalbatti53/prototype-complisca.git
-cd prototype-complisca
-```
-
-### 2. Backend setup
-
-```bash
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r backend/requirements.txt
-cp .env.example .env
-```
-
-Then configure your local environment values in `.env`.
-
-### 3. Frontend setup
-
-```bash
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-### 4. Run backend
+## Configuration
 
-```bash
-cd ..
-uvicorn backend.app.main:app --reload --port 8000
+See `.env.example` for the backend settings. Supabase Storage is optional; configure `SUPABASE_URL`, a service key, and `SUPABASE_STORAGE_BUCKET` to use it. Without those settings, uploads are stored under `backend/storage/uploads`.
+
+`API_AUTH_REQUIRED` enables a deployment-scoped API-key gate. Set `API_KEY` and provide the matching `VITE_API_KEY` to the frontend deployment. A Vite environment value is included in browser code, so it is visible to users and is a basic deployment gate rather than a confidential secret.
+
+`MAX_UPLOAD_SIZE_MB` controls the upload size cap. Uploads accept JPEG, PNG, WebP, and PDF MIME types.
+
+## Daily compliance check
+
+The Render cron entry invokes:
+
+```text
+python -m backend.app.jobs.daily_check
 ```
 
-The API docs will be available at:
-- http://localhost:8000/docs
-- Frontend: http://localhost:5173
+It checks in-progress application stage SLAs, open or submitted undertaking due dates, and document expiry windows. It creates notifications while a matching unacknowledged notification exists and returns counts with `human_review_required: true`. The Render cron schedule in `render.yaml` is `0 2 * * *` UTC.
 
-## Environment variables
+## API areas
 
-Example values are provided in `.env.example`:
+- `/api/v1/aicte`: applications, institutions, documents, undertakings, notifications, AI extraction, and case summaries
+- `/api/v1/rules`: prototype route, SLA, expiry, escalation, and simulated-clock configuration
+- `/api/health`: deployment health summary
 
-```env
-PROJECT_NAME=C.O.M.P.L.I.S.C.A.N.
-VERSION=1.0.0
-API_V1_STR=/api/v1
-
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-2.5-flash
-
-DATABASE_URL=postgresql://postgres:postgres@db.<project-ref>.supabase.co:5432/postgres
-# DATABASE_URL=sqlite:///./backend/storage/compliscan.db
-
-SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_KEY=your_supabase_service_role_key
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_PROJECT_ID=<project-ref>
-
-FRONTEND_URL=https://prototype-complisca.vercel.app
-BACKEND_URL=https://prototype-complisca.onrender.com
-```
-
-## Deployment notes
-
-- Web app: Vercel
-- API service: Render
-- Database and storage: Supabase Postgres + Supabase Storage
-- Authentication and role-based logic: Supabase auth + project policies
-
-## Notes
-
-This project is intentionally structured around the SIH 26262 AICTE compliance and institutional approval workflow theme, with Gemini AI, OCR, routing logic, and a scheduled daily checker layered on top of a Supabase-powered backend.
-
-## License
-
-This project is currently maintained for hackathon and internal evaluation use.
+All route and assessment outputs are for demonstration and require human review.
